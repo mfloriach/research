@@ -9,7 +9,7 @@ export default function Home() {
       <SiteNavbar brand={site.brand} search={site.search} avatar={site.avatar} menu={site.menu} />
 
       <main className="flex-1">
-        <div className="mx-4 py-8 sm:py-10">
+        <div className="mx-8 py-8 sm:py-10">
           <PageHeading title={heading.title} description={heading.description} />
 
           <ReportingAuditSection />

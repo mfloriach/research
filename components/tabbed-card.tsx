@@ -50,7 +50,7 @@ export function TabbedCard({ name, title, tabs, defaultTabId }: TabbedCardProps)
                 autoComplete="off"
                 defaultChecked={tab.id === activeId}
               />
-              <div className="tab-content border-base-300 bg-base-100 p-4 sm:p-6">
+              <div className="tab-content max-h-[60vh] overflow-y-auto overscroll-contain border-base-300 bg-base-100 p-4 [scrollbar-gutter:stable] sm:p-6 lg:max-h-[70vh]">
                 {tab.content}
               </div>
             </Fragment>
