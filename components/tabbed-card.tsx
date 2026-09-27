@@ -33,11 +33,7 @@ export function TabbedCard({ name, title, tabs, defaultTabId }: TabbedCardProps)
   const activeId = defaultTabId ?? tabs[0].id;
 
   return (
-    <section className="card border border-base-300 bg-base-100 shadow-sm">
-      <div className="card-body pb-3">
-        <h2 className="card-title">{title}</h2>
-      </div>
-
+    <section>
       <div className="px-3 pb-3 sm:px-4 sm:pb-4">
         <div className="tabs tabs-lift">
           {tabs.map((tab) => (

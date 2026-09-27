@@ -4,8 +4,7 @@ import { useMemo, useState } from "react";
 import { ArticleList } from "@/components/article-list";
 import { CollapseList } from "@/components/collapse-list";
 import { TabbedCard } from "@/components/tabbed-card";
-import type { Article, ReportingParagraph } from "@/lib/content";
-import { auditCard, reportingCard } from "@/lib/content";
+import type { Article, CollapsibleItem, ContentTab, ReportingParagraph } from "@/lib/content";
 
 export type SelectedParagraph = {
   articleId: string;
@@ -16,7 +15,18 @@ export type SelectedParagraph = {
   auditItemIds: string[];
 };
 
-export function ReportingAuditSection() {
+export type ReportingAuditSectionProps = {
+  reportingCard: {
+    title: string;
+    tabs: ContentTab<Article>[];
+  };
+  auditCard: {
+    title: string;
+    tabs: ContentTab<CollapsibleItem>[];
+  };
+};
+
+export function ReportingAuditSection({ reportingCard, auditCard }: ReportingAuditSectionProps) {
   const [selected, setSelected] = useState<SelectedParagraph | null>(null);
 
   const handleParagraphClick = (
@@ -51,7 +61,7 @@ export function ReportingAuditSection() {
       }))
       .filter((tab) => tab.items.length > 0);
     return filtered.length > 0 ? filtered : auditCard.tabs;
-  }, [selected]);
+  }, [selected, auditCard.tabs]);
 
   return (
     <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start lg:gap-8">
@@ -83,6 +93,21 @@ export function ReportingAuditSection() {
             label: tab.label,
             content: (
               <div className="space-y-4">
+                {(tab.author ?? tab.date) && (
+                  <p className="text-xs text-base-content/60">
+                    {tab.author && <span>By {tab.author}</span>}
+                    {tab.author && tab.date && <span aria-hidden="true"> · </span>}
+                    {tab.date && (
+                      <time dateTime={tab.date}>
+                        {new Date(`${tab.date}T00:00:00`).toLocaleDateString(undefined, {
+                          year: "numeric",
+                          month: "short",
+                          day: "numeric",
+                        })}
+                      </time>
+                    )}
+                  </p>
+                )}
                 <CollapseList items={tab.items} />
               </div>
             ),

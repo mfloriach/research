@@ -33,6 +33,8 @@ export type ContentTab<T> = {
   id: string;
   label: string;
   items: T[];
+  author?: string;
+  date?: string;
 };
 
 export type MenuItem = {
@@ -235,6 +237,8 @@ export const auditCard = {
     {
       id: "b36c3ee0-abfe-4b21-a54d-c9f0423df768",
       label: "Fallacies",
+      author: "J. Kim",
+      date: "2025-02-14",
       items: [
         {
           id: "2746480b-1cfa-4650-954c-43283dea532f",
@@ -331,6 +335,8 @@ export const auditCard = {
     {
       id: "a9c65285-7074-4175-b978-6c6c6267a1db",
       label: "Interpretation",
+      author: "T. Nguyen",
+      date: "2025-04-17",
       items: [
         {
           id: "a7d6e08d-8071-4a2d-b8c5-d4a88d1a9c6c",
