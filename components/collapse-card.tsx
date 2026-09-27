@@ -1,6 +1,8 @@
 export type CollapseCardProps = {
   title: string;
   paragraphs: readonly string[];
+  author?: string;
+  date?: string;
 };
 
 /**
@@ -11,7 +13,7 @@ export type CollapseCardProps = {
  * via the `group-open:` variant. `collapse-arrow` renders the chevron that
  * `.collapse-title` reserves its inline-end padding for.
  */
-export function CollapseCard({ title, paragraphs }: CollapseCardProps) {
+export function CollapseCard({ title, paragraphs, author, date }: CollapseCardProps) {
   return (
     <details className="group collapse border border-base-300 bg-base-100">
       <summary className="collapse-title line-clamp-2 text-sm font-medium leading-6 group-open:line-clamp-none">
@@ -23,6 +25,21 @@ export function CollapseCard({ title, paragraphs }: CollapseCardProps) {
             <p key={index}>{paragraph}</p>
           ))}
         </div>
+        {(author ?? date) && (
+          <p className="mt-3 text-xs text-base-content/60">
+            {author && <span>By {author}</span>}
+            {author && date && <span aria-hidden="true"> · </span>}
+            {date && (
+              <time dateTime={date}>
+                {new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
+                  year: "numeric",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </time>
+            )}
+          </p>
+        )}
       </div>
     </details>
   );

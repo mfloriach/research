@@ -14,7 +14,13 @@ export function CollapseList({ items }: CollapseListProps) {
   return (
     <div className="flex flex-col gap-2">
       {items.map((item) => (
-        <CollapseCard key={item.id} title={item.title} paragraphs={item.paragraphs} />
+        <CollapseCard
+          key={item.id}
+          title={item.title}
+          paragraphs={item.paragraphs}
+          author={item.author}
+          date={item.date}
+        />
       ))}
     </div>
   );

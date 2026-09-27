@@ -1,35 +1,57 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { ArticleList } from "@/components/article-list";
 import { CollapseList } from "@/components/collapse-list";
 import { TabbedCard } from "@/components/tabbed-card";
-import type { Article } from "@/lib/content";
+import type { Article, ReportingParagraph } from "@/lib/content";
 import { auditCard, reportingCard } from "@/lib/content";
 
 export type SelectedParagraph = {
   articleId: string;
   articleTitle: string;
+  paragraphId: string;
   paragraphIndex: number;
   text: string;
+  auditItemIds: string[];
 };
 
 export function ReportingAuditSection() {
   const [selected, setSelected] = useState<SelectedParagraph | null>(null);
 
-  const handleParagraphClick = (article: Article, paragraphIndex: number) => {
+  const handleParagraphClick = (
+    article: Article,
+    paragraph: ReportingParagraph,
+    index: number,
+  ) => {
     setSelected((prev) => {
-      if (prev?.articleId === article.id && prev?.paragraphIndex === paragraphIndex) {
+      if (prev?.paragraphId === paragraph.id) {
         return null;
       }
       return {
         articleId: article.id,
         articleTitle: article.title,
-        paragraphIndex,
-        text: article.paragraphs[paragraphIndex] ?? "",
+        paragraphId: paragraph.id,
+        paragraphIndex: index,
+        text: paragraph.text,
+        auditItemIds: paragraph.auditItemIds,
       };
     });
   };
+
+  const auditTabsToShow = useMemo(() => {
+    if (!selected) {
+      return auditCard.tabs;
+    }
+    const wanted = new Set(selected.auditItemIds);
+    const filtered = auditCard.tabs
+      .map((tab) => ({
+        ...tab,
+        items: tab.items.filter((item) => wanted.has(item.id)),
+      }))
+      .filter((tab) => tab.items.length > 0);
+    return filtered.length > 0 ? filtered : auditCard.tabs;
+  }, [selected]);
 
   return (
     <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start lg:gap-8">
@@ -50,20 +72,23 @@ export function ReportingAuditSection() {
         }))}
       />
 
-      <TabbedCard
-        name="audit"
-        title={auditCard.title}
-        defaultTabId={auditCard.tabs[0]?.id}
-        tabs={auditCard.tabs.map((tab) => ({
-          id: tab.id,
-          label: tab.label,
-          content: (
-            <div className="space-y-4">
-              <CollapseList items={tab.items} />
-            </div>
-          ),
-        }))}
-      />
+      <div className="space-y-3">
+        <TabbedCard
+          key={selected?.paragraphId ?? "all"}
+          name="audit"
+          title={auditCard.title}
+          defaultTabId={auditTabsToShow[0]?.id}
+          tabs={auditTabsToShow.map((tab) => ({
+            id: tab.id,
+            label: tab.label,
+            content: (
+              <div className="space-y-4">
+                <CollapseList items={tab.items} />
+              </div>
+            ),
+          }))}
+        />
+      </div>
     </div>
   );
 }

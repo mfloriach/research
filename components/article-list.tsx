@@ -1,16 +1,17 @@
 import { Fragment } from "react";
-import type { Article } from "@/lib/content";
+import type { Article, ReportingParagraph } from "@/lib/content";
 
 /** Content constraint: no article may exceed this many words. */
 export const ARTICLE_WORD_LIMIT = 500;
 
 export type ParagraphSelection = {
   articleId: string;
-  paragraphIndex: number;
+  paragraphId: string;
 };
 
-function countWords(paragraphs: readonly string[]): number {
+function countWords(paragraphs: readonly ReportingParagraph[]): number {
   return paragraphs
+    .map((p) => p.text)
     .join(" ")
     .split(/\s+/)
     .filter(Boolean).length;
@@ -23,7 +24,7 @@ function Article({
 }: {
   article: Article;
   selected?: ParagraphSelection | null;
-  onParagraphClick?: (article: Article, paragraphIndex: number) => void;
+  onParagraphClick?: (article: Article, paragraph: ReportingParagraph, index: number) => void;
 }) {
   const words = countWords(article.paragraphs);
 
@@ -38,14 +39,14 @@ function Article({
       <h3 className="text-lg font-semibold leading-7">{article.title}</h3>
       {article.paragraphs.map((paragraph, index) => {
         const isSelected =
-          selected?.articleId === article.id && selected?.paragraphIndex === index;
+          selected?.articleId === article.id && selected?.paragraphId === paragraph.id;
         const clickable = typeof onParagraphClick === "function";
         return (
           <button
-            key={index}
+            key={paragraph.id}
             type="button"
             disabled={!clickable}
-            onClick={() => onParagraphClick?.(article, index)}
+            onClick={() => onParagraphClick?.(article, paragraph, index)}
             aria-pressed={isSelected}
             title={clickable ? "Click to audit this paragraph" : undefined}
             className={[
@@ -57,7 +58,7 @@ function Article({
               isSelected ? "bg-primary/10 outline outline-1 outline-primary" : "",
             ].join(" ")}
           >
-            {paragraph}
+            {paragraph.text}
           </button>
         );
       })}
@@ -68,7 +69,7 @@ function Article({
 export type ArticleListProps = {
   articles: readonly Article[];
   selected?: ParagraphSelection | null;
-  onParagraphClick?: (article: Article, paragraphIndex: number) => void;
+  onParagraphClick?: (article: Article, paragraph: ReportingParagraph, index: number) => void;
 };
 
 /** Renders a tab's worth of articles, separated by a daisyUI divider. */
