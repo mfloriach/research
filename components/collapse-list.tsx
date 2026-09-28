@@ -3,10 +3,12 @@ import type { CollapsibleItem } from "@/db/content";
 
 export type CollapseListProps = {
   items: readonly CollapsibleItem[];
+  openCounts?: Readonly<Record<string, number>>;
+  onOpen?: (itemId: string) => void;
 };
 
 /** Renders a tab's worth of collapse cards. */
-export function CollapseList({ items }: CollapseListProps) {
+export function CollapseList({ items, openCounts, onOpen }: CollapseListProps) {
   if (items.length === 0) {
     return null;
   }
@@ -20,6 +22,8 @@ export function CollapseList({ items }: CollapseListProps) {
           paragraphs={item.paragraphs}
           author={item.author}
           date={item.date}
+          openCount={openCounts?.[item.id] ?? item.openCount}
+          onOpen={onOpen ? () => onOpen(item.id) : undefined}
         />
       ))}
     </div>

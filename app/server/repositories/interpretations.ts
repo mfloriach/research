@@ -7,6 +7,8 @@ export class AuditTabNotFoundError extends Error {}
 
 export class UnknownParagraphsError extends Error {}
 
+export class AuditItemNotFoundError extends Error {}
+
 export type CreateInterpretationInput = {
   title: string;
   paragraphs: string[];
@@ -73,4 +75,20 @@ export async function createInterpretation(
   }
 
   return { itemId, tabId: tab._id };
+}
+
+export async function incrementInterpretationOpenCount(itemId: string): Promise<number> {
+  const db = await getDb();
+
+  const updated = await db
+    .collection<{ _id: string; openCount?: number }>(COLLECTIONS.auditItems)
+    .findOneAndUpdate(
+      { _id: itemId },
+      { $inc: { openCount: 1 } },
+      { returnDocument: "after" },
+    );
+  if (!updated) {
+    throw new AuditItemNotFoundError(`No interpretation with id ${itemId}`);
+  }
+  return updated.openCount ?? 1;
 }

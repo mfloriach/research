@@ -67,6 +67,7 @@ type AuditItemDoc = {
   author?: string;
   date?: string;
   order?: number;
+  openCount?: number;
 };
 
 const byOrder = (a: { order?: number }, b: { order?: number }) => (a.order ?? 0) - (b.order ?? 0);
@@ -131,6 +132,7 @@ export async function getContentFromDb(): Promise<DbContent> {
       ...(item.author ? { author: item.author } : {}),
       ...(item.date ? { date: item.date } : {}),
       paragraphs: item.paragraphs,
+      openCount: item.openCount ?? 0,
       order: item.order ?? 0,
     });
     itemsByTab.set(item.tabId, list);
@@ -188,6 +190,7 @@ export async function getContentFromDb(): Promise<DbContent> {
             ...(item.author ? { author: item.author } : {}),
             ...(item.date ? { date: item.date } : {}),
             paragraphs: item.paragraphs,
+            openCount: item.openCount ?? 0,
           })),
       })),
     },

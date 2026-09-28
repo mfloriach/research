@@ -1,6 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
+import { useState } from "react";
 import { CollapseList } from "@/components/collapse-list";
 import { useWallet } from "@/app/hooks/use-wallet";
 import type { CollapsibleItem, ContentTab } from "@/db/content";
@@ -16,6 +17,29 @@ export function FallacyTabContent({ tab, selectedParagraphId }: FallacyTabConten
   const createHref = selectedParagraphId
     ? `/debate/fallacies/create?paragraphId=${selectedParagraphId}`
     : "/debate/fallacies/create";
+
+  const [openCounts, setOpenCounts] = useState<Record<string, number>>(() =>
+    Object.fromEntries(tab.items.map((item) => [item.id, item.openCount ?? 0])),
+  );
+
+  async function handleOpen(itemId: string) {
+    setOpenCounts((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? 0) + 1 }));
+    try {
+      const response = await fetch(
+        `/api/audits/fallacies/${itemId}/open`,
+        { method: "POST" },
+      );
+      if (!response.ok) {
+        throw new Error(`status ${response.status}`);
+      }
+      const data = (await response.json()) as { openCount?: number };
+      if (typeof data.openCount === "number") {
+        setOpenCounts((prev) => ({ ...prev, [itemId]: data.openCount as number }));
+      }
+    } catch {
+      setOpenCounts((prev) => ({ ...prev, [itemId]: Math.max((prev[itemId] ?? 1) - 1, 0) }));
+    }
+  }
 
   return (
     <div className="space-y-4">
@@ -45,7 +69,7 @@ export function FallacyTabContent({ tab, selectedParagraphId }: FallacyTabConten
           )}
         </p>
       )}
-      <CollapseList items={tab.items} />
+      <CollapseList items={tab.items} openCounts={openCounts} onOpen={handleOpen} />
     </div>
   );
 }

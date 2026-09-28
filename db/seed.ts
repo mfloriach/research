@@ -107,6 +107,7 @@ export async function seed(): Promise<void> {
         ...(date ? { date } : {}),
         paragraphs: item.paragraphs,
         order: new Int32(itemOrder),
+        openCount: new Int32(0),
       });
     }
   }

@@ -27,6 +27,7 @@ export type CollapsibleItem = {
   paragraphs: string[];
   author?: string;
   date?: string;
+  openCount?: number;
 };
 
 export type ContentTab<T> = {

@@ -151,6 +151,7 @@ const VALIDATORS: Record<string, object> = {
         author: { bsonType: "string" },
         date: { bsonType: "string" },
         order: { bsonType: "int" },
+        openCount: { bsonType: "int" },
       },
     },
   },
