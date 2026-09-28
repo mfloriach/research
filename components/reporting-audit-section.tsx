@@ -1,9 +1,12 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { ArticleList } from "@/components/article-list";
 import { CollapseList } from "@/components/collapse-list";
 import { TabbedCard } from "@/components/tabbed-card";
+import { AUDIT_KINDS, getCreatePath } from "@/lib/audit-kinds";
+import { useWallet } from "@/lib/use-wallet";
 import type { Article, CollapsibleItem, ContentTab, ReportingParagraph } from "@/lib/content";
 
 export type SelectedParagraph = {
@@ -28,6 +31,13 @@ export type ReportingAuditSectionProps = {
 
 export function ReportingAuditSection({ reportingCard, auditCard }: ReportingAuditSectionProps) {
   const [selected, setSelected] = useState<SelectedParagraph | null>(null);
+  const { isConnected } = useWallet();
+  const router = useRouter();
+
+  const kindByTabLabel = useMemo(
+    () => new Map(AUDIT_KINDS.map((kind) => [kind.tabLabel, kind])),
+    [],
+  );
 
   const handleParagraphClick = (
     article: Article,
@@ -88,30 +98,56 @@ export function ReportingAuditSection({ reportingCard, auditCard }: ReportingAud
           name="audit"
           title={auditCard.title}
           defaultTabId={auditTabsToShow[0]?.id}
-          tabs={auditTabsToShow.map((tab) => ({
-            id: tab.id,
-            label: `${tab.label} (${tab.items.length})`,
-            content: (
-              <div className="space-y-4">
-                {(tab.author ?? tab.date) && (
-                  <p className="text-xs text-base-content/60">
-                    {tab.author && <span>By {tab.author}</span>}
-                    {tab.author && tab.date && <span aria-hidden="true"> · </span>}
-                    {tab.date && (
-                      <time dateTime={tab.date}>
-                        {new Date(`${tab.date}T00:00:00`).toLocaleDateString(undefined, {
-                          year: "numeric",
-                          month: "short",
-                          day: "numeric",
-                        })}
-                      </time>
-                    )}
-                  </p>
-                )}
-                <CollapseList items={tab.items} />
-              </div>
-            ),
-          }))}
+          tabs={auditTabsToShow.map((tab) => {
+            const kind = kindByTabLabel.get(tab.label);
+            const kindName = kind?.name.toLowerCase() ?? "audit item";
+            const createHref = kind
+              ? selected
+                ? `${getCreatePath(kind)}?paragraphId=${selected.paragraphId}`
+                : getCreatePath(kind)
+              : null;
+            return {
+              id: tab.id,
+              label: `${tab.label} (${tab.items.length})`,
+              content: (
+                <div className="space-y-4">
+                  {createHref ? (
+                    <div className="flex justify-end">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-outline"
+                        disabled={!isConnected}
+                        title={
+                          isConnected
+                            ? `Create a new ${kindName}`
+                            : "Connect your wallet to create"
+                        }
+                        onClick={() => router.push(createHref)}
+                      >
+                        Create {kindName}
+                      </button>
+                    </div>
+                  ) : null}
+                  {(tab.author ?? tab.date) && (
+                    <p className="text-xs text-base-content/60">
+                      {tab.author && <span>By {tab.author}</span>}
+                      {tab.author && tab.date && <span aria-hidden="true"> · </span>}
+                      {tab.date && (
+                        <time dateTime={tab.date}>
+                          {new Date(`${tab.date}T00:00:00`).toLocaleDateString(undefined, {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                          })}
+                        </time>
+                      )}
+                    </p>
+                  )}
+                  <CollapseList items={tab.items} />
+                </div>
+              ),
+            };
+          })}
         />
       </div>
     </div>
