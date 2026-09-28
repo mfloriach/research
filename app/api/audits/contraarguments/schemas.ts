@@ -1,9 +1,4 @@
 import { z } from "zod";
-import {
-  AuditTabNotFoundError,
-  UnknownParagraphsError,
-  createContraargument,
-} from "@/app/server/repositories/contraarguments";
 
 const MAX_TITLE_LENGTH = 200;
 const MAX_AUTHOR_LENGTH = 120;

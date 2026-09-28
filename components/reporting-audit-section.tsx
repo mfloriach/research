@@ -1,20 +1,15 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useRouter } from "next/navigation";
 import { ArticleList } from "@/components/article-list";
 import { CollapseList } from "@/components/collapse-list";
+import { ContraargumentTabContent } from "@/components/contraargument-tab-content";
+import { EvidenceTabContent } from "@/components/evidence-tab-content";
+import { FallacyTabContent } from "@/components/fallacy-tab-content";
+import { InterpretationTabContent } from "@/components/interpretation-tab-content";
+import { SourceTabContent } from "@/components/source-tab-content";
 import { TabbedCard } from "@/components/tabbed-card";
-import { useWallet } from "@/app/hooks/use-wallet";
 import type { Article, CollapsibleItem, ContentTab, ReportingParagraph } from "@/db/content";
-
-const CREATE_BY_TAB_LABEL: Record<string, { path: string; name: string }> = {
-  Contraargument: { path: "/debate/contraarguments/create", name: "contraargument" },
-  Fallacies: { path: "/debate/fallacies/create", name: "fallacy" },
-  Evidences: { path: "/debate/evidences/create", name: "evidence" },
-  Sources: { path: "/debate/sources/create", name: "source" },
-  Interpretation: { path: "/debate/interpretations/create", name: "interpretation" },
-};
 
 export type SelectedParagraph = {
   articleId: string;
@@ -36,10 +31,7 @@ export type ReportingAuditSectionProps = {
   };
 };
 
-export function ReportingAuditSection({ reportingCard, auditCard }: ReportingAuditSectionProps) {
-  const [selected, setSelected] = useState<SelectedParagraph | null>(null);
-  const { isConnected } = useWallet();
-  const router = useRouter();
+export function ReportingAuditSection({ reportingCard, auditCard }: ReportingAuditSectionProps) {  const [selected, setSelected] = useState<SelectedParagraph | null>(null);
 
   const handleParagraphClick = (
     article: Article,
@@ -100,57 +92,62 @@ export function ReportingAuditSection({ reportingCard, auditCard }: ReportingAud
           name="audit"
           title={auditCard.title}
           defaultTabId={auditTabsToShow[0]?.id}
-          tabs={auditTabsToShow.map((tab) => {
-            const entry = CREATE_BY_TAB_LABEL[tab.label];
-            const createHref = entry
-              ? selected
-                ? `${entry.path}?paragraphId=${selected.paragraphId}`
-                : entry.path
-              : null;
-            return {
-              id: tab.id,
-              label: `${tab.label} (${tab.items.length})`,
-              content: (
-                <div className="space-y-4">
-                  {entry && createHref ? (
-                    <div className="flex justify-end">
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-outline"
-                        disabled={!isConnected}
-                        title={
-                          isConnected
-                            ? `Create a new ${entry.name}`
-                            : "Connect your wallet to create"
-                        }
-                        onClick={() => router.push(createHref)}
-                      >
-                        Create {entry.name}
-                      </button>
-                    </div>
-                  ) : null}
-                  {(tab.author ?? tab.date) && (
-                    <p className="text-xs text-base-content/60">
-                      {tab.author && <span>By {tab.author}</span>}
-                      {tab.author && tab.date && <span aria-hidden="true"> · </span>}
-                      {tab.date && (
-                        <time dateTime={tab.date}>
-                          {new Date(`${tab.date}T00:00:00`).toLocaleDateString(undefined, {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          })}
-                        </time>
-                      )}
-                    </p>
-                  )}
-                  <CollapseList items={tab.items} />
-                </div>
-              ),
-            };
-          })}
+          tabs={auditTabsToShow.map((tab) => ({
+            id: tab.id,
+            label: `${tab.label} (${tab.items.length})`,
+            content: (
+              <AuditTabContent
+                tab={tab}
+                selectedParagraphId={selected?.paragraphId ?? null}
+              />
+            ),
+          }))}
         />
       </div>
+    </div>
+  );
+}
+
+function AuditTabContent({
+  tab,
+  selectedParagraphId,
+}: {
+  tab: ContentTab<CollapsibleItem>;
+  selectedParagraphId: string | null;
+}) {
+  if (tab.label === "Contraargument") {
+    return <ContraargumentTabContent tab={tab} selectedParagraphId={selectedParagraphId} />;
+  }
+  if (tab.label === "Fallacies") {
+    return <FallacyTabContent tab={tab} selectedParagraphId={selectedParagraphId} />;
+  }
+  if (tab.label === "Evidences") {
+    return <EvidenceTabContent tab={tab} selectedParagraphId={selectedParagraphId} />;
+  }
+  if (tab.label === "Sources") {
+    return <SourceTabContent tab={tab} selectedParagraphId={selectedParagraphId} />;
+  }
+  if (tab.label === "Interpretation") {
+    return <InterpretationTabContent tab={tab} selectedParagraphId={selectedParagraphId} />;
+  }
+  return (
+    <div className="space-y-4">
+      {(tab.author ?? tab.date) && (
+        <p className="text-xs text-base-content/60">
+          {tab.author && <span>By {tab.author}</span>}
+          {tab.author && tab.date && <span aria-hidden="true"> · </span>}
+          {tab.date && (
+            <time dateTime={tab.date}>
+              {new Date(`${tab.date}T00:00:00`).toLocaleDateString(undefined, {
+                year: "numeric",
+                month: "short",
+                day: "numeric",
+              })}
+            </time>
+          )}
+        </p>
+      )}
+      <CollapseList items={tab.items} />
     </div>
   );
 }
