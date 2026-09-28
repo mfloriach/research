@@ -3,6 +3,7 @@
  * defined in `lib/content.ts`.
  */
 import { getDb } from "@/lib/mongodb";
+import { logger } from "@/lib/logger";
 import type { Article, CollapsibleItem, ContentTab } from "@/lib/content";
 import { COLLECTIONS } from "@/db/migration";
 
@@ -71,6 +72,8 @@ type AuditItemDoc = {
 const byOrder = (a: { order?: number }, b: { order?: number }) => (a.order ?? 0) - (b.order ?? 0);
 
 export async function getContentFromDb(): Promise<DbContent> {
+  const started = performance.now();
+  const contentLog = logger.child({ component: "content-db", operation: "getContentFromDb" });
   const db = await getDb();
 
   const [siteDoc, headingDoc] = await Promise.all([
@@ -133,7 +136,7 @@ export async function getContentFromDb(): Promise<DbContent> {
     itemsByTab.set(item.tabId, list);
   }
 
-  return {
+  const result = {
     site: {
       brand: siteDoc.brand,
       title: siteDoc.title,
@@ -189,4 +192,6 @@ export async function getContentFromDb(): Promise<DbContent> {
       })),
     },
   };
+
+  return result;
 }

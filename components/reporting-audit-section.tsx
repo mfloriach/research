@@ -90,7 +90,7 @@ export function ReportingAuditSection({ reportingCard, auditCard }: ReportingAud
           defaultTabId={auditTabsToShow[0]?.id}
           tabs={auditTabsToShow.map((tab) => ({
             id: tab.id,
-            label: tab.label,
+            label: `${tab.label} (${tab.items.length})`,
             content: (
               <div className="space-y-4">
                 {(tab.author ?? tab.date) && (

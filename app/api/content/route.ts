@@ -1,12 +1,16 @@
 import { NextResponse } from "next/server";
 import { getContentFromDb } from "@/lib/content-db";
+import { withRouteLogging } from "@/lib/api-log";
 
-export async function GET() {
+export const GET = withRouteLogging("api/content", async (_request, log) => {
   try {
     const content = await getContentFromDb();
     return NextResponse.json(content);
   } catch (error) {
-    console.warn("[api/content] failed to read content from MongoDB:", (error as Error).message);
+    log.error(
+      { event: "content.failed", err: error },
+      "Failed to read content from MongoDB",
+    );
     return NextResponse.json({ error: "Content unavailable" }, { status: 500 });
   }
-}
+});

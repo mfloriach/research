@@ -2,6 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Image from "next/image";
+import {
+  ANVIL_CHAIN_ID_HEX,
+  ensureAnvilChain,
+  getAnvilAccountsViaRpc,
+  getAnvilRpcUrl,
+  isAnvilReachable,
+  type AnvilEthereumProvider,
+} from "@/lib/anvil";
 
 export type SiteNavbarMenuItem = {
   id: string;
@@ -9,11 +17,7 @@ export type SiteNavbarMenuItem = {
   href: string;
 };
 
-type EthereumProvider = {
-  request: (args: { method: string; params?: unknown }) => Promise<unknown>;
-  on?: (event: string, listener: (...args: unknown[]) => void) => void;
-  removeListener?: (event: string, listener: (...args: unknown[]) => void) => void;
-};
+type EthereumProvider = AnvilEthereumProvider;
 
 declare global {
   interface Window {
@@ -40,16 +44,23 @@ export type SiteNavbarProps = {
     connectingLabel?: string;
     noWalletMessage?: string;
   };
+  disconnect?: {
+    label?: string;
+    disconnectingLabel?: string;
+  };
   walletAddress?: string | null;
   onConnect?: (address: string | null) => void;
+  onDisconnect?: () => void;
 };
 
 /**
  * Top navigation bar: brand, search field and wallet-gated account UI.
  *
- * If a wallet is connected, renders the avatar dropdown menu.
- * Otherwise renders a connect button that requests accounts from the
- * injected EIP-1193 provider (`window.ethereum`).
+ * If a wallet is connected to the local Anvil chain, renders the avatar
+ * dropdown menu. Otherwise renders a connect button that switches the
+ * injected EIP-1193 provider to Anvil (`http://127.0.0.1:8545`, chain 31337)
+ * and requests accounts. When no injected wallet exists, it falls back to
+ * Anvil's unlocked accounts over direct JSON-RPC (local dev only).
  */
 export function SiteNavbar({
   brand,
@@ -57,12 +68,16 @@ export function SiteNavbar({
   avatar,
   menu,
   connect = { label: "Connect wallet" },
+  disconnect = {},
   walletAddress,
   onConnect,
+  onDisconnect,
 }: SiteNavbarProps) {
   const [query, setQuery] = useState("");
   const [internalAddress, setInternalAddress] = useState<string | null>(null);
+  const [chainId, setChainId] = useState<string | null>(null);
   const [connecting, setConnecting] = useState(false);
+  const [disconnecting, setDisconnecting] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -78,7 +93,8 @@ export function SiteNavbar({
   }, [query]);
 
   const address = walletAddress !== undefined ? walletAddress : internalAddress;
-  const isConnected = address !== null && address !== "";
+  const isOnAnvil = chainId === null || chainId.toLowerCase() === ANVIL_CHAIN_ID_HEX;
+  const isConnected = address !== null && address !== "" && isOnAnvil;
 
   useEffect(() => {
     if (walletAddress !== undefined) {
@@ -89,13 +105,18 @@ export function SiteNavbar({
       return;
     }
     let cancelled = false;
-    provider
-      .request({ method: "eth_accounts" })
-      .then((accounts) => {
+    Promise.all([
+      provider.request({ method: "eth_accounts" }),
+      provider.request({ method: "eth_chainId" }).catch(() => null),
+    ])
+      .then(([accounts, currentChainId]) => {
         if (cancelled) {
           return;
         }
-        const [first] = (accounts ?? []) as string[];
+        const [first] = ((accounts ?? []) as string[]) ?? [];
+        if (typeof currentChainId === "string") {
+          setChainId(currentChainId);
+        }
         if (first) {
           setInternalAddress(first);
           onConnect?.(first);
@@ -111,39 +132,109 @@ export function SiteNavbar({
       setInternalAddress(next ?? null);
       onConnect?.(next ?? null);
     };
+    const handleChainChanged = (...args: unknown[]) => {
+      const [nextChainId] = args as [string?];
+      setChainId(typeof nextChainId === "string" ? nextChainId : null);
+    };
     provider.on?.("accountsChanged", handleAccountsChanged);
+    provider.on?.("chainChanged", handleChainChanged);
     return () => {
       cancelled = true;
       provider.removeListener?.("accountsChanged", handleAccountsChanged);
+      provider.removeListener?.("chainChanged", handleChainChanged);
     };
   }, [walletAddress, onConnect]);
 
-  async function handleConnect() {
-    const provider = window.ethereum;
-    if (!provider) {
-      setConnectError(connect.noWalletMessage ?? "No wallet found. Install MetaMask or another wallet.");
-      return;
+  function setConnectedAddress(next: string | null) {
+    if (walletAddress === undefined) {
+      setInternalAddress(next);
     }
+    onConnect?.(next);
+  }
+
+  async function connectViaInjected(provider: EthereumProvider) {
+    await ensureAnvilChain(provider);
+    const accounts = (await provider.request({
+      method: "eth_requestAccounts",
+    })) as string[];
+    const [first] = accounts ?? [];
+    if (!first) {
+      throw new Error("No accounts returned by the wallet.");
+    }
+    const currentChainId = (await provider
+      .request({ method: "eth_chainId" })
+      .catch(() => null)) as string | null;
+    if (typeof currentChainId === "string") {
+      setChainId(currentChainId);
+      if (currentChainId.toLowerCase() !== ANVIL_CHAIN_ID_HEX) {
+        throw new Error("Wallet did not switch to Anvil (chain 31337).");
+      }
+    }
+    setConnectedAddress(first);
+  }
+
+  async function connectViaAnvilRpc() {
+    const reachable = await isAnvilReachable();
+    if (!reachable) {
+      throw new Error(`Anvil is not reachable at ${getAnvilRpcUrl()}. Start it with \`anvil\`.`);
+    }
+    const accounts = await getAnvilAccountsViaRpc();
+    const [first] = accounts ?? [];
+    if (!first) {
+      throw new Error("Anvil returned no accounts.");
+    }
+    setChainId(ANVIL_CHAIN_ID_HEX);
+    setConnectedAddress(first);
+  }
+
+  async function handleConnect() {
     setConnecting(true);
     setConnectError(null);
     try {
-      const accounts = (await provider.request({
-        method: "eth_requestAccounts",
-      })) as string[];
-      const [first] = accounts ?? [];
-      if (!first) {
-        setConnectError("No accounts returned by the wallet.");
-        return;
+      const provider = window.ethereum;
+      if (provider) {
+        await connectViaInjected(provider);
+      } else {
+        await connectViaAnvilRpc();
       }
-      if (walletAddress === undefined) {
-        setInternalAddress(first);
+    } catch (error) {
+      if (error instanceof Error && error.message) {
+        setConnectError(error.message);
+      } else if (!window.ethereum) {
+        setConnectError(
+          connect.noWalletMessage ?? "No wallet found. Install MetaMask or start Anvil locally.",
+        );
+      } else {
+        setConnectError("Connection request was rejected.");
       }
-      onConnect?.(first);
-    } catch {
-      setConnectError("Connection request was rejected.");
     } finally {
       setConnecting(false);
     }
+  }
+
+  async function handleDisconnect() {
+    setDisconnecting(true);
+    try {
+      const provider = window.ethereum;
+      if (provider) {
+        // MetaMask supports revoking account access; other wallets may not.
+        await provider
+          .request({ method: "wallet_revokePermissions", params: [{ eth_accounts: {} }] })
+          .catch(() => null);
+      }
+    } finally {
+      setConnectedAddress(null);
+      setConnectError(null);
+      setDisconnecting(false);
+      onDisconnect?.();
+    }
+  }
+
+  function truncateAddress(value: string): string {
+    if (value.length <= 10) {
+      return value;
+    }
+    return `${value.slice(0, 6)}…${value.slice(-4)}`;
   }
 
   return (
@@ -196,11 +287,35 @@ export function SiteNavbar({
               <li>
                 <span className="menu-title">{menu.label}</span>
               </li>
+              {address ? (
+                <li>
+                  <span
+                    className="font-mono text-xs opacity-70"
+                    title={address}
+                    aria-label={`Connected wallet ${address}`}
+                  >
+                    {truncateAddress(address)}
+                  </span>
+                </li>
+              ) : null}
               {menu.items.map((item) => (
                 <li key={item.id}>
                   <a href={item.href}>{item.label}</a>
                 </li>
               ))}
+              <div className="divider my-1" aria-hidden="true" />
+              <li>
+                <button
+                  type="button"
+                  onClick={handleDisconnect}
+                  disabled={disconnecting}
+                  className="text-error"
+                >
+                  {disconnecting
+                    ? (disconnect.disconnectingLabel ?? "Disconnecting…")
+                    : (disconnect.label ?? "Disconnect")}
+                </button>
+              </li>
             </ul>
           </div>
         ) : (

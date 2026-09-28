@@ -25,7 +25,7 @@ export type TabbedCardProps = {
  * Tabs use radio inputs, so switching them is pure CSS and this component
  * stays a Server Component — no hydration cost.
  */
-export function TabbedCard({ name, title, tabs, defaultTabId }: TabbedCardProps) {
+export function TabbedCard({ name, tabs, defaultTabId }: TabbedCardProps) {
   if (tabs.length === 0) {
     return null;
   }
