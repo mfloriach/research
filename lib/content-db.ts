@@ -4,7 +4,7 @@
  */
 import { getDb } from "@/lib/mongodb";
 import { logger } from "@/lib/logger";
-import type { Article, CollapsibleItem, ContentTab } from "@/lib/content";
+import type { Article, CollapsibleItem, ContentTab } from "@/db/content";
 import { COLLECTIONS } from "@/db/migration";
 
 type SiteContent = {

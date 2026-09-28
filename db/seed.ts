@@ -11,7 +11,7 @@ config();
 import { Int32 } from "mongodb";
 import { getDb, closeDb } from "../lib/mongodb";
 import { COLLECTIONS, migrate } from "./migration";
-import { site, heading, reportingCard, auditCard } from "../lib/content";
+import { site, heading, reportingCard, auditCard } from "./content";
 
 type SeedDoc = {
   _id: string;

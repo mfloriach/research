@@ -1,10 +1,9 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import { notFound, useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useEffect, useState } from "react";
 import "@uiw/react-md-editor/markdown-editor.css";
-import { getApiPath, getAuditKind } from "@/lib/audit-kinds";
 import type { DbContent } from "@/lib/content-db";
 import { useWallet } from "@/app/hooks/use-wallet";
 
@@ -16,9 +15,15 @@ type LinkedParagraph = {
   text: string;
 };
 
-export default function CreateAuditItemPage() {
-  const params = useParams<{ kind: string }>();
-  const kind = getAuditKind(params.kind);
+export default function CreateContraargumentPage() {
+  return (
+    <Suspense>
+      <CreateContraargumentForm />
+    </Suspense>
+  );
+}
+
+function CreateContraargumentForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const paragraphId = searchParams.get("paragraphId");
@@ -69,13 +74,6 @@ export default function CreateAuditItemPage() {
     };
   }, [paragraphId]);
 
-  if (!kind) {
-    notFound();
-  }
-
-  const apiPath = getApiPath(kind);
-  const kindName = kind.name.toLowerCase();
-
   const canSubmit =
     isConnected && !submitting && title.trim().length >= 3 && content.trim().length > 0;
 
@@ -87,7 +85,7 @@ export default function CreateAuditItemPage() {
     setSubmitting(true);
     setError(null);
     try {
-      const response = await fetch(apiPath, {
+      const response = await fetch("/api/audits/contraarguments", {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
@@ -104,7 +102,9 @@ export default function CreateAuditItemPage() {
       }
       router.push("/");
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Could not store audit item");
+      setError(
+        submitError instanceof Error ? submitError.message : "Could not store contraargument",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -114,7 +114,7 @@ export default function CreateAuditItemPage() {
     <main className="flex-1">
       <div className="mx-8 max-w-5xl py-8 sm:py-10">
         <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
-          Create new {kindName}
+          Create new contraargument
         </h1>
         <p className="mt-2 text-sm text-base-content/70">
           Write the content in markdown on the left, preview it on the right.
@@ -122,7 +122,7 @@ export default function CreateAuditItemPage() {
 
         {!isConnected ? (
           <div role="alert" className="alert alert-warning mt-6">
-            <span>Connect your wallet to create a {kindName}.</span>
+            <span>Connect your wallet to create a contraargument.</span>
           </div>
         ) : null}
 
@@ -136,8 +136,8 @@ export default function CreateAuditItemPage() {
         ) : (
           <div role="note" className="alert mt-6">
             <span>
-              No paragraph selected — this {kindName} won&apos;t be linked. Go back and click a
-              reporting paragraph first to link it.
+              No paragraph selected — this contraargument won&apos;t be linked. Go back and click
+              a reporting paragraph first to link it.
             </span>
           </div>
         )}
@@ -150,7 +150,7 @@ export default function CreateAuditItemPage() {
             <input
               type="text"
               className="input input-bordered w-full"
-              placeholder={`${kind.name} title`}
+              placeholder="Contraargument title"
               value={title}
               onChange={(event) => setTitle(event.target.value)}
               minLength={3}
@@ -215,9 +215,9 @@ export default function CreateAuditItemPage() {
               type="submit"
               className="btn btn-primary"
               disabled={!canSubmit}
-              title={!isConnected ? "Connect your wallet to create" : `Save ${kindName}`}
+              title={!isConnected ? "Connect your wallet to create" : "Save contraargument"}
             >
-              {submitting ? "Saving…" : `Save ${kindName}`}
+              {submitting ? "Saving…" : "Save contraargument"}
             </button>
             <button
               type="button"

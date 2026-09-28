@@ -1,5 +1,5 @@
 import { CollapseCard } from "@/components/collapse-card";
-import type { CollapsibleItem } from "@/lib/content";
+import type { CollapsibleItem } from "@/db/content";
 
 export type CollapseListProps = {
   items: readonly CollapsibleItem[];

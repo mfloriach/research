@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { site as siteFallback } from "@/lib/content";
+import { site as siteFallback } from "@/db/content";
 import { getContentFromDb } from "@/lib/content-db";
 import "./globals.css";
 

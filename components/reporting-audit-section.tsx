@@ -5,9 +5,16 @@ import { useRouter } from "next/navigation";
 import { ArticleList } from "@/components/article-list";
 import { CollapseList } from "@/components/collapse-list";
 import { TabbedCard } from "@/components/tabbed-card";
-import { AUDIT_KINDS, getCreatePath } from "@/lib/audit-kinds";
 import { useWallet } from "@/app/hooks/use-wallet";
-import type { Article, CollapsibleItem, ContentTab, ReportingParagraph } from "@/lib/content";
+import type { Article, CollapsibleItem, ContentTab, ReportingParagraph } from "@/db/content";
+
+const CREATE_BY_TAB_LABEL: Record<string, { path: string; name: string }> = {
+  Contraargument: { path: "/debate/contraarguments/create", name: "contraargument" },
+  Fallacies: { path: "/debate/fallacies/create", name: "fallacy" },
+  Evidences: { path: "/debate/evidences/create", name: "evidence" },
+  Sources: { path: "/debate/sources/create", name: "source" },
+  Interpretation: { path: "/debate/interpretations/create", name: "interpretation" },
+};
 
 export type SelectedParagraph = {
   articleId: string;
@@ -33,11 +40,6 @@ export function ReportingAuditSection({ reportingCard, auditCard }: ReportingAud
   const [selected, setSelected] = useState<SelectedParagraph | null>(null);
   const { isConnected } = useWallet();
   const router = useRouter();
-
-  const kindByTabLabel = useMemo(
-    () => new Map(AUDIT_KINDS.map((kind) => [kind.tabLabel, kind])),
-    [],
-  );
 
   const handleParagraphClick = (
     article: Article,
@@ -99,19 +101,18 @@ export function ReportingAuditSection({ reportingCard, auditCard }: ReportingAud
           title={auditCard.title}
           defaultTabId={auditTabsToShow[0]?.id}
           tabs={auditTabsToShow.map((tab) => {
-            const kind = kindByTabLabel.get(tab.label);
-            const kindName = kind?.name.toLowerCase() ?? "audit item";
-            const createHref = kind
+            const entry = CREATE_BY_TAB_LABEL[tab.label];
+            const createHref = entry
               ? selected
-                ? `${getCreatePath(kind)}?paragraphId=${selected.paragraphId}`
-                : getCreatePath(kind)
+                ? `${entry.path}?paragraphId=${selected.paragraphId}`
+                : entry.path
               : null;
             return {
               id: tab.id,
               label: `${tab.label} (${tab.items.length})`,
               content: (
                 <div className="space-y-4">
-                  {createHref ? (
+                  {entry && createHref ? (
                     <div className="flex justify-end">
                       <button
                         type="button"
@@ -119,12 +120,12 @@ export function ReportingAuditSection({ reportingCard, auditCard }: ReportingAud
                         disabled={!isConnected}
                         title={
                           isConnected
-                            ? `Create a new ${kindName}`
+                            ? `Create a new ${entry.name}`
                             : "Connect your wallet to create"
                         }
                         onClick={() => router.push(createHref)}
                       >
-                        Create {kindName}
+                        Create {entry.name}
                       </button>
                     </div>
                   ) : null}

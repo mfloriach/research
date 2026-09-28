@@ -10,7 +10,7 @@ import {
   heading as headingFallback,
   reportingCard as reportingCardFallback,
   site as siteFallback,
-} from "@/lib/content";
+} from "@/db/content";
 import type { DbContent } from "@/lib/content-db";
 import { useWallet } from "@/app/hooks/use-wallet";
 

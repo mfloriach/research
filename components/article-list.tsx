@@ -1,5 +1,5 @@
 import { Fragment } from "react";
-import type { Article, ReportingParagraph } from "@/lib/content";
+import type { Article, ReportingParagraph } from "@/db/content";
 
 /** Content constraint: no article may exceed this many words. */
 export const ARTICLE_WORD_LIMIT = 500;
