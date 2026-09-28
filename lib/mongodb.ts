@@ -83,7 +83,7 @@ function getClientPromise(): Promise<MongoClient> {
       "Connecting to MongoDB",
     );
     const client = new MongoClient(uri, { monitorCommands: true });
-    attachMonitoring(client);
+    // attachMonitoring(client);
     const started = performance.now();
     clientPromise = client.connect().then(
       (connected) => {
@@ -114,13 +114,13 @@ export async function getDb(): Promise<Db> {
   const started = performance.now();
   const client = await getClientPromise();
   const db = client.db(dbName);
-  mongoLog.debug(
-    {
-      event: "mongodb.getDb",
-      durationMs: Math.round(performance.now() - started),
-    },
-    "Acquired MongoDB database handle",
-  );
+  // mongoLog.debug(
+  //   {
+  //     event: "mongodb.getDb",
+  //     durationMs: Math.round(performance.now() - started),
+  //   },
+  //   "Acquired MongoDB database handle",
+  // );
   return db;
 }
 

@@ -1,65 +1,21 @@
 import { NextResponse } from "next/server";
 import { withRouteLogging } from "@/lib/api-log";
-import {auditItemSchema, splitAuditParagraphs} from "./schemas"
-import {
-  AuditTabNotFoundError,
-  UnknownParagraphsError,
-  createEvidence,
-} from "@/app/server/repositories/evidences";
+import { auditItemSchema, splitAuditParagraphs } from "./schemas";
+import { createEvidence } from "@/app/server/repositories/evidences";
+import { parseJson } from "@/lib/parse_json";
 
-export const POST = withRouteLogging(`api/audits/evidences`, async (request, log) => {
-    let raw: Record<string, unknown>;
-    try {
-      raw = (await request.json()) as Record<string, unknown>;
-    } catch {
-      return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-    }
+export const POST = withRouteLogging(
+  `api/audits/evidences`,
+  async (request, { params }, log) => {
+    const data = await parseJson(request, auditItemSchema);
 
-    const parsed = auditItemSchema.safeParse(raw);
-    if (!parsed.success) {
-      return NextResponse.json(
-        { error: parsed.error.issues[0]?.message ?? "Invalid request body" },
-        { status: 400 },
-      );
-    }
+    const paragraphs = splitAuditParagraphs(data.content);
 
-    const {
-      title: cleanTitle,
-      content: cleanContent,
-      author: cleanAuthor,
-      date: cleanDate,
-      paragraphIds,
-    } = parsed.data;
+    const { itemId, tabId } = await createEvidence({
+      ...data,
+      paragraphs,
+    });
 
-    const paragraphs = splitAuditParagraphs(cleanContent);
-
-    try {
-      const { itemId, tabId } = await createEvidence({
-        title: cleanTitle,
-        paragraphs,
-        paragraphIds,
-        author: cleanAuthor,
-        date: cleanDate
-      });
-
-      return NextResponse.json({ itemId, tabId }, { status: 201 });
-    } catch (error) {
-      if (error instanceof UnknownParagraphsError) {
-        return NextResponse.json(
-          { error: "One or more related paragraphs do not exist" },
-          { status: 400 },
-        );
-      }
-      if (error instanceof AuditTabNotFoundError) {
-        return NextResponse.json(
-          { error: `No "Evidences" audit tab available` },
-          { status: 500 },
-        );
-      }
-      log.error(
-        { event: "audit.failed", kind: "evidences", err: error },
-        `Failed to store new evidences`,
-      );
-      return NextResponse.json({ error: "Could not store audit item" }, { status: 500 });
-    }
-  })
+    return NextResponse.json({ itemId, tabId }, { status: 201 });
+  },
+);

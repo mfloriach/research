@@ -50,7 +50,12 @@ type SiteConfigDoc = {
 };
 type HeadingDoc = { _id: string; title: string; description: string };
 type ReportingTabDoc = { _id: string; label: string; order?: number };
-type ReportingArticleDoc = { _id: string; tabId: string; title: string; order?: number };
+type ReportingArticleDoc = {
+  _id: string;
+  tabId: string;
+  title: string;
+  order?: number;
+};
 type ReportingParagraphDoc = {
   _id: string;
   articleId: string;
@@ -58,7 +63,13 @@ type ReportingParagraphDoc = {
   auditItemIds: string[];
   order?: number;
 };
-type AuditTabDoc = { _id: string; label: string; order?: number; author?: string; date?: string };
+type AuditTabDoc = {
+  _id: string;
+  label: string;
+  order?: number;
+  author?: string;
+  date?: string;
+};
 type AuditItemDoc = {
   _id: string;
   tabId: string;
@@ -70,19 +81,27 @@ type AuditItemDoc = {
   openCount?: number;
 };
 
-const byOrder = (a: { order?: number }, b: { order?: number }) => (a.order ?? 0) - (b.order ?? 0);
+const byOrder = (a: { order?: number }, b: { order?: number }) =>
+  (a.order ?? 0) - (b.order ?? 0);
 
 export async function getContentFromDb(): Promise<DbContent> {
-  const started = performance.now();
-  const contentLog = logger.child({ component: "content-db", operation: "getContentFromDb" });
+  // const started = performance.now();
+  // const contentLog = logger.child({
+  //   component: "content-db",
+  //   operation: "getContentFromDb",
+  // });
   const db = await getDb();
 
   const [siteDoc, headingDoc] = await Promise.all([
-    db.collection<SiteConfigDoc>(COLLECTIONS.siteConfig).findOne({ _id: "site" }),
+    db
+      .collection<SiteConfigDoc>(COLLECTIONS.siteConfig)
+      .findOne({ _id: "site" }),
     db.collection<HeadingDoc>(COLLECTIONS.headings).findOne({ _id: "heading" }),
   ]);
   if (!siteDoc || !headingDoc) {
-    throw new Error("Content collections are empty. Run `npm run db:seed` first.");
+    throw new Error(
+      "Content collections are empty. Run `npm run db:seed` first.",
+    );
   }
 
   const itemIds = siteDoc.menu.itemIds ?? [];
@@ -94,14 +113,28 @@ export async function getContentFromDb(): Promise<DbContent> {
     : [];
   const menuById = new Map(menuDocs.map((d) => [d._id, d]));
 
-  const [reportingTabs, reportingArticles, reportingParagraphs, auditTabs, auditItems] =
-    await Promise.all([
-      db.collection<ReportingTabDoc>(COLLECTIONS.reportingTabs).find({}).toArray(),
-      db.collection<ReportingArticleDoc>(COLLECTIONS.reportingArticles).find({}).toArray(),
-      db.collection<ReportingParagraphDoc>(COLLECTIONS.reportingParagraphs).find({}).toArray(),
-      db.collection<AuditTabDoc>(COLLECTIONS.auditTabs).find({}).toArray(),
-      db.collection<AuditItemDoc>(COLLECTIONS.auditItems).find({}).toArray(),
-    ]);
+  const [
+    reportingTabs,
+    reportingArticles,
+    reportingParagraphs,
+    auditTabs,
+    auditItems,
+  ] = await Promise.all([
+    db
+      .collection<ReportingTabDoc>(COLLECTIONS.reportingTabs)
+      .find({})
+      .toArray(),
+    db
+      .collection<ReportingArticleDoc>(COLLECTIONS.reportingArticles)
+      .find({})
+      .toArray(),
+    db
+      .collection<ReportingParagraphDoc>(COLLECTIONS.reportingParagraphs)
+      .find({})
+      .toArray(),
+    db.collection<AuditTabDoc>(COLLECTIONS.auditTabs).find({}).toArray(),
+    db.collection<AuditItemDoc>(COLLECTIONS.auditItems).find({}).toArray(),
+  ]);
 
   const paragraphsByArticle = new Map<
     string,
@@ -109,7 +142,12 @@ export async function getContentFromDb(): Promise<DbContent> {
   >();
   for (const p of reportingParagraphs) {
     const list = paragraphsByArticle.get(p.articleId) ?? [];
-    list.push({ id: p._id, text: p.text, auditItemIds: p.auditItemIds, order: p.order ?? 0 });
+    list.push({
+      id: p._id,
+      text: p.text,
+      auditItemIds: p.auditItemIds,
+      order: p.order ?? 0,
+    });
     paragraphsByArticle.set(p.articleId, list);
   }
 
@@ -182,32 +220,17 @@ export async function getContentFromDb(): Promise<DbContent> {
         label: tab.label,
         ...(tab.author ? { author: tab.author } : {}),
         ...(tab.date ? { date: tab.date } : {}),
-        items: (itemsByTab.get(tab._id) ?? [])
-          .sort(byOrder)
-          .map((item) => ({
-            id: item.id,
-            title: item.title,
-            ...(item.author ? { author: item.author } : {}),
-            ...(item.date ? { date: item.date } : {}),
-            paragraphs: item.paragraphs,
-            openCount: item.openCount ?? 0,
-          })),
+        items: (itemsByTab.get(tab._id) ?? []).sort(byOrder).map((item) => ({
+          id: item.id,
+          title: item.title,
+          ...(item.author ? { author: item.author } : {}),
+          ...(item.date ? { date: item.date } : {}),
+          paragraphs: item.paragraphs,
+          openCount: item.openCount ?? 0,
+        })),
       })),
     },
   };
-
-  contentLog.info(
-    {
-      event: "content.loaded",
-      durationMs: Math.round(performance.now() - started),
-      reportingTabs: result.reportingCard.tabs.length,
-      reportingArticles: reportingArticles.length,
-      reportingParagraphs: reportingParagraphs.length,
-      auditTabs: result.auditCard.tabs.length,
-      auditItems: auditItems.length,
-    },
-    "Loaded site content from MongoDB",
-  );
 
   return result;
 }
