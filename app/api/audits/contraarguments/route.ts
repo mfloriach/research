@@ -4,14 +4,7 @@ import { randomUUID } from "node:crypto";
 import { Int32 } from "mongodb";
 import { getDb } from "@/lib/mongodb";
 import { COLLECTIONS } from "@/db/migration";
-
-type AuditItemBody = {
-  title?: unknown;
-  content?: unknown;
-  author?: unknown;
-  date?: unknown;
-  paragraphIds?: unknown;
-};
+import { z } from "zod";
 
 type AuditTabDoc = { _id: string; label: string; order?: number };
 
@@ -27,48 +20,68 @@ export function splitAuditParagraphs(markdown: string): string[] {
 }
 
 
+const auditItemSchema = z.object({
+  title: z
+    .string({ error: "Title must be a string" })
+    .trim()
+    .min(3, { error: `Title must be between 3 and ${MAX_TITLE_LENGTH} characters` })
+    .max(MAX_TITLE_LENGTH, {
+      error: `Title must be between 3 and ${MAX_TITLE_LENGTH} characters`,
+    }),
+  content: z
+    .string({ error: "Content must be a string" })
+    .trim()
+    .min(1, { error: "Content must not be empty" })
+    .max(MAX_CONTENT_LENGTH, {
+      error: `Content must be between 1 and ${MAX_CONTENT_LENGTH} characters`,
+    })
+    .refine((value) => splitAuditParagraphs(value).length > 0, {
+      error: "Content must not be empty",
+    }),
+  author: z
+    .string({ error: "Author must be a string" })
+    .trim()
+    .max(MAX_AUTHOR_LENGTH, { error: `Author must be at most ${MAX_AUTHOR_LENGTH} characters` })
+    .optional(),
+  date: z
+    .string({ error: "Date must be a string" })
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, { error: "Date must use YYYY-MM-DD format" })
+    .optional(),
+  paragraphIds: z.array(z.string().min(1)).optional().default([]),
+});
+
+
 export const POST = withRouteLogging(`api/audits/contraarguments`, async (request, log) => {
-    let body: AuditItemBody;
+    let raw: Record<string, unknown>;
     try {
-      body = (await request.json()) as AuditItemBody;
+      raw = (await request.json()) as Record<string, unknown>;
     } catch {
       return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
     }
 
-    const cleanTitle = typeof body.title === "string" ? body.title.trim() : "";
-    const cleanContent = typeof body.content === "string" ? body.content.trim() : "";
-    const cleanAuthor = typeof body.author === "string" ? body.author.trim() : "";
-    const cleanDate = typeof body.date === "string" ? body.date.trim() : "";
-    const paragraphIds = Array.isArray(body.paragraphIds)
-      ? body.paragraphIds.filter((id): id is string => typeof id === "string" && id.length > 0)
-      : [];
+    const parsed = auditItemSchema.safeParse({
+      ...raw,
+      author: raw.author === "" ? undefined : raw.author,
+      date: raw.date === "" ? undefined : raw.date,
+      paragraphIds: Array.isArray(raw.paragraphIds)
+        ? raw.paragraphIds.filter((id): id is string => typeof id === "string" && id.length > 0)
+        : [],
+    });
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: parsed.error.issues[0]?.message ?? "Invalid request body" },
+        { status: 400 },
+      );
+    }
 
-    if (cleanTitle.length < 3 || cleanTitle.length > MAX_TITLE_LENGTH) {
-      return NextResponse.json(
-        { error: `Title must be between 3 and ${MAX_TITLE_LENGTH} characters` },
-        { status: 400 },
-      );
-    }
-    if (cleanAuthor.length > MAX_AUTHOR_LENGTH) {
-      return NextResponse.json(
-        { error: `Author must be at most ${MAX_AUTHOR_LENGTH} characters` },
-        { status: 400 },
-      );
-    }
-    if (cleanDate.length > 0 && !/^\d{4}-\d{2}-\d{2}$/.test(cleanDate)) {
-      return NextResponse.json({ error: "Date must use YYYY-MM-DD format" }, { status: 400 });
-    }
-    if (cleanContent.length === 0 || cleanContent.length > MAX_CONTENT_LENGTH) {
-      return NextResponse.json(
-        { error: `Content must be between 1 and ${MAX_CONTENT_LENGTH} characters` },
-        { status: 400 },
-      );
-    }
+    const cleanTitle = parsed.data.title;
+    const cleanContent = parsed.data.content;
+    const cleanAuthor = parsed.data.author ?? "";
+    const cleanDate = parsed.data.date ?? "";
+    const paragraphIds = parsed.data.paragraphIds;
 
     const paragraphs = splitAuditParagraphs(cleanContent);
-    if (paragraphs.length === 0) {
-      return NextResponse.json({ error: "Content must not be empty" }, { status: 400 });
-    }
 
     try {
       const db = await getDb();
