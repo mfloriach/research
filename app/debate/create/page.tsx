@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import "@uiw/react-md-editor/markdown-editor.css";
-import { useWallet } from "@/lib/use-wallet";
+import { useWallet } from "@/app/hooks/use-wallet";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 

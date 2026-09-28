@@ -6,7 +6,7 @@ import { useEffect, useState } from "react";
 import "@uiw/react-md-editor/markdown-editor.css";
 import { getApiPath, getAuditKind } from "@/lib/audit-kinds";
 import type { DbContent } from "@/lib/content-db";
-import { useWallet } from "@/lib/use-wallet";
+import { useWallet } from "@/app/hooks/use-wallet";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 

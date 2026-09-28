@@ -12,7 +12,7 @@ import {
   site as siteFallback,
 } from "@/lib/content";
 import type { DbContent } from "@/lib/content-db";
-import { useWallet } from "@/lib/use-wallet";
+import { useWallet } from "@/app/hooks/use-wallet";
 
 const fallbackContent: DbContent = {
   site: siteFallback,
@@ -63,7 +63,7 @@ export default function Home() {
               className="btn btn-primary"
               disabled={!isConnected}
               title={isConnected ? "Create a new report" : "Connect your wallet to create a report"}
-              onClick={() => router.push("/debates/create")}
+              onClick={() => router.push("/debate/create")}
             >
               Create new report
             </button>

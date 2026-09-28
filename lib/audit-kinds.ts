@@ -20,7 +20,7 @@ export function getAuditKind(slug: string): AuditKind | undefined {
 }
 
 export function getCreatePath(kind: AuditKind): string {
-  return `/audits/${kind.slug}/create`;
+  return `/debate/${kind.slug}/create`;
 }
 
 export function getApiPath(kind: AuditKind): string {

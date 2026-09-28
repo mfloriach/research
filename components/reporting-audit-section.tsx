@@ -6,7 +6,7 @@ import { ArticleList } from "@/components/article-list";
 import { CollapseList } from "@/components/collapse-list";
 import { TabbedCard } from "@/components/tabbed-card";
 import { AUDIT_KINDS, getCreatePath } from "@/lib/audit-kinds";
-import { useWallet } from "@/lib/use-wallet";
+import { useWallet } from "@/app/hooks/use-wallet";
 import type { Article, CollapsibleItem, ContentTab, ReportingParagraph } from "@/lib/content";
 
 export type SelectedParagraph = {
