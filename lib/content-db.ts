@@ -193,5 +193,18 @@ export async function getContentFromDb(): Promise<DbContent> {
     },
   };
 
+  contentLog.info(
+    {
+      event: "content.loaded",
+      durationMs: Math.round(performance.now() - started),
+      reportingTabs: result.reportingCard.tabs.length,
+      reportingArticles: reportingArticles.length,
+      reportingParagraphs: reportingParagraphs.length,
+      auditTabs: result.auditCard.tabs.length,
+      auditItems: auditItems.length,
+    },
+    "Loaded site content from MongoDB",
+  );
+
   return result;
 }

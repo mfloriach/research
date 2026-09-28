@@ -83,7 +83,7 @@ function getClientPromise(): Promise<MongoClient> {
       "Connecting to MongoDB",
     );
     const client = new MongoClient(uri, { monitorCommands: true });
-    // attachMonitoring(client);
+    attachMonitoring(client);
     const started = performance.now();
     clientPromise = client.connect().then(
       (connected) => {
