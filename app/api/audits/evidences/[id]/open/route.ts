@@ -1,18 +1,14 @@
 import { NextResponse } from "next/server";
-import { withRouteLogging } from "@/lib/api-log";
-import {
-  AuditItemNotFoundError,
-  incrementEvidenceOpenCount,
-} from "@/app/server/repositories/evidences";
+import { incrementEvidenceOpenCount } from "@/app/server/repositories/evidences";
 
+type Props = {
+  params: Promise<{ id: string }>;
+};
 
-export const POST = withRouteLogging(
-  "api/audits/evidences/open",
-  async (request, { params },log) => {
-    const { id: evidenceId } = await params;
+export const POST = async (request: Request, { params }: Props) => {
+  const { id: evidenceId } = await params;
 
-    const openCount = await incrementEvidenceOpenCount(evidenceId);
-    
-    return NextResponse.json({ evidenceId, openCount });
-  },
-);
+  const openCount = await incrementEvidenceOpenCount(evidenceId);
+
+  return NextResponse.json({ evidenceId, openCount });
+};

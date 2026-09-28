@@ -1,17 +1,14 @@
 import { NextResponse } from "next/server";
-import { withRouteLogging } from "@/lib/api-log";
-import {
-  incrementFallacyOpenCount,
-} from "@/app/server/repositories/fallacies";
+import { incrementFallacyOpenCount } from "@/app/server/repositories/fallacies";
 
+type Props = {
+  params: Promise<{ id: string }>;
+};
 
-export const POST = withRouteLogging(
-  "api/audits/fallacies/open",
-  async (request, { params },log) => {
-    const { id: fallacyId } = await params;
+export const POST = async (request: Request, { params }: Props) => {
+  const { id: fallacyId } = await params;
 
-    const openCount = await incrementFallacyOpenCount(fallacyId);
-    
-    return NextResponse.json({ fallacyId, openCount });
-  },
-);
+  const openCount = await incrementFallacyOpenCount(fallacyId);
+
+  return NextResponse.json({ fallacyId, openCount });
+};
