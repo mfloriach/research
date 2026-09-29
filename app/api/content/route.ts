@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server";
 import { getContentFromDb } from "@/lib/content-db";
-import { withRouteLogging } from "@/lib/api-log";
 
 /**
  * Get the full page content
@@ -12,21 +11,7 @@ import { withRouteLogging } from "@/lib/api-log";
  * @response 500:ErrorResponse:Content unavailable
  * @openapi
  */
-export const GET = withRouteLogging(
-  "api/content",
-  async (_request, _context, log) => {
-    try {
-      const content = await getContentFromDb();
-      return NextResponse.json(content);
-    } catch (error) {
-      log.error(
-        { event: "content.failed", err: error },
-        "Failed to read content from MongoDB",
-      );
-      return NextResponse.json(
-        { error: "Content unavailable" },
-        { status: 500 },
-      );
-    }
-  },
-);
+export const GET = async (request: Request) => {
+  const content = await getContentFromDb();
+  return NextResponse.json(content);
+};

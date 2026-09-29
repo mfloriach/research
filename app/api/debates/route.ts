@@ -2,12 +2,8 @@ import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
 import { Int32 } from "mongodb";
 import { getDb } from "@/lib/mongodb";
-import { withRouteLogging } from "@/lib/api-log";
 import { COLLECTIONS } from "@/db/migration";
-import {
-  debateInputSchema,
-  splitMarkdownParagraphs,
-} from "@/lib/api-schemas";
+import { debateInputSchema, splitMarkdownParagraphs } from "@/lib/api-schemas";
 
 type ReportingTabDoc = { _id: string; label: string; order?: number };
 
@@ -23,7 +19,7 @@ type ReportingTabDoc = { _id: string; label: string; order?: number };
  * @response 500:ErrorResponse:Storage failed
  * @openapi
  */
-export const POST = withRouteLogging("api/debates", async (request, _context, log) => {
+export const POST = async (request: Request) => {
   let body: unknown;
   try {
     body = await request.json();
@@ -55,136 +51,107 @@ export const POST = withRouteLogging("api/debates", async (request, _context, lo
     );
   }
 
-  try {
-    const db = await getDb();
+  const db = await getDb();
 
-    let targetTabId =
-      typeof rawTabId === "string" && rawTabId.length > 0 ? rawTabId : null;
-    if (targetTabId) {
-      const tab = await db
-        .collection<ReportingTabDoc>(COLLECTIONS.reportingTabs)
-        .findOne({ _id: targetTabId }, { projection: { _id: 1 } });
-      if (!tab) {
-        return NextResponse.json(
-          { error: "Unknown reporting tab" },
-          { status: 400 },
-        );
-      }
-    } else if (cleanLabel.length > 0) {
-      const existing = await db
-        .collection<ReportingTabDoc>(COLLECTIONS.reportingTabs)
-        .findOne({ label: cleanLabel });
-      if (existing) {
-        targetTabId = existing._id;
-      } else {
-        const lastTab = await db
-          .collection<ReportingTabDoc>(COLLECTIONS.reportingTabs)
-          .find({})
-          .sort({ order: -1 })
-          .limit(1)
-          .toArray();
-        const nextOrder = (lastTab[0]?.order ?? -1) + 1;
-        targetTabId = randomUUID();
-        await db
-          .collection<{ _id: string; label: string; order: Int32 }>(
-            COLLECTIONS.reportingTabs,
-          )
-          .insertOne({
-            _id: targetTabId,
-            label: cleanLabel,
-            order: new Int32(nextOrder),
-          });
-        log.info(
-          {
-            event: "debate.tabCreated",
-            tabId: targetTabId,
-            label: cleanLabel,
-          },
-          `Created new reporting tab "${cleanLabel}"`,
-        );
-      }
+  let targetTabId =
+    typeof rawTabId === "string" && rawTabId.length > 0 ? rawTabId : null;
+  if (targetTabId) {
+    const tab = await db
+      .collection<ReportingTabDoc>(COLLECTIONS.reportingTabs)
+      .findOne({ _id: targetTabId }, { projection: { _id: 1 } });
+    if (!tab) {
+      return NextResponse.json(
+        { error: "Unknown reporting tab" },
+        { status: 400 },
+      );
+    }
+  } else if (cleanLabel.length > 0) {
+    const existing = await db
+      .collection<ReportingTabDoc>(COLLECTIONS.reportingTabs)
+      .findOne({ label: cleanLabel });
+    if (existing) {
+      targetTabId = existing._id;
     } else {
-      const firstTab = await db
+      const lastTab = await db
         .collection<ReportingTabDoc>(COLLECTIONS.reportingTabs)
         .find({})
-        .sort({ order: 1 })
+        .sort({ order: -1 })
         .limit(1)
         .toArray();
-      if (firstTab.length === 0) {
-        return NextResponse.json(
-          { error: "No reporting tabs available" },
-          { status: 500 },
-        );
-      }
-      targetTabId = firstTab[0]._id;
-    }
-
-    const articleOrder = await db
-      .collection<{ _id: string }>(COLLECTIONS.reportingArticles)
-      .countDocuments({ tabId: targetTabId });
-    const articleId = randomUUID();
-
-    await db
-      .collection<{
-        _id: string;
-        tabId: string;
-        title: string;
-        order: Int32;
-      }>(COLLECTIONS.reportingArticles)
-      .insertOne({
-        _id: articleId,
-        tabId: targetTabId,
-        title: cleanTitle,
-        order: new Int32(articleOrder),
-      });
-
-    const paragraphDocs = chunks.map((text, index) => ({
-      _id: randomUUID(),
-      articleId,
-      text,
-      auditItemIds: [] as string[],
-      order: new Int32(index),
-    }));
-    if (paragraphDocs.length > 0) {
+      const nextOrder = (lastTab[0]?.order ?? -1) + 1;
+      targetTabId = randomUUID();
       await db
         .collection<{
           _id: string;
-          articleId: string;
-          text: string;
-          auditItemIds: string[];
+          label: string;
           order: Int32;
-        }>(COLLECTIONS.reportingParagraphs)
-        .insertMany(paragraphDocs);
+        }>(COLLECTIONS.reportingTabs)
+        .insertOne({
+          _id: targetTabId,
+          label: cleanLabel,
+          order: new Int32(nextOrder),
+        });
     }
-
-    log.info(
-      {
-        event: "debate.created",
-        articleId,
-        tabId: targetTabId,
-        label: cleanLabel.length > 0 ? cleanLabel : undefined,
-        titleLength: cleanTitle.length,
-        paragraphs: paragraphDocs.length,
-      },
-      "Stored new report in reporting collections",
-    );
-
-    return NextResponse.json(
-      {
-        articleId,
-        tabId: targetTabId,
-        paragraphIds: paragraphDocs.map((doc) => doc._id),
-      },
-      { status: 201 },
-    );
-  } catch (error) {
-    log.error(
-      { event: "debate.failed", err: error },
-      "Failed to store new report",
-    );
-    return NextResponse.json(
-      { error: "Could not store report" },
-      { status: 500 },
-    );
+  } else {
+    const firstTab = await db
+      .collection<ReportingTabDoc>(COLLECTIONS.reportingTabs)
+      .find({})
+      .sort({ order: 1 })
+      .limit(1)
+      .toArray();
+    if (firstTab.length === 0) {
+      return NextResponse.json(
+        { error: "No reporting tabs available" },
+        { status: 500 },
+      );
+    }
+    targetTabId = firstTab[0]._id;
   }
-});
+
+  const articleOrder = await db
+    .collection<{ _id: string }>(COLLECTIONS.reportingArticles)
+    .countDocuments({ tabId: targetTabId });
+  const articleId = randomUUID();
+
+  await db
+    .collection<{
+      _id: string;
+      tabId: string;
+      title: string;
+      order: Int32;
+    }>(COLLECTIONS.reportingArticles)
+    .insertOne({
+      _id: articleId,
+      tabId: targetTabId,
+      title: cleanTitle,
+      order: new Int32(articleOrder),
+    });
+
+  const paragraphDocs = chunks.map((text, index) => ({
+    _id: randomUUID(),
+    articleId,
+    text,
+    auditItemIds: [] as string[],
+    order: new Int32(index),
+  }));
+  if (paragraphDocs.length > 0) {
+    await db
+      .collection<{
+        _id: string;
+        articleId: string;
+        text: string;
+        auditItemIds: string[];
+        order: Int32;
+      }>(COLLECTIONS.reportingParagraphs)
+      .insertMany(paragraphDocs);
+  }
+
+  return NextResponse.json(
+    {
+      articleId,
+      tabId: targetTabId,
+      paragraphIds: paragraphDocs.map((doc) => doc._id),
+    },
+    { status: 201 },
+  );
+};

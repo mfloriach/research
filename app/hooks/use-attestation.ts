@@ -75,7 +75,7 @@ export function getAttestationContractAddress(): Address | null {
   return /^0x[0-9a-fA-F]{40}$/.test(raw) ? (raw as Address) : null;
 }
 
-function getAnvilChain() {
+export function getAnvilChain() {
   return defineChain({
     id: 31337,
     name: "Anvil Local",

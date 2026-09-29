@@ -5,6 +5,11 @@ import { useRouter } from "next/navigation";
 import { useState } from "react";
 import "@uiw/react-md-editor/markdown-editor.css";
 import { useWallet } from "@/app/hooks/use-wallet";
+import {
+  useAuditSign,
+  type SignedAudit,
+} from "@/app/hooks/use-audit-sign";
+import { SignaturePanel } from "@/components/signature-panel";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
@@ -16,9 +21,16 @@ export default function CreateDebatePage() {
   const [description, setDescription] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
+  const [signed, setSigned] = useState<SignedAudit | null>(null);
+  const { phase: signPhase, signPayload } = useAuditSign();
 
   const canSubmit =
-    isConnected && !submitting && title.trim().length >= 3 && description.trim().length > 0;
+    isConnected &&
+    !submitting &&
+    signPhase !== "signing" &&
+    signed === null &&
+    title.trim().length >= 3 &&
+    description.trim().length > 0;
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
@@ -28,25 +40,47 @@ export default function CreateDebatePage() {
     setSubmitting(true);
     setError(null);
     try {
+      const body = {
+        title: title.trim(),
+        label: label.trim(),
+        description: description.trim(),
+      };
+      const signResult = await signPayload({ kind: "report", body });
+      if (!signResult.ok) {
+        throw new Error(`${signResult.error} Nothing was saved.`);
+      }
       const response = await fetch("/api/debates", {
         method: "POST",
         headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          title: title.trim(),
-          label: label.trim(),
-          description: description.trim(),
-        }),
+        body: JSON.stringify(body),
       });
       const data = (await response.json().catch(() => null)) as { error?: string } | null;
       if (!response.ok) {
         throw new Error(data?.error ?? `Request failed with status ${response.status}`);
       }
-      router.push("/");
+      setSigned(signResult.signed);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Could not store report");
     } finally {
       setSubmitting(false);
     }
+  }
+
+  if (signed) {
+    return (
+      <main className="flex-1">
+        <div className="mx-8 max-w-5xl py-8 sm:py-10">
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Create new report</h1>
+          <SignaturePanel
+            kindLabel="Report"
+            signer={signed.signer}
+            signature={signed.signature}
+            contentHash={signed.contentHash}
+            onContinue={() => router.push("/")}
+          />
+        </div>
+      </main>
+    );
   }
 
   return (
@@ -124,7 +158,11 @@ export default function CreateDebatePage() {
               disabled={!canSubmit}
               title={!isConnected ? "Connect your wallet to create a report" : "Save report"}
             >
-              {submitting ? "Saving…" : "Save report"}
+              {submitting
+                ? signPhase === "signing"
+                  ? "Waiting for signature…"
+                  : "Saving…"
+                : "Save report"}
             </button>
             <button
               type="button"
