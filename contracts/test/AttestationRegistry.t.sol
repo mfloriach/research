@@ -69,24 +69,27 @@ contract AttestationRegistryTest is Test {
     function test_record_signature_stores_hash_and_emits() public {
         bytes32 contentHash = keccak256("content");
         bytes memory signature = hex"deadbeef";
+        string memory ipfsCid = "bafytestcid";
         vm.expectEmit(true, true, false, true);
-        emit AttestationRegistry.SignatureRecorded(
+        emit AttestationRegistry.ItemProvenance(
             ITEM,
             alice,
             contentHash,
-            signature
+            signature,
+            ipfsCid
         );
         vm.prank(alice);
-        registry.recordSignature(ITEM, contentHash, signature);
+        registry.recordSignature(ITEM, contentHash, signature, ipfsCid);
         assertTrue(registry.hasRecordedSignature(ITEM, alice));
         assertEq(registry.signatureContentHash(ITEM, alice), contentHash);
+        assertEq(registry.itemIpfsCid(ITEM, alice), ipfsCid);
         assertFalse(registry.hasRecordedSignature(ITEM, bob));
     }
 
     function test_double_record_reverts() public {
         bytes32 contentHash = keccak256("content");
         vm.prank(alice);
-        registry.recordSignature(ITEM, contentHash, hex"aa");
+        registry.recordSignature(ITEM, contentHash, hex"aa", "bafyone");
         vm.expectRevert(
             abi.encodeWithSelector(
                 AttestationRegistry.AlreadyRecorded.selector,
@@ -95,13 +98,14 @@ contract AttestationRegistryTest is Test {
             )
         );
         vm.prank(alice);
-        registry.recordSignature(ITEM, contentHash, hex"bb");
+        registry.recordSignature(ITEM, contentHash, hex"bb", "bafytwo");
         assertEq(registry.signatureContentHash(ITEM, alice), contentHash);
+        assertEq(registry.itemIpfsCid(ITEM, alice), "bafyone");
     }
 
     function test_record_and_attest_are_independent() public {
         vm.prank(alice);
-        registry.recordSignature(ITEM, keccak256("content"), hex"aa");
+        registry.recordSignature(ITEM, keccak256("content"), hex"aa", "bafyone");
         assertFalse(registry.hasAttested(ITEM, alice));
         vm.prank(alice);
         registry.attest(ITEM);

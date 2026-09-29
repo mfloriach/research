@@ -59,6 +59,7 @@ export const attestationAbi = [
       { name: "itemId", type: "bytes16" },
       { name: "contentHash", type: "bytes32" },
       { name: "signature", type: "bytes" },
+      { name: "ipfsCid", type: "string" },
     ],
     outputs: [],
   },
@@ -83,13 +84,24 @@ export const attestationAbi = [
     outputs: [{ type: "bool" }],
   },
   {
+    type: "function",
+    name: "itemIpfsCid",
+    stateMutability: "view",
+    inputs: [
+      { name: "itemId", type: "bytes16" },
+      { name: "account", type: "address" },
+    ],
+    outputs: [{ type: "string" }],
+  },
+  {
     type: "event",
-    name: "SignatureRecorded",
+    name: "ItemProvenance",
     inputs: [
       { name: "itemId", type: "bytes16", indexed: true },
       { name: "attester", type: "address", indexed: true },
       { name: "contentHash", type: "bytes32", indexed: false },
       { name: "signature", type: "bytes", indexed: false },
+      { name: "ipfsCid", type: "string", indexed: false },
     ],
   },
 ] as const;

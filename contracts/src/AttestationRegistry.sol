@@ -14,13 +14,15 @@ contract AttestationRegistry is Ownable {
     mapping(bytes16 => mapping(address => bool)) private _attested;
     mapping(bytes16 => mapping(address => bytes32)) private _signatureHashes;
     mapping(bytes16 => mapping(address => bool)) private _hasSignature;
+    mapping(bytes16 => mapping(address => string)) private _itemCids;
 
     event Attested(bytes16 indexed itemId, address indexed attester);
-    event SignatureRecorded(
+    event ItemProvenance(
         bytes16 indexed itemId,
         address indexed attester,
         bytes32 contentHash,
-        bytes signature
+        bytes signature,
+        string ipfsCid
     );
 
     error AlreadyAttested(bytes16 itemId, address attester);
@@ -55,20 +57,23 @@ contract AttestationRegistry is Ownable {
 
     /**
      * @notice Record the caller's creation signature for `itemId`.
-     * Stores the content hash on-chain and emits the full signature.
-     * Reverts with `AlreadyRecorded` when the caller already recorded one.
+     * Stores the content hash and IPFS CID on-chain and emits the full
+     * signature. Reverts with `AlreadyRecorded` when the caller already
+     * recorded one.
      */
     function recordSignature(
         bytes16 itemId,
         bytes32 contentHash,
-        bytes calldata signature
+        bytes calldata signature,
+        string calldata ipfsCid
     ) external {
         if (_hasSignature[itemId][msg.sender]) {
             revert AlreadyRecorded(itemId, msg.sender);
         }
         _hasSignature[itemId][msg.sender] = true;
         _signatureHashes[itemId][msg.sender] = contentHash;
-        emit SignatureRecorded(itemId, msg.sender, contentHash, signature);
+        _itemCids[itemId][msg.sender] = ipfsCid;
+        emit ItemProvenance(itemId, msg.sender, contentHash, signature, ipfsCid);
     }
 
     /** @notice Content hash recorded by `account` for `itemId`, if any. */
@@ -85,5 +90,13 @@ contract AttestationRegistry is Ownable {
         address account
     ) external view returns (bool) {
         return _hasSignature[itemId][account];
+    }
+
+    /** @notice IPFS CID recorded by `account` for `itemId`, if any. */
+    function itemIpfsCid(
+        bytes16 itemId,
+        address account
+    ) external view returns (string memory) {
+        return _itemCids[itemId][account];
     }
 }

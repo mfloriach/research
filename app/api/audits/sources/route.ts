@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { createSource } from "@/app/server/repositories/sources";
 import { auditItemSchema, splitAuditParagraphs } from "./schemas";
 import { parseJson } from "@/lib/parse_json";
+import { IpfsUnavailableError } from "@/lib/ipfs";
 
 /**
  * Create a source audit item
  *
- * @description Validates the audit item payload, splits the markdown body
- * into paragraphs, and stores it under the Sources tab.
+ * @description Validates the audit item payload, pins it to IPFS, splits
+ * the markdown body into paragraphs, and stores it under the Sources tab.
  * @tag Sources
  * @requestBody AuditItemInput required
  * @response 201:AuditItemResponse:Source created
@@ -19,10 +20,17 @@ export const POST = async (request: Request) => {
   const data = await parseJson(request, auditItemSchema);
   const paragraphs = splitAuditParagraphs(data.content);
 
-  const { itemId, tabId } = await createSource({
-    ...data,
-    paragraphs,
-  });
+  try {
+    const { itemId, tabId, ipfsCid } = await createSource({
+      ...data,
+      paragraphs,
+    });
 
-  return NextResponse.json({ itemId, tabId }, { status: 201 });
+    return NextResponse.json({ itemId, tabId, ipfsCid }, { status: 201 });
+  } catch (error) {
+    if (error instanceof IpfsUnavailableError) {
+      return NextResponse.json({ error: "IPFS unavailable" }, { status: 500 });
+    }
+    throw error;
+  }
 };

@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Int32 } from "mongodb";
 import { getDb } from "@/lib/mongodb";
+import { pinJson } from "@/lib/ipfs";
 import { COLLECTIONS } from "@/db/migration";
 
 export class AuditTabNotFoundError extends Error {}
@@ -11,6 +12,7 @@ export class AuditItemNotFoundError extends Error {}
 
 export type CreateContraargumentInput = {
   title: string;
+  content: string;
   paragraphs: string[];
   author?: string;
   date?: string;
@@ -20,6 +22,7 @@ export type CreateContraargumentInput = {
 export type CreatedContraargument = {
   itemId: string;
   tabId: string;
+  ipfsCid: string;
 };
 
 export async function createContraargument(
@@ -48,6 +51,16 @@ export async function createContraargument(
     .countDocuments({ tabId: tab._id });
   const itemId = randomUUID();
 
+  const ipfsCid = await pinJson({
+    kind: "contraargument",
+    title: input.title,
+    ...(input.author ? { author: input.author } : {}),
+    ...(input.date ? { date: input.date } : {}),
+    content: input.content,
+    paragraphs: input.paragraphs,
+    paragraphIds: input.paragraphIds,
+  });
+
   await db
     .collection<{
       _id: string;
@@ -56,6 +69,7 @@ export async function createContraargument(
       paragraphs: string[];
       author?: string;
       date?: string;
+      ipfsCid: string;
       order: Int32;
     }>(COLLECTIONS.auditItems)
     .insertOne({
@@ -65,6 +79,7 @@ export async function createContraargument(
       paragraphs: input.paragraphs,
       ...(input.author ? { author: input.author } : {}),
       ...(input.date ? { date: input.date } : {}),
+      ipfsCid,
       order: new Int32(itemOrder),
     });
 
@@ -74,7 +89,7 @@ export async function createContraargument(
       .updateMany({ _id: { $in: input.paragraphIds } }, { $addToSet: { auditItemIds: itemId } });
   }
 
-  return { itemId, tabId: tab._id };
+  return { itemId, tabId: tab._id, ipfsCid };
 }
 
 export async function incrementContraargumentOpenCount(itemId: string): Promise<number> {

@@ -129,6 +129,7 @@ function CreateEvidenceForm() {
       const data = (await response.json().catch(() => null)) as {
         error?: string;
         itemId?: string;
+        ipfsCid?: string;
       } | null;
       if (!response.ok) {
         throw new Error(data?.error ?? `Request failed with status ${response.status}`);
@@ -136,10 +137,14 @@ function CreateEvidenceForm() {
       if (!data?.itemId || typeof data.itemId !== "string") {
         throw new Error("Stored, but the response missed the item ID.");
       }
+      if (!data?.ipfsCid || typeof data.ipfsCid !== "string") {
+        throw new Error("Stored, but the response missed the IPFS CID.");
+      }
       const recorded = await recordSignature({
         itemId: data.itemId,
         contentHash: signResult.signed.contentHash,
         signature: signResult.signed.signature,
+        ipfsCid: data.ipfsCid,
       });
       setRecordWarning(recorded.ok ? null : recorded.error);
       setSigned(signResult.signed);

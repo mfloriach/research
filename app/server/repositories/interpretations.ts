@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Int32 } from "mongodb";
 import { getDb } from "@/lib/mongodb";
+import { pinJson } from "@/lib/ipfs";
 import { COLLECTIONS } from "@/db/migration";
 
 export class AuditTabNotFoundError extends Error {}
@@ -11,6 +12,7 @@ export class AuditItemNotFoundError extends Error {}
 
 export type CreateInterpretationInput = {
   title: string;
+  content: string;
   paragraphs: string[];
   author: string;
   date: string;
@@ -20,6 +22,7 @@ export type CreateInterpretationInput = {
 export type CreatedInterpretation = {
   itemId: string;
   tabId: string;
+  ipfsCid: string;
 };
 
 export async function createInterpretation(
@@ -48,6 +51,16 @@ export async function createInterpretation(
     .countDocuments({ tabId: tab._id });
   const itemId = randomUUID();
 
+  const ipfsCid = await pinJson({
+    kind: "interpretation",
+    title: input.title,
+    ...(input.author ? { author: input.author } : {}),
+    ...(input.date ? { date: input.date } : {}),
+    content: input.content,
+    paragraphs: input.paragraphs,
+    paragraphIds: input.paragraphIds,
+  });
+
   await db
     .collection<{
       _id: string;
@@ -56,6 +69,7 @@ export async function createInterpretation(
       paragraphs: string[];
       author?: string;
       date?: string;
+      ipfsCid: string;
       order: Int32;
     }>(COLLECTIONS.auditItems)
     .insertOne({
@@ -65,6 +79,7 @@ export async function createInterpretation(
       paragraphs: input.paragraphs,
       ...(input.author ? { author: input.author } : {}),
       ...(input.date ? { date: input.date } : {}),
+      ipfsCid,
       order: new Int32(itemOrder),
     });
 
@@ -74,7 +89,7 @@ export async function createInterpretation(
       .updateMany({ _id: { $in: input.paragraphIds } }, { $addToSet: { auditItemIds: itemId } });
   }
 
-  return { itemId, tabId: tab._id };
+  return { itemId, tabId: tab._id, ipfsCid };
 }
 
 export async function incrementInterpretationOpenCount(itemId: string): Promise<number> {

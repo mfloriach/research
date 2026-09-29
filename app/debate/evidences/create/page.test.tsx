@@ -69,7 +69,7 @@ beforeEach(() => {
   mockRecordSignature.mockResolvedValue({ ok: true, txHash: "0xhash" });
   mockFetch.mockResolvedValue({
     ok: true,
-    json: async () => ({ itemId: "test-item-id" }),
+    json: async () => ({ itemId: "test-item-id", ipfsCid: "bafytestcid" }),
   });
   global.fetch = mockFetch as unknown as typeof fetch;
 });
@@ -126,6 +126,9 @@ describe("CreateEvidencePage", () => {
     expect(mockFetch).toHaveBeenCalledWith(
       "/api/audits/evidences",
       expect.objectContaining({ method: "POST" }),
+    );
+    expect(mockRecordSignature).toHaveBeenCalledWith(
+      expect.objectContaining({ itemId: "test-item-id", ipfsCid: "bafytestcid" }),
     );
     expect(await screen.findByText("Evidence signed and stored")).toBeInTheDocument();
   });

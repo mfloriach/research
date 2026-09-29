@@ -4,14 +4,15 @@ import { Int32 } from "mongodb";
 import { getDb } from "@/lib/mongodb";
 import { COLLECTIONS } from "@/db/migration";
 import { debateInputSchema, splitMarkdownParagraphs } from "@/lib/api-schemas";
+import { IpfsUnavailableError, pinJson } from "@/lib/ipfs";
 
 type ReportingTabDoc = { _id: string; label: string; order?: number };
 
 /**
  * Create a debate report
  *
- * @description Stores a new report as an article with paragraphs, reusing or
- * creating the target reporting tab.
+ * @description Pins the report to IPFS, then stores it as an article with
+ * paragraphs, reusing or creating the target reporting tab.
  * @tag Debates
  * @requestBody DebateInput required
  * @response 201:DebateResponse:Report stored
@@ -113,17 +114,35 @@ export const POST = async (request: Request) => {
     .countDocuments({ tabId: targetTabId });
   const articleId = randomUUID();
 
+  let ipfsCid: string;
+  try {
+    ipfsCid = await pinJson({
+      kind: "report",
+      title: cleanTitle,
+      ...(cleanLabel.length > 0 ? { label: cleanLabel } : {}),
+      description: cleanDescription,
+      paragraphs: chunks,
+    });
+  } catch (error) {
+    if (error instanceof IpfsUnavailableError) {
+      return NextResponse.json({ error: "IPFS unavailable" }, { status: 500 });
+    }
+    throw error;
+  }
+
   await db
     .collection<{
       _id: string;
       tabId: string;
       title: string;
+      ipfsCid: string;
       order: Int32;
     }>(COLLECTIONS.reportingArticles)
     .insertOne({
       _id: articleId,
       tabId: targetTabId,
       title: cleanTitle,
+      ipfsCid,
       order: new Int32(articleOrder),
     });
 
@@ -151,6 +170,7 @@ export const POST = async (request: Request) => {
       articleId,
       tabId: targetTabId,
       paragraphIds: paragraphDocs.map((doc) => doc._id),
+      ipfsCid,
     },
     { status: 201 },
   );

@@ -2,12 +2,13 @@ import { NextResponse } from "next/server";
 import { auditItemSchema, splitAuditParagraphs } from "./schemas";
 import { createEvidence } from "@/app/server/repositories/evidences";
 import { parseJson } from "@/lib/parse_json";
+import { IpfsUnavailableError } from "@/lib/ipfs";
 
 /**
  * Create an evidence audit item
  *
- * @description Validates the audit item payload, splits the markdown body
- * into paragraphs, and stores it under the Evidences tab.
+ * @description Validates the audit item payload, pins it to IPFS, splits
+ * the markdown body into paragraphs, and stores it under the Evidences tab.
  * @tag Evidences
  * @requestBody AuditItemInput required
  * @response 201:AuditItemResponse:Evidence created
@@ -20,10 +21,17 @@ export const POST = async (request: Request) => {
 
   const paragraphs = splitAuditParagraphs(data.content);
 
-  const { itemId, tabId } = await createEvidence({
-    ...data,
-    paragraphs,
-  });
+  try {
+    const { itemId, tabId, ipfsCid } = await createEvidence({
+      ...data,
+      paragraphs,
+    });
 
-  return NextResponse.json({ itemId, tabId }, { status: 201 });
+    return NextResponse.json({ itemId, tabId, ipfsCid }, { status: 201 });
+  } catch (error) {
+    if (error instanceof IpfsUnavailableError) {
+      return NextResponse.json({ error: "IPFS unavailable" }, { status: 500 });
+    }
+    throw error;
+  }
 };

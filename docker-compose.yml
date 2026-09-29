@@ -8,6 +8,23 @@ services:
     entrypoint: ["anvil", "--host", "0.0.0.0", "--port", "8545"]
     restart: unless-stopped
 
+  ipfs:
+    image: ipfs/kubo:latest
+    container_name: epistimology-ipfs
+    restart: unless-stopped
+    ports:
+      - "4001:4001"
+      - "5001:5001"
+      - "8080:8080"
+    volumes:
+      - ipfs-data:/data/ipfs
+    healthcheck:
+      test: ["CMD", "ipfs", "version"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+
   mongodb:
     image: mongo:7
     container_name: epistimology-mongodb
@@ -45,3 +62,4 @@ services:
 
 volumes:
   mongodb-data:
+  ipfs-data:

@@ -22,6 +22,8 @@ export type ProvenanceEntry = {
   contentHash?: Hex;
   /** Only on signature entries. */
   signature?: Hex;
+  /** Only on signature entries. */
+  ipfsCid?: string;
   attester: Address;
   txHash: Hash;
   blockNumber: bigint;
@@ -76,12 +78,13 @@ async function loadProvenance(
       address: contract,
       event: {
         type: "event",
-        name: "SignatureRecorded",
+        name: "ItemProvenance",
         inputs: [
           { name: "itemId", type: "bytes16", indexed: true },
           { name: "attester", type: "address", indexed: true },
           { name: "contentHash", type: "bytes32", indexed: false },
           { name: "signature", type: "bytes", indexed: false },
+          { name: "ipfsCid", type: "string", indexed: false },
         ],
       },
       args: { attester },
@@ -104,6 +107,7 @@ async function loadProvenance(
       itemId: bytes16ToUuid(log.args.itemId as string),
       contentHash: log.args.contentHash as Hex,
       signature: log.args.signature as Hex,
+      ipfsCid: log.args.ipfsCid as string,
       attester: log.args.attester as Address,
       txHash: log.transactionHash,
       blockNumber: log.blockNumber,

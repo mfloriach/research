@@ -57,6 +57,7 @@ export type UseAuditSignResult = {
     itemId: string;
     contentHash: Hex;
     signature: Hex;
+    ipfsCid: string;
   }) => Promise<{ ok: true; txHash: Hex } | { ok: false; error: string }>;
   isConnected: boolean;
 };
@@ -188,10 +189,14 @@ export function useAuditSign(): UseAuditSignResult {
       itemId: string;
       contentHash: Hex;
       signature: Hex;
+      ipfsCid: string;
     }): Promise<{ ok: true; txHash: Hex } | { ok: false; error: string }> => {
       const contract = getAttestationContractAddress();
       if (!contract) {
         return { ok: false, error: "Attestation contract is not configured." };
+      }
+      if (!input.ipfsCid || typeof input.ipfsCid !== "string") {
+        return { ok: false, error: "Missing IPFS CID for the stored item." };
       }
       let key: Hex;
       try {
@@ -218,7 +223,7 @@ export function useAuditSign(): UseAuditSignResult {
           address: contract,
           abi: attestationAbi,
           functionName: "recordSignature",
-          args: [key, input.contentHash, input.signature],
+          args: [key, input.contentHash, input.signature, input.ipfsCid],
         });
         await getPublicClient().waitForTransactionReceipt({ hash: txHash });
         return { ok: true, txHash };

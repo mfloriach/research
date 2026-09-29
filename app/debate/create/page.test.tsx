@@ -65,7 +65,7 @@ beforeEach(() => {
   mockRecordSignature.mockResolvedValue({ ok: true, txHash: "0xhash" });
   mockFetch.mockResolvedValue({
     ok: true,
-    json: async () => ({ articleId: "test-article-id" }),
+    json: async () => ({ articleId: "test-article-id", ipfsCid: "bafytestcid" }),
   });
   global.fetch = mockFetch as unknown as typeof fetch;
 });

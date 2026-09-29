@@ -72,6 +72,7 @@ export const debateResponseSchema = z
     paragraphIds: z
       .array(z.string())
       .describe("Stored paragraph IDs in document order"),
+    ipfsCid: z.string().describe("IPFS CID of the pinned report envelope"),
   })
   .meta({ id: "DebateResponse" });
 
@@ -232,6 +233,7 @@ export const auditItemResponseSchema = z
   .object({
     itemId: z.string().describe("Created audit item ID"),
     tabId: z.string().describe("Audit tab the item was stored under"),
+    ipfsCid: z.string().describe("IPFS CID of the pinned item envelope"),
   })
   .meta({ id: "AuditItemResponse" });
 

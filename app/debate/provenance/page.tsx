@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useWallet } from "@/app/hooks/use-wallet";
 import { useProvenance } from "@/app/hooks/use-provenance";
+import { ipfsGatewayUrl } from "@/lib/ipfs-gateway";
 
 function truncate(value: string): string {
   if (value.length <= 20) {
@@ -106,6 +107,7 @@ export default function ProvenancePage() {
                       <th>Type</th>
                       <th>Item ID</th>
                       <th>Content hash</th>
+                      <th>IPFS</th>
                       <th>Transaction</th>
                       <th>Time</th>
                     </tr>
@@ -133,6 +135,21 @@ export default function ProvenancePage() {
                             <span title={entry.contentHash}>
                               {truncate(entry.contentHash)}
                             </span>
+                          ) : (
+                            <span className="opacity-40">—</span>
+                          )}
+                        </td>
+                        <td className="font-mono text-xs">
+                          {entry.ipfsCid ? (
+                            <a
+                              href={ipfsGatewayUrl(entry.ipfsCid)}
+                              target="_blank"
+                              rel="noreferrer"
+                              className="link"
+                              title={entry.ipfsCid}
+                            >
+                              {truncate(entry.ipfsCid)}
+                            </a>
                           ) : (
                             <span className="opacity-40">—</span>
                           )}
