@@ -14,9 +14,11 @@
     "db:seed": "tsx db/seed.ts",
     "db:setup": "tsx db/seed.ts",
     "openapi:generate": "openapi-gen generate",
+    "prepare": "husky",
     "contracts:build": "forge build --root contracts",
     "contracts:test": "forge test --root contracts",
-    "contracts:deploy:anvil": "forge script contracts/script/Deploy.s.sol --root contracts --rpc-url http://127.0.0.1:8545 --broadcast --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+    "contracts:deploy:anvil": "forge script contracts/script/Deploy.s.sol --root contracts --rpc-url http://127.0.0.1:8545 --broadcast --private-key 0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80",
+    "prepare": "husky"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",
@@ -37,6 +39,8 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
     "@tailwindcss/postcss": "^4",
     "@types/node": "^20",
     "@types/react": "^19",
@@ -44,6 +48,7 @@
     "daisyui": "^5.7.46",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
+    "husky": "^9.1.7",
     "next-openapi-gen": "^1.8.2",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",

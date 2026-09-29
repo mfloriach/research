@@ -25,7 +25,28 @@ No automated test framework or coverage threshold is configured. Validate UI cha
 
 ## Commit & Pull Request Guidelines
 
-The available Git history contains only the initial Create Next App commit, so no established commit convention is visible. Use concise, imperative commit subjects that describe one change (for example, `Add article card component`). Pull requests should explain the user-visible change, note relevant implementation details, link related issues when available, and include screenshots for visual changes. Mention the lint/build checks performed.
+This repo follows [Conventional Commits](https://www.conventionalcommits.org/),
+enforced locally by commitlint (husky `commit-msg` hook). Format:
+
+```
+<type>(<scope>): <subject>
+```
+
+- `type`: `feat` (new feature), `fix`, `docs`, `refactor`, `test`, `chore`
+  (tooling/deps), `ci`, `style`, `perf`, `revert`.
+- `scope`: the area touched — `api`, `web3`, `contracts`, `ui`, `db`,
+  `hooks`, `deps`, `docs`, `ci`. Omit only when no scope fits.
+- `subject`: concise, imperative, lowercase, no trailing period
+  (for example, `feat(web3): add attest button to audit cards`).
+- Breaking changes: append `!` after the scope and explain in the body,
+  e.g. `feat(api)!: change debate response shape`, with a
+  `BREAKING CHANGE:` footer describing the migration.
+
+`release-please` builds `CHANGELOG.md`, bumps `package.json`, and tags
+releases from these messages — so every user-facing change needs a `feat:`
+or `fix:` commit, and anything that must not release uses `chore:`/`docs:`.
+
+Pull requests should explain the user-visible change, note relevant implementation details, link related issues when available, and include screenshots for visual changes. Mention the lint/build checks performed.
 
 ## Configuration
 
