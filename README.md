@@ -62,6 +62,34 @@ The config is `openapi-gen.config.ts`. After changing a route handler or a
 schema, rerun the command and commit the updated `public/openapi.yaml`. No
 docs UI is bundled — the YAML file is the deliverable.
 
+## On-chain attestations
+
+Audit items (contraarguments, fallacies, evidences, sources, interpretations)
+can be attested on-chain via the shield icon on each card. Attestations live
+in the `AttestationRegistry` contract (`contracts/src/AttestationRegistry.sol`,
+OpenZeppelin `Ownable`), which enforces one attestation per wallet per item.
+Frontend logic is in `app/hooks/use-attestation.ts`; counts are read over RPC
+and writes go through the connected wallet on the Anvil chain (31337).
+
+Local flow (Anvil is already part of `docker-compose.yml`):
+
+```bash
+docker compose up -d            # starts anvil + mongodb
+npm run contracts:build         # forge build
+npm run contracts:test          # forge test
+npm run contracts:deploy:anvil  # deploys with the public Anvil dev key (local only)
+```
+
+Copy the deployed address into `.env.local`:
+
+```bash
+NEXT_PUBLIC_ATTESTATION_CONTRACT_ADDRESS=0x...
+```
+
+A fresh Anvil deployment from the default key deterministically yields
+`0x5FbDB2315678afecb367f032d93F642f64180aa3`. Without this variable the attest
+buttons render disabled.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

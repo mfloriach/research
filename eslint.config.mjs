@@ -12,6 +12,8 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    // Foundry dependencies (OpenZeppelin, forge-std) ship their own sources.
+    "contracts/**",
   ]),
 ]);
 

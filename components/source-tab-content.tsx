@@ -3,6 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useState } from "react";
 import { CollapseList } from "@/components/collapse-list";
+import { useAttestations } from "@/app/hooks/use-attestation";
 import { useWallet } from "@/app/hooks/use-wallet";
 import type { CollapsibleItem, ContentTab } from "@/db/content";
 
@@ -21,6 +22,13 @@ export function SourceTabContent({ tab, selectedParagraphId }: SourceTabContentP
   const [openCounts, setOpenCounts] = useState<Record<string, number>>(() =>
     Object.fromEntries(tab.items.map((item) => [item.id, item.openCount ?? 0])),
   );
+
+  const {
+    items: attestations,
+    attest,
+    error: attestError,
+    isReady: attestReady,
+  } = useAttestations(tab.items.map((item) => item.id));
 
   async function handleOpen(itemId: string) {
     setOpenCounts((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? 0) + 1 }));
@@ -69,7 +77,19 @@ export function SourceTabContent({ tab, selectedParagraphId }: SourceTabContentP
           )}
         </p>
       )}
-      <CollapseList items={tab.items} openCounts={openCounts} onOpen={handleOpen} />
+      <CollapseList
+        items={tab.items}
+        openCounts={openCounts}
+        onOpen={handleOpen}
+        attestations={attestations}
+        onAttest={attest}
+        canAttest={attestReady && isConnected}
+      />
+      {attestError ? (
+        <p role="alert" className="text-xs text-error">
+          {attestError}
+        </p>
+      ) : null}
     </div>
   );
 }

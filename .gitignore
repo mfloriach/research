@@ -39,6 +39,11 @@ yarn-error.log*
 # next-openapi-gen dev metadata (manifest + disk cache)
 .openapi-gen/
 
+# forge build artifacts, cache and broadcast logs
+contracts/out/
+contracts/cache/
+contracts/broadcast/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
