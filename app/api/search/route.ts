@@ -1,9 +1,5 @@
 import { NextResponse } from "next/server";
-import { withRouteLogging } from "@/lib/api-log";
-import {
-  MAX_SEARCH_QUERY_LENGTH,
-  searchQuerySchema,
-} from "@/lib/api-schemas";
+import { MAX_SEARCH_QUERY_LENGTH, searchQuerySchema } from "@/lib/api-schemas";
 
 /**
  * Log a search query
@@ -16,8 +12,9 @@ import {
  * @response 400:ErrorResponse:Invalid query
  * @openapi
  */
-export const GET = withRouteLogging("api/search", async (request, _context, log) => {
+export const GET = async (request: Request) => {
   const { searchParams } = new URL(request.url);
+
   const parsed = searchQuerySchema.safeParse({
     q: searchParams.get("q") ?? undefined,
   });
@@ -31,15 +28,5 @@ export const GET = withRouteLogging("api/search", async (request, _context, log)
   const rawQuery = parsed.data.q ?? "";
   const query = rawQuery.slice(0, MAX_SEARCH_QUERY_LENGTH);
 
-  log.info(
-    {
-      event: "search.query",
-      query,
-      queryLength: query.length,
-      truncated: rawQuery.length > MAX_SEARCH_QUERY_LENGTH,
-    },
-    `Search query: "${query}"`,
-  );
-
   return NextResponse.json({ query, logged: true });
-});
+};

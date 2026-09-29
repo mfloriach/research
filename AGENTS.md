@@ -1,5 +1,24 @@
 # Repository Guidelines
 
+## Tech Stack
+
+- Next.js 16 with App route
+- TypeScript
+- Tailwind CSS
+- MongoDB
+- Zod and react-hook-form
+
+## Conventions
+
+- Use functional components
+- Follow REST API naming conventions
+- Write test for all new components
+- Capture exceptions on the @app/middleware.ts
+- Do not queries on the @app/api
+- All database queries must be in @app/server/repositories
+- Do not add logic on the components use/create @app/hooks
+- All API must be documented using OpenAPI stardards, after update run build openapi file.
+
 ## Project Structure
 
 This repository is a Next.js App Router site built with React and TypeScript. Route pages, the root layout, and global styles live in `app/` (`app/page.tsx`, `app/layout.tsx`, and `app/globals.css`). Reusable UI components are in `components/`; shared content helpers and data belong in `lib/`. Static files served directly are in `public/`. There is currently no dedicated test directory.

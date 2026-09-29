@@ -10,6 +10,7 @@ import {
   isAnvilReachable,
   type AnvilEthereumProvider,
 } from "@/lib/anvil";
+import { Search } from "./search";
 
 export type SiteNavbarMenuItem = {
   id: string;
@@ -93,7 +94,8 @@ export function SiteNavbar({
   }, [query]);
 
   const address = walletAddress !== undefined ? walletAddress : internalAddress;
-  const isOnAnvil = chainId === null || chainId.toLowerCase() === ANVIL_CHAIN_ID_HEX;
+  const isOnAnvil =
+    chainId === null || chainId.toLowerCase() === ANVIL_CHAIN_ID_HEX;
   const isConnected = address !== null && address !== "" && isOnAnvil;
 
   useEffect(() => {
@@ -176,7 +178,9 @@ export function SiteNavbar({
   async function connectViaAnvilRpc() {
     const reachable = await isAnvilReachable();
     if (!reachable) {
-      throw new Error(`Anvil is not reachable at ${getAnvilRpcUrl()}. Start it with \`anvil\`.`);
+      throw new Error(
+        `Anvil is not reachable at ${getAnvilRpcUrl()}. Start it with \`anvil\`.`,
+      );
     }
     const accounts = await getAnvilAccountsViaRpc();
     const [first] = accounts ?? [];
@@ -202,7 +206,8 @@ export function SiteNavbar({
         setConnectError(error.message);
       } else if (!window.ethereum) {
         setConnectError(
-          connect.noWalletMessage ?? "No wallet found. Install MetaMask or start Anvil locally.",
+          connect.noWalletMessage ??
+            "No wallet found. Install MetaMask or start Anvil locally.",
         );
       } else {
         setConnectError("Connection request was rejected.");
@@ -219,7 +224,10 @@ export function SiteNavbar({
       if (provider) {
         // MetaMask supports revoking account access; other wallets may not.
         await provider
-          .request({ method: "wallet_revokePermissions", params: [{ eth_accounts: {} }] })
+          .request({
+            method: "wallet_revokePermissions",
+            params: [{ eth_accounts: {} }],
+          })
           .catch(() => null);
       }
     } finally {
@@ -244,40 +252,22 @@ export function SiteNavbar({
       </div>
 
       <div className="navbar-end gap-2">
-        <label className="input w-36 sm:w-72">
-          <svg
-            className="h-[1em] opacity-50"
-            xmlns="http://www.w3.org/2000/svg"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
-          >
-            <g
-              strokeLinejoin="round"
-              strokeLinecap="round"
-              strokeWidth="2.5"
-              fill="none"
-              stroke="currentColor"
-            >
-              <circle cx="11" cy="11" r="8" />
-              <path d="m21 21-4.3-4.3" />
-            </g>
-          </svg>
-          <input
-            type="search"
-            required
-            placeholder={search.placeholder}
-            aria-label={search.label}
-            className="grow"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-          />
-        </label>
+        <Search query={query} setQuery={setQuery} search={search} />
 
         {isConnected ? (
           <div className="dropdown dropdown-end">
-            <div tabIndex={0} role="button" className="btn btn-ghost btn-circle avatar">
+            <div
+              tabIndex={0}
+              role="button"
+              className="btn btn-ghost btn-circle avatar"
+            >
               <div className="w-10 rounded-full">
-                <Image src={avatar.src} alt={avatar.alt} width={40} height={40} />
+                <Image
+                  src={avatar.src}
+                  alt={avatar.alt}
+                  width={40}
+                  height={40}
+                />
               </div>
             </div>
             <ul
@@ -326,7 +316,9 @@ export function SiteNavbar({
               onClick={handleConnect}
               disabled={connecting}
             >
-              {connecting ? (connect.connectingLabel ?? "Connecting…") : connect.label}
+              {connecting
+                ? (connect.connectingLabel ?? "Connecting…")
+                : connect.label}
             </button>
             {connectError ? (
               <p role="alert" className="text-xs text-error">
