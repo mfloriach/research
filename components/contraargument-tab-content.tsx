@@ -1,9 +1,14 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { CollapseList } from "@/components/collapse-list";
 import { useAttestations } from "@/app/hooks/use-attestation";
+import {
+  AUDIT_SORT_OPTIONS,
+  sortAuditItems,
+  type AuditSortMode,
+} from "@/lib/audit-sort";
 import { useWallet } from "@/app/hooks/use-wallet";
 import type { CollapsibleItem, ContentTab } from "@/db/content";
 
@@ -33,6 +38,19 @@ export function ContraargumentTabContent({
     isReady: attestReady,
   } = useAttestations(tab.items.map((item) => item.id));
 
+  const [sort, setSort] = useState<AuditSortMode>("newest");
+  const attestationCounts = useMemo(
+    () =>
+      Object.fromEntries(
+        Object.entries(attestations).map(([id, state]) => [id, state.count]),
+      ),
+    [attestations],
+  );
+  const sortedItems = useMemo(
+    () => sortAuditItems(tab.items, sort, { openCounts, attestationCounts }),
+    [tab.items, sort, openCounts, attestationCounts],
+  );
+
   async function handleOpen(itemId: string) {
     setOpenCounts((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? 0) + 1 }));
     try {
@@ -54,7 +72,19 @@ export function ContraargumentTabContent({
 
   return (
     <div className="space-y-4">
-      <div className="flex justify-end">
+      <div className="flex items-center justify-between gap-2">
+        <select
+          aria-label="Sort items"
+          className="select select-bordered select-sm"
+          value={sort}
+          onChange={(event) => setSort(event.target.value as AuditSortMode)}
+        >
+          {AUDIT_SORT_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {option.label}
+            </option>
+          ))}
+        </select>
         <button
           type="button"
           className="btn btn-sm btn-outline"
@@ -81,7 +111,7 @@ export function ContraargumentTabContent({
         </p>
       )}
       <CollapseList
-        items={tab.items}
+        items={sortedItems}
         openCounts={openCounts}
         onOpen={handleOpen}
         attestations={attestations}
