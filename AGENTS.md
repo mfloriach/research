@@ -12,8 +12,9 @@ Use npm, with dependencies recorded in `package-lock.json`:
 - `npm run build` creates the production build and checks Next.js compilation.
 - `npm run start` serves the production build (run `npm run build` first).
 - `npm run lint` runs ESLint across the project.
+- `npm test` runs the Jest unit suite (`--ci`); `npm run test:watch` reruns on change.
 
-There is no test script configured yet. For changes, run the linter and production build as appropriate; add tests when introducing behavior that needs repeatable coverage.
+For changes, run the unit tests and linter as appropriate; add tests when introducing behavior that needs repeatable coverage.
 
 ## Coding Style & Naming
 
@@ -21,7 +22,14 @@ Follow the existing TypeScript and React patterns. Use two spaces for indentatio
 
 ## Testing Guidelines
 
-No automated test framework or coverage threshold is configured. Validate UI changes in the local development server, and run `npm run build` to catch production compilation issues. If adding a test framework, document its command and place tests next to the feature or in a clearly named `tests/` directory.
+Jest (`jest.config.mjs`, `next/jest` + jsdom) is the unit-test framework.
+Colocate suites as `page.test.tsx` next to the page or component under test.
+Wallet/sign/router/fetch dependencies are mocked per suite (see an existing
+`app/debate/**/create/page.test.tsx` for the pattern); stub `@uiw/react-md-editor`
+with a plain textarea. Run `npm test` for changes, and the linter plus
+production build as appropriate. Validate UI changes in the local development
+server. If adding coverage for backend behavior, prefer `forge test`
+(`npm run contracts:test`) for contracts and repeatable scripts for API routes.
 
 ## Commit & Pull Request Guidelines
 

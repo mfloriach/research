@@ -3,8 +3,15 @@
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import "@uiw/react-md-editor/markdown-editor.css";
 import type { DbContent } from "@/lib/content-db";
+import {
+  auditCreateFormSchema,
+  type AuditCreateFormInput,
+  type AuditCreateFormValues,
+} from "@/lib/form-schemas";
 import { useWallet } from "@/app/hooks/use-wallet";
 import {
   useAuditSign,
@@ -34,10 +41,16 @@ function CreateSourceForm() {
   const paragraphId = searchParams.get("paragraphId");
   const { isConnected } = useWallet();
 
-  const [title, setTitle] = useState("");
-  const [author, setAuthor] = useState("");
-  const [date, setDate] = useState("");
-  const [content, setContent] = useState("");
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm<AuditCreateFormInput, unknown, AuditCreateFormValues>({
+    resolver: zodResolver(auditCreateFormSchema),
+    mode: "onChange",
+    defaultValues: { title: "", content: "", author: "", date: "" },
+  });
   const [linked, setLinked] = useState<LinkedParagraph | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -87,11 +100,9 @@ function CreateSourceForm() {
     !submitting &&
     signPhase !== "signing" &&
     signed === null &&
-    title.trim().length >= 3 &&
-    content.trim().length > 0;
+    isValid;
 
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
+  async function onValid(values: AuditCreateFormValues) {
     if (!canSubmit) {
       return;
     }
@@ -99,10 +110,10 @@ function CreateSourceForm() {
     setError(null);
     try {
       const body = {
-        title: title.trim(),
-        content: content.trim(),
-        ...(author.trim().length > 0 ? { author: author.trim() } : {}),
-        ...(date.length > 0 ? { date } : {}),
+        title: values.title,
+        content: values.content,
+        ...(values.author.length > 0 ? { author: values.author } : {}),
+        ...(values.date.length > 0 ? { date: values.date } : {}),
         paragraphIds: paragraphId ? [paragraphId] : [],
       };
       const signResult = await signPayload({ kind: "source", body });
@@ -186,7 +197,7 @@ function CreateSourceForm() {
           </div>
         )}
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+        <form onSubmit={handleSubmit(onValid)} className="mt-6 space-y-6">
           <label className="form-control w-full">
             <span className="label">
               <span className="label-text font-medium">Title</span>
@@ -195,13 +206,17 @@ function CreateSourceForm() {
               type="text"
               className="input input-bordered w-full"
               placeholder="Source title"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              minLength={3}
               maxLength={200}
-              required
               disabled={!isConnected || submitting}
+              {...register("title")}
             />
+            {errors.title ? (
+              <span className="label">
+                <span role="alert" className="label-text text-error">
+                  {errors.title.message}
+                </span>
+              </span>
+            ) : null}
           </label>
 
           <div className="grid gap-4 sm:grid-cols-2">
@@ -213,11 +228,17 @@ function CreateSourceForm() {
                 type="text"
                 className="input input-bordered w-full"
                 placeholder="Author name"
-                value={author}
-                onChange={(event) => setAuthor(event.target.value)}
                 maxLength={120}
                 disabled={!isConnected || submitting}
+                {...register("author")}
               />
+              {errors.author ? (
+                <span className="label">
+                  <span role="alert" className="label-text text-error">
+                    {errors.author.message}
+                  </span>
+                </span>
+              ) : null}
             </label>
             <label className="form-control w-full">
               <span className="label">
@@ -226,10 +247,16 @@ function CreateSourceForm() {
               <input
                 type="date"
                 className="input input-bordered w-full"
-                value={date}
-                onChange={(event) => setDate(event.target.value)}
                 disabled={!isConnected || submitting}
+                {...register("date")}
               />
+              {errors.date ? (
+                <span className="label">
+                  <span role="alert" className="label-text text-error">
+                    {errors.date.message}
+                  </span>
+                </span>
+              ) : null}
             </label>
           </div>
 
@@ -238,14 +265,27 @@ function CreateSourceForm() {
               <span className="label-text font-medium">Content (markdown)</span>
             </span>
             <div data-color-mode="light">
-              <MDEditor
-                value={content}
-                onChange={(value) => setContent(value ?? "")}
-                preview="live"
-                height={320}
-                visibleDragbar={false}
+              <Controller
+                name="content"
+                control={control}
+                render={({ field }) => (
+                  <MDEditor
+                    value={field.value}
+                    onChange={(value) => field.onChange(value ?? "")}
+                    preview="live"
+                    height={320}
+                    visibleDragbar={false}
+                  />
+                )}
               />
             </div>
+            {errors.content ? (
+              <span className="label">
+                <span role="alert" className="label-text text-error">
+                  {errors.content.message}
+                </span>
+              </span>
+            ) : null}
           </div>
 
           {error ? (

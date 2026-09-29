@@ -3,8 +3,15 @@
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import { Controller, useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 import "@uiw/react-md-editor/markdown-editor.css";
 import { useWallet } from "@/app/hooks/use-wallet";
+import {
+  reportCreateFormSchema,
+  type ReportCreateFormInput,
+  type ReportCreateFormValues,
+} from "@/lib/form-schemas";
 import {
   useAuditSign,
   type SignedAudit,
@@ -16,9 +23,16 @@ const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 export default function CreateDebatePage() {
   const router = useRouter();
   const { isConnected } = useWallet();
-  const [title, setTitle] = useState("");
-  const [label, setLabel] = useState("");
-  const [description, setDescription] = useState("");
+  const {
+    register,
+    control,
+    handleSubmit,
+    formState: { errors, isValid },
+  } = useForm<ReportCreateFormInput, unknown, ReportCreateFormValues>({
+    resolver: zodResolver(reportCreateFormSchema),
+    mode: "onChange",
+    defaultValues: { title: "", label: "", description: "" },
+  });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [signed, setSigned] = useState<SignedAudit | null>(null);
@@ -30,11 +44,9 @@ export default function CreateDebatePage() {
     !submitting &&
     signPhase !== "signing" &&
     signed === null &&
-    title.trim().length >= 3 &&
-    description.trim().length > 0;
+    isValid;
 
-  async function handleSubmit(event: React.FormEvent) {
-    event.preventDefault();
+  async function onValid(values: ReportCreateFormValues) {
     if (!canSubmit) {
       return;
     }
@@ -42,9 +54,9 @@ export default function CreateDebatePage() {
     setError(null);
     try {
       const body = {
-        title: title.trim(),
-        label: label.trim(),
-        description: description.trim(),
+        title: values.title,
+        label: values.label,
+        description: values.description,
       };
       const signResult = await signPayload({ kind: "report", body });
       if (!signResult.ok) {
@@ -111,7 +123,7 @@ export default function CreateDebatePage() {
           </div>
         ) : null}
 
-        <form onSubmit={handleSubmit} className="mt-6 space-y-6">
+        <form onSubmit={handleSubmit(onValid)} className="mt-6 space-y-6">
           <label className="form-control w-full">
             <span className="label">
               <span className="label-text font-medium">Title</span>
@@ -120,13 +132,17 @@ export default function CreateDebatePage() {
               type="text"
               className="input input-bordered w-full"
               placeholder="Report title"
-              value={title}
-              onChange={(event) => setTitle(event.target.value)}
-              minLength={3}
               maxLength={200}
-              required
               disabled={!isConnected || submitting}
+              {...register("title")}
             />
+            {errors.title ? (
+              <span className="label">
+                <span role="alert" className="label-text text-error">
+                  {errors.title.message}
+                </span>
+              </span>
+            ) : null}
           </label>
 
           <label className="form-control w-full">
@@ -137,11 +153,17 @@ export default function CreateDebatePage() {
               type="text"
               className="input input-bordered w-full"
               placeholder="Section label (e.g. Clima)"
-              value={label}
-              onChange={(event) => setLabel(event.target.value)}
               maxLength={60}
               disabled={!isConnected || submitting}
+              {...register("label")}
             />
+            {errors.label ? (
+              <span className="label">
+                <span role="alert" className="label-text text-error">
+                  {errors.label.message}
+                </span>
+              </span>
+            ) : null}
           </label>
 
           <div>
@@ -149,14 +171,27 @@ export default function CreateDebatePage() {
               <span className="label-text font-medium">Description (markdown)</span>
             </span>
             <div data-color-mode="light">
-              <MDEditor
-                value={description}
-                onChange={(value) => setDescription(value ?? "")}
-                preview="live"
-                height={400}
-                visibleDragbar={false}
+              <Controller
+                name="description"
+                control={control}
+                render={({ field }) => (
+                  <MDEditor
+                    value={field.value}
+                    onChange={(value) => field.onChange(value ?? "")}
+                    preview="live"
+                    height={400}
+                    visibleDragbar={false}
+                  />
+                )}
               />
             </div>
+            {errors.description ? (
+              <span className="label">
+                <span role="alert" className="label-text text-error">
+                  {errors.description.message}
+                </span>
+              </span>
+            ) : null}
           </div>
 
           {error ? (
