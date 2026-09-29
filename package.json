@@ -12,7 +12,8 @@
     "lint": "eslint",
     "db:migrate": "tsx db/migration.ts",
     "db:seed": "tsx db/seed.ts",
-    "db:setup": "tsx db/seed.ts"
+    "db:setup": "tsx db/seed.ts",
+    "openapi:generate": "openapi-gen generate"
   },
   "dependencies": {
     "@opentelemetry/api": "^1.9.1",
@@ -39,6 +40,7 @@
     "daisyui": "^5.7.46",
     "eslint": "^9",
     "eslint-config-next": "16.3.6",
+    "next-openapi-gen": "^1.8.2",
     "tailwindcss": "^4",
     "tsx": "^4.23.15",
     "typescript": "^5"

@@ -36,6 +36,9 @@ yarn-error.log*
 # vercel
 .vercel
 
+# next-openapi-gen dev metadata (manifest + disk cache)
+.openapi-gen/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

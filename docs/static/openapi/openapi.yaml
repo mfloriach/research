@@ -1,0 +1,831 @@
+openapi: 3.0.0
+info:
+  title: Epistimology API
+  version: 1.0.0
+  description: >-
+    Reporting and argument-audit API: debates, full-text content, full-text search logging, and audit items
+    (contraarguments, fallacies, evidences, sources, interpretations).
+paths:
+  /content:
+    get:
+      operationId: get-content
+      summary: Get the full page content
+      description: Reads the site, heading, reporting and audit content from
+      tags:
+        - Content
+      parameters: []
+      responses:
+        '200':
+          description: Full page content
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContentResponse'
+        '500':
+          description: Content unavailable
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /audits/contraarguments:
+    post:
+      operationId: post-audits-contraarguments
+      summary: Create a contraargument audit item
+      description: Validates the audit item payload, splits the markdown body
+      tags:
+        - Contraarguments
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditItemInput'
+        required: true
+      responses:
+        '201':
+          description: Contraargument created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditItemResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Storage failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /audits/contraarguments/{id}/open:
+    post:
+      operationId: post-audits-contraarguments-{id}-open
+      summary: Record a contraargument open
+      description: Increments the open count for a contraargument item.
+      tags:
+        - Contraarguments
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            description: Audit item ID
+          description: Audit item ID
+          example: '123'
+      responses:
+        '200':
+          description: Open count incremented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ContraargumentOpenResponse'
+        '404':
+          description: Contraargument not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Update failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /debates:
+    post:
+      operationId: post-debates
+      summary: Create a debate report
+      description: Stores a new report as an article with paragraphs, reusing or
+      tags:
+        - Debates
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DebateInput'
+        required: true
+      responses:
+        '201':
+          description: Report stored
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DebateResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Storage failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /audits/evidences:
+    post:
+      operationId: post-audits-evidences
+      summary: Create an evidence audit item
+      description: Validates the audit item payload, splits the markdown body
+      tags:
+        - Evidences
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditItemInput'
+        required: true
+      responses:
+        '201':
+          description: Evidence created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditItemResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Storage failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /audits/evidences/{id}/open:
+    post:
+      operationId: post-audits-evidences-{id}-open
+      summary: Record an evidence open
+      description: Increments the open count for an evidence item.
+      tags:
+        - Evidences
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            description: Audit item ID
+          description: Audit item ID
+          example: '123'
+      responses:
+        '200':
+          description: Open count incremented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/EvidenceOpenResponse'
+        '404':
+          description: Evidence not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Update failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /audits/fallacies:
+    post:
+      operationId: post-audits-fallacies
+      summary: Create a fallacy audit item
+      description: Validates the audit item payload, splits the markdown body
+      tags:
+        - Fallacies
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditItemInput'
+        required: true
+      responses:
+        '201':
+          description: Fallacy created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditItemResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Storage failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /audits/fallacies/{id}/open:
+    post:
+      operationId: post-audits-fallacies-{id}-open
+      summary: Record a fallacy open
+      description: Increments the open count for a fallacy item.
+      tags:
+        - Fallacies
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            description: Audit item ID
+          description: Audit item ID
+          example: '123'
+      responses:
+        '200':
+          description: Open count incremented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FallacyOpenResponse'
+        '404':
+          description: Fallacy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Update failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /audits/interpretations:
+    post:
+      operationId: post-audits-interpretations
+      summary: Create an interpretation audit item
+      description: Validates the audit item payload, splits the markdown body
+      tags:
+        - Interpretations
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditItemInput'
+        required: true
+      responses:
+        '201':
+          description: Interpretation created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditItemResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Storage failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /audits/interpretations/{id}/open:
+    post:
+      operationId: post-audits-interpretations-{id}-open
+      summary: Record an interpretation open
+      description: Increments the open count for an interpretation item.
+      tags:
+        - Interpretations
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            description: Audit item ID
+          description: Audit item ID
+          example: '123'
+      responses:
+        '200':
+          description: Open count incremented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/InterpretationOpenResponse'
+        '404':
+          description: Interpretation not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Update failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /search:
+    get:
+      operationId: get-search
+      summary: Log a search query
+      description: Validates the `q` query parameter, truncates it to 200
+      tags:
+        - Search
+      parameters:
+        - in: query
+          name: q
+          required: false
+          schema:
+            type: string
+            description: Full-text search query. Truncated server-side to 200 characters.
+          description: Full-text search query. Truncated server-side to 200 characters.
+          example: example
+      responses:
+        '200':
+          description: Logged query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SearchResponse'
+        '400':
+          description: Invalid query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /audits/sources:
+    post:
+      operationId: post-audits-sources
+      summary: Create a source audit item
+      description: Validates the audit item payload, splits the markdown body
+      tags:
+        - Sources
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuditItemInput'
+        required: true
+      responses:
+        '201':
+          description: Source created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuditItemResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Storage failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /audits/sources/{id}/open:
+    post:
+      operationId: post-audits-sources-{id}-open
+      summary: Record a source open
+      description: Increments the open count for a source item.
+      tags:
+        - Sources
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            description: Audit item ID
+          description: Audit item ID
+          example: '123'
+      responses:
+        '200':
+          description: Open count incremented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SourceOpenResponse'
+        '404':
+          description: Source not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Update failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+tags:
+  - name: Content
+  - name: Contraarguments
+  - name: Debates
+  - name: Evidences
+  - name: Fallacies
+  - name: Interpretations
+  - name: Search
+  - name: Sources
+servers:
+  - url: ''
+    description: API server
+components:
+  schemas:
+    AuditItem:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        author:
+          type: string
+        date:
+          type: string
+        paragraphs:
+          type: array
+          items:
+            type: string
+        openCount:
+          type: number
+      required:
+        - id
+        - title
+        - paragraphs
+        - openCount
+    AuditItemInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 200
+          description: Audit item title, 3-200 characters
+        content:
+          type: string
+          minLength: 1
+          maxLength: 20000
+          description: Markdown body. Blank-line separated paragraphs become stored paragraphs.
+        author:
+          type: string
+          maxLength: 120
+          description: Author display name, at most 120 characters
+        date:
+          type: string
+          pattern: ^\d{4}-\d{2}-\d{2}$
+          description: Item date in YYYY-MM-DD format
+        paragraphIds:
+          type: array
+          items:
+            type: string
+            minLength: 1
+          description: Reporting paragraph IDs to link this item to
+      required:
+        - title
+        - content
+        - author
+        - date
+    AuditItemPathParams:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+          description: Audit item ID
+      required:
+        - id
+    AuditItemResponse:
+      type: object
+      properties:
+        itemId:
+          type: string
+          description: Created audit item ID
+        tabId:
+          type: string
+          description: Audit tab the item was stored under
+      required:
+        - itemId
+        - tabId
+    AuditTab:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        author:
+          type: string
+        date:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/AuditItem'
+      required:
+        - id
+        - label
+        - items
+    ContentResponse:
+      type: object
+      properties:
+        site:
+          allOf:
+            - $ref: '#/components/schemas/SiteContent'
+          description: Site chrome, search copy and menu
+        heading:
+          allOf:
+            - $ref: '#/components/schemas/HeadingContent'
+          description: Page heading copy
+        reportingCard:
+          type: object
+          properties:
+            title:
+              type: string
+            tabs:
+              type: array
+              items:
+                $ref: '#/components/schemas/ReportingTab'
+          required:
+            - title
+            - tabs
+          description: Reporting articles grouped by tab
+        auditCard:
+          type: object
+          properties:
+            title:
+              type: string
+            tabs:
+              type: array
+              items:
+                $ref: '#/components/schemas/AuditTab'
+          required:
+            - title
+            - tabs
+          description: Audit items grouped by tab
+      required:
+        - site
+        - heading
+        - reportingCard
+        - auditCard
+    ContraargumentOpenResponse:
+      type: object
+      properties:
+        contraargumentId:
+          type: string
+          description: Contraargument item ID
+        openCount:
+          type: number
+          description: Open count after increment
+      required:
+        - contraargumentId
+        - openCount
+    DebateInput:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 200
+          description: Report title, 3-200 characters
+        label:
+          type: string
+          maxLength: 60
+          description: Reporting tab label. Reuses the tab when it exists, otherwise creates it.
+        description:
+          type: string
+          minLength: 1
+          maxLength: 20000
+          description: Markdown report body. Blank-line separated paragraphs become stored paragraphs.
+        tabId:
+          type: string
+          minLength: 1
+          description: Existing reporting tab ID. Takes precedence over label.
+      required:
+        - title
+        - description
+    DebateResponse:
+      type: object
+      properties:
+        articleId:
+          type: string
+          description: Created reporting article ID
+        tabId:
+          type: string
+          description: Reporting tab the article was stored under
+        paragraphIds:
+          type: array
+          items:
+            type: string
+          description: Stored paragraph IDs in document order
+      required:
+        - articleId
+        - tabId
+        - paragraphIds
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Human-readable error message
+      required:
+        - error
+    EvidenceOpenResponse:
+      type: object
+      properties:
+        evidenceId:
+          type: string
+          description: Evidence item ID
+        openCount:
+          type: number
+          description: Open count after increment
+      required:
+        - evidenceId
+        - openCount
+    FallacyOpenResponse:
+      type: object
+      properties:
+        fallacyId:
+          type: string
+          description: Fallacy item ID
+        openCount:
+          type: number
+          description: Open count after increment
+      required:
+        - fallacyId
+        - openCount
+    HeadingContent:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+      required:
+        - title
+        - description
+    InterpretationOpenResponse:
+      type: object
+      properties:
+        interpretationId:
+          type: string
+          description: Interpretation item ID
+        openCount:
+          type: number
+          description: Open count after increment
+      required:
+        - interpretationId
+        - openCount
+    MenuItem:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        href:
+          type: string
+      required:
+        - id
+        - label
+        - href
+    ReportingArticle:
+      type: object
+      properties:
+        id:
+          type: string
+        title:
+          type: string
+        paragraphs:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportingParagraph'
+      required:
+        - id
+        - title
+        - paragraphs
+    ReportingParagraph:
+      type: object
+      properties:
+        id:
+          type: string
+        text:
+          type: string
+        auditItemIds:
+          type: array
+          items:
+            type: string
+      required:
+        - id
+        - text
+        - auditItemIds
+    ReportingTab:
+      type: object
+      properties:
+        id:
+          type: string
+        label:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/ReportingArticle'
+      required:
+        - id
+        - label
+        - items
+    SearchQuery:
+      type: object
+      properties:
+        q:
+          type: string
+          description: Full-text search query. Truncated server-side to 200 characters.
+    SearchResponse:
+      type: object
+      properties:
+        query:
+          type: string
+          description: Query after server-side truncation
+        logged:
+          type: boolean
+          description: Whether the query was logged
+      required:
+        - query
+        - logged
+    SiteContent:
+      type: object
+      properties:
+        brand:
+          type: string
+        title:
+          type: string
+        description:
+          type: string
+        search:
+          type: object
+          properties:
+            placeholder:
+              type: string
+            label:
+              type: string
+          required:
+            - placeholder
+            - label
+        avatar:
+          type: object
+          properties:
+            src:
+              type: string
+            alt:
+              type: string
+          required:
+            - src
+            - alt
+        menu:
+          type: object
+          properties:
+            label:
+              type: string
+            items:
+              type: array
+              items:
+                $ref: '#/components/schemas/MenuItem'
+          required:
+            - label
+            - items
+      required:
+        - brand
+        - title
+        - description
+        - search
+        - avatar
+        - menu
+    SourceOpenResponse:
+      type: object
+      properties:
+        sourceId:
+          type: string
+          description: Source item ID
+        openCount:
+          type: number
+          description: Open count after increment
+      required:
+        - sourceId
+        - openCount
+  responses: {}

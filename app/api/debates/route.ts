@@ -4,21 +4,26 @@ import { Int32 } from "mongodb";
 import { getDb } from "@/lib/mongodb";
 import { withRouteLogging } from "@/lib/api-log";
 import { COLLECTIONS } from "@/db/migration";
-
-const MAX_TITLE_LENGTH = 200;
-const MAX_LABEL_LENGTH = 60;
-const MAX_DESCRIPTION_LENGTH = 20000;
+import {
+  debateInputSchema,
+  splitMarkdownParagraphs,
+} from "@/lib/api-schemas";
 
 type ReportingTabDoc = { _id: string; label: string; order?: number };
 
-function splitMarkdownParagraphs(markdown: string): string[] {
-  return markdown
-    .split(/\n{2,}/)
-    .map((chunk) => chunk.trim())
-    .filter((chunk) => chunk.length > 0);
-}
-
-export const POST = withRouteLogging("api/debates", async (request, log) => {
+/**
+ * Create a debate report
+ *
+ * @description Stores a new report as an article with paragraphs, reusing or
+ * creating the target reporting tab.
+ * @tag Debates
+ * @requestBody DebateInput required
+ * @response 201:DebateResponse:Report stored
+ * @response 400:ErrorResponse:Invalid input
+ * @response 500:ErrorResponse:Storage failed
+ * @openapi
+ */
+export const POST = withRouteLogging("api/debates", async (request, _context, log) => {
   let body: unknown;
   try {
     body = await request.json();
@@ -26,51 +31,44 @@ export const POST = withRouteLogging("api/debates", async (request, log) => {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const { title, label, description, tabId } = (body ?? {}) as {
-    title?: unknown;
-    label?: unknown;
-    description?: unknown;
-    tabId?: unknown;
-  };
+  const parsed = debateInputSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json(
+      { error: parsed.error.issues[0]?.message ?? "Invalid request body" },
+      { status: 400 },
+    );
+  }
 
-  const cleanTitle = typeof title === "string" ? title.trim() : "";
-  const cleanLabel = typeof label === "string" ? label.trim() : "";
-  const cleanDescription = typeof description === "string" ? description.trim() : "";
-
-  if (cleanTitle.length < 3 || cleanTitle.length > MAX_TITLE_LENGTH) {
-    return NextResponse.json(
-      { error: `Title must be between 3 and ${MAX_TITLE_LENGTH} characters` },
-      { status: 400 },
-    );
-  }
-  if (cleanLabel.length > MAX_LABEL_LENGTH) {
-    return NextResponse.json(
-      { error: `Label must be at most ${MAX_LABEL_LENGTH} characters` },
-      { status: 400 },
-    );
-  }
-  if (cleanDescription.length === 0 || cleanDescription.length > MAX_DESCRIPTION_LENGTH) {
-    return NextResponse.json(
-      { error: `Description must be between 1 and ${MAX_DESCRIPTION_LENGTH} characters` },
-      { status: 400 },
-    );
-  }
+  const {
+    title: cleanTitle,
+    description: cleanDescription,
+    tabId: rawTabId,
+    label: rawLabel,
+  } = parsed.data;
+  const cleanLabel = rawLabel ?? "";
 
   const chunks = splitMarkdownParagraphs(cleanDescription);
   if (chunks.length === 0) {
-    return NextResponse.json({ error: "Description must not be empty" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Description must not be empty" },
+      { status: 400 },
+    );
   }
 
   try {
     const db = await getDb();
 
-    let targetTabId = typeof tabId === "string" && tabId.length > 0 ? tabId : null;
+    let targetTabId =
+      typeof rawTabId === "string" && rawTabId.length > 0 ? rawTabId : null;
     if (targetTabId) {
       const tab = await db
         .collection<ReportingTabDoc>(COLLECTIONS.reportingTabs)
         .findOne({ _id: targetTabId }, { projection: { _id: 1 } });
       if (!tab) {
-        return NextResponse.json({ error: "Unknown reporting tab" }, { status: 400 });
+        return NextResponse.json(
+          { error: "Unknown reporting tab" },
+          { status: 400 },
+        );
       }
     } else if (cleanLabel.length > 0) {
       const existing = await db
@@ -91,9 +89,17 @@ export const POST = withRouteLogging("api/debates", async (request, log) => {
           .collection<{ _id: string; label: string; order: Int32 }>(
             COLLECTIONS.reportingTabs,
           )
-          .insertOne({ _id: targetTabId, label: cleanLabel, order: new Int32(nextOrder) });
+          .insertOne({
+            _id: targetTabId,
+            label: cleanLabel,
+            order: new Int32(nextOrder),
+          });
         log.info(
-          { event: "debate.tabCreated", tabId: targetTabId, label: cleanLabel },
+          {
+            event: "debate.tabCreated",
+            tabId: targetTabId,
+            label: cleanLabel,
+          },
           `Created new reporting tab "${cleanLabel}"`,
         );
       }
@@ -105,7 +111,10 @@ export const POST = withRouteLogging("api/debates", async (request, log) => {
         .limit(1)
         .toArray();
       if (firstTab.length === 0) {
-        return NextResponse.json({ error: "No reporting tabs available" }, { status: 500 });
+        return NextResponse.json(
+          { error: "No reporting tabs available" },
+          { status: 500 },
+        );
       }
       targetTabId = firstTab[0]._id;
     }
@@ -169,7 +178,13 @@ export const POST = withRouteLogging("api/debates", async (request, log) => {
       { status: 201 },
     );
   } catch (error) {
-    log.error({ event: "debate.failed", err: error }, "Failed to store new report");
-    return NextResponse.json({ error: "Could not store report" }, { status: 500 });
+    log.error(
+      { event: "debate.failed", err: error },
+      "Failed to store new report",
+    );
+    return NextResponse.json(
+      { error: "Could not store report" },
+      { status: 500 },
+    );
   }
 });
