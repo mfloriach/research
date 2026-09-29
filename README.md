@@ -71,6 +71,13 @@ OpenZeppelin `Ownable`), which enforces one attestation per wallet per item.
 Frontend logic is in `app/hooks/use-attestation.ts`; counts are read over RPC
 and writes go through the connected wallet on the Anvil chain (31337).
 
+Creating an audit item or report also signs it (`app/hooks/use-audit-sign.ts`):
+the wallet signs the exact payload before it is stored, and the signature plus
+content hash are recorded on-chain via `recordSignature` (one record per
+wallet per item). The `/debate/provenance` page (`app/hooks/use-provenance.ts`)
+shows a wallet's signatures and attestations in creation order from contract
+events.
+
 Local flow (Anvil is already part of `docker-compose.yml`):
 
 ```bash

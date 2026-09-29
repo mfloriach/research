@@ -51,6 +51,47 @@ export const attestationAbi = [
       { name: "attester", type: "address", indexed: true },
     ],
   },
+  {
+    type: "function",
+    name: "recordSignature",
+    stateMutability: "nonpayable",
+    inputs: [
+      { name: "itemId", type: "bytes16" },
+      { name: "contentHash", type: "bytes32" },
+      { name: "signature", type: "bytes" },
+    ],
+    outputs: [],
+  },
+  {
+    type: "function",
+    name: "signatureContentHash",
+    stateMutability: "view",
+    inputs: [
+      { name: "itemId", type: "bytes16" },
+      { name: "account", type: "address" },
+    ],
+    outputs: [{ type: "bytes32" }],
+  },
+  {
+    type: "function",
+    name: "hasRecordedSignature",
+    stateMutability: "view",
+    inputs: [
+      { name: "itemId", type: "bytes16" },
+      { name: "account", type: "address" },
+    ],
+    outputs: [{ type: "bool" }],
+  },
+  {
+    type: "event",
+    name: "SignatureRecorded",
+    inputs: [
+      { name: "itemId", type: "bytes16", indexed: true },
+      { name: "attester", type: "address", indexed: true },
+      { name: "contentHash", type: "bytes32", indexed: false },
+      { name: "signature", type: "bytes", indexed: false },
+    ],
+  },
 ] as const;
 
 const UUID_PATTERN =
@@ -84,7 +125,7 @@ export function getAnvilChain() {
   });
 }
 
-function getPublicClient() {
+export function getPublicClient() {
   return createPublicClient({
     chain: getAnvilChain(),
     transport: http(getAnvilRpcUrl()),

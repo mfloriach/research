@@ -15,7 +15,13 @@ import {
   type AnvilEthereumProvider,
 } from "@/lib/anvil";
 import { useWallet } from "@/app/hooks/use-wallet";
-import { getAnvilChain } from "@/app/hooks/use-attestation";
+import {
+  attestationAbi,
+  getAnvilChain,
+  getAttestationContractAddress,
+  getPublicClient,
+  uuidToBytes16,
+} from "@/app/hooks/use-attestation";
 
 export type AuditSignKind =
   | "evidence"
@@ -43,6 +49,15 @@ export type UseAuditSignResult = {
     kind: AuditSignKind;
     body: Record<string, unknown>;
   }) => Promise<SignPayloadResult>;
+  /**
+   * Record a creation signature on-chain after the item was stored.
+   * Separate from signing: safe to retry, never blocks the stored item.
+   */
+  recordSignature: (input: {
+    itemId: string;
+    contentHash: Hex;
+    signature: Hex;
+  }) => Promise<{ ok: true; txHash: Hex } | { ok: false; error: string }>;
   isConnected: boolean;
 };
 
@@ -168,5 +183,67 @@ export function useAuditSign(): UseAuditSignResult {
     [address],
   );
 
-  return { phase, signPayload, isConnected };
+  const recordSignature = useCallback(
+    async (input: {
+      itemId: string;
+      contentHash: Hex;
+      signature: Hex;
+    }): Promise<{ ok: true; txHash: Hex } | { ok: false; error: string }> => {
+      const contract = getAttestationContractAddress();
+      if (!contract) {
+        return { ok: false, error: "Attestation contract is not configured." };
+      }
+      let key: Hex;
+      try {
+        key = uuidToBytes16(input.itemId);
+      } catch (error) {
+        return {
+          ok: false,
+          error: error instanceof Error ? error.message : String(error),
+        };
+      }
+      const provider: AnvilEthereumProvider | undefined =
+        typeof window === "undefined" ? undefined : window.ethereum;
+      if (!provider || !address) {
+        return { ok: false, error: "Connect your wallet to record." };
+      }
+      try {
+        await ensureAnvilChain(provider);
+        const walletClient = createWalletClient({
+          account: address as Address,
+          chain: getAnvilChain(),
+          transport: custom(provider as EIP1193Provider),
+        });
+        const txHash = await walletClient.writeContract({
+          address: contract,
+          abi: attestationAbi,
+          functionName: "recordSignature",
+          args: [key, input.contentHash, input.signature],
+        });
+        await getPublicClient().waitForTransactionReceipt({ hash: txHash });
+        return { ok: true, txHash };
+      } catch (error) {
+        const message = error instanceof Error ? error.message : String(error);
+        // AlreadyRecorded(bytes16,address) selector is 0x8191741f.
+        if (/AlreadyRecorded|0x8191741f/i.test(message)) {
+          return { ok: true, txHash: "0x" as Hex };
+        }
+        if (
+          typeof error === "object" &&
+          error !== null &&
+          "code" in error &&
+          (error as { code?: unknown }).code === 4001
+        ) {
+          return { ok: false, error: "Transaction rejected in the wallet." };
+        }
+        return {
+          ok: false,
+          error: message || "Could not record the signature on-chain.",
+        };
+      }
+    },
+    [address],
+  );
+
+  return { phase, signPayload, recordSignature, isConnected };
 }

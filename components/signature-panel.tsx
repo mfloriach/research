@@ -8,6 +8,11 @@ export type SignaturePanelProps = {
   signer: Address;
   signature: Hex;
   contentHash: Hex;
+  /**
+   * Non-blocking warning, e.g. when on-chain signature recording failed.
+   * The item itself is already stored when this is set.
+   */
+  recordWarning?: string | null;
   onContinue: () => void;
 };
 
@@ -27,6 +32,7 @@ export function SignaturePanel({
   signer,
   signature,
   contentHash,
+  recordWarning,
   onContinue,
 }: SignaturePanelProps) {
   return (
@@ -69,6 +75,11 @@ export function SignaturePanel({
         </div>
       </dl>
       <div className="mt-4">
+        {recordWarning ? (
+          <p role="alert" className="mb-3 text-xs text-warning">
+            Stored, but the signature was not recorded on-chain: {recordWarning}
+          </p>
+        ) : null}
         <button type="button" className="btn btn-primary" onClick={onContinue}>
           Continue
         </button>

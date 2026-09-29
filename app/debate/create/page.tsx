@@ -22,7 +22,8 @@ export default function CreateDebatePage() {
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [signed, setSigned] = useState<SignedAudit | null>(null);
-  const { phase: signPhase, signPayload } = useAuditSign();
+  const [recordWarning, setRecordWarning] = useState<string | null>(null);
+  const { phase: signPhase, signPayload, recordSignature } = useAuditSign();
 
   const canSubmit =
     isConnected &&
@@ -54,10 +55,22 @@ export default function CreateDebatePage() {
         headers: { "content-type": "application/json" },
         body: JSON.stringify(body),
       });
-      const data = (await response.json().catch(() => null)) as { error?: string } | null;
+      const data = (await response.json().catch(() => null)) as {
+        error?: string;
+        articleId?: string;
+      } | null;
       if (!response.ok) {
         throw new Error(data?.error ?? `Request failed with status ${response.status}`);
       }
+      if (!data?.articleId || typeof data.articleId !== "string") {
+        throw new Error("Stored, but the response missed the article ID.");
+      }
+      const recorded = await recordSignature({
+        itemId: data.articleId,
+        contentHash: signResult.signed.contentHash,
+        signature: signResult.signed.signature,
+      });
+      setRecordWarning(recorded.ok ? null : recorded.error);
       setSigned(signResult.signed);
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Could not store report");
@@ -76,6 +89,7 @@ export default function CreateDebatePage() {
             signer={signed.signer}
             signature={signed.signature}
             contentHash={signed.contentHash}
+            recordWarning={recordWarning}
             onContinue={() => router.push("/")}
           />
         </div>

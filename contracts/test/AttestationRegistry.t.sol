@@ -65,4 +65,47 @@ contract AttestationRegistryTest is Test {
     function test_unknown_item_has_zero_count() public view {
         assertEq(registry.attestationCount(bytes16(uint128(0x9999))), 0);
     }
+
+    function test_record_signature_stores_hash_and_emits() public {
+        bytes32 contentHash = keccak256("content");
+        bytes memory signature = hex"deadbeef";
+        vm.expectEmit(true, true, false, true);
+        emit AttestationRegistry.SignatureRecorded(
+            ITEM,
+            alice,
+            contentHash,
+            signature
+        );
+        vm.prank(alice);
+        registry.recordSignature(ITEM, contentHash, signature);
+        assertTrue(registry.hasRecordedSignature(ITEM, alice));
+        assertEq(registry.signatureContentHash(ITEM, alice), contentHash);
+        assertFalse(registry.hasRecordedSignature(ITEM, bob));
+    }
+
+    function test_double_record_reverts() public {
+        bytes32 contentHash = keccak256("content");
+        vm.prank(alice);
+        registry.recordSignature(ITEM, contentHash, hex"aa");
+        vm.expectRevert(
+            abi.encodeWithSelector(
+                AttestationRegistry.AlreadyRecorded.selector,
+                ITEM,
+                alice
+            )
+        );
+        vm.prank(alice);
+        registry.recordSignature(ITEM, contentHash, hex"bb");
+        assertEq(registry.signatureContentHash(ITEM, alice), contentHash);
+    }
+
+    function test_record_and_attest_are_independent() public {
+        vm.prank(alice);
+        registry.recordSignature(ITEM, keccak256("content"), hex"aa");
+        assertFalse(registry.hasAttested(ITEM, alice));
+        vm.prank(alice);
+        registry.attest(ITEM);
+        assertTrue(registry.hasAttested(ITEM, alice));
+        assertTrue(registry.hasRecordedSignature(ITEM, alice));
+    }
 }
