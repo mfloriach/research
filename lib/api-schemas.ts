@@ -37,9 +37,7 @@ export const debateInputSchema = z
         error: `Label must be at most ${MAX_DEBATE_LABEL_LENGTH} characters`,
       })
       .optional()
-      .describe(
-        "Reporting tab label. Reuses the tab when it exists, otherwise creates it.",
-      ),
+      .describe("Article label. Groups the article in the reporting view."),
     description: z
       .string({ error: "Description must be a string" })
       .trim()
@@ -55,11 +53,6 @@ export const debateInputSchema = z
       .describe(
         "Markdown report body. Blank-line separated paragraphs become stored paragraphs.",
       ),
-    tabId: z
-      .string({ error: "Tab ID must be a string" })
-      .min(1, { error: "Tab ID must not be empty" })
-      .optional()
-      .describe("Existing reporting tab ID. Takes precedence over label."),
   })
   .meta({ id: "DebateInput" });
 
@@ -68,7 +61,7 @@ export type DebateInput = z.infer<typeof debateInputSchema>;
 export const debateResponseSchema = z
   .object({
     articleId: z.string().describe("Created reporting article ID"),
-    tabId: z.string().describe("Reporting tab the article was stored under"),
+    tab: z.string().describe("Article label the report was stored under"),
     paragraphIds: z
       .array(z.string())
       .describe("Stored paragraph IDs in document order"),
@@ -94,14 +87,6 @@ export const searchResponseSchema = z
   })
   .meta({ id: "SearchResponse" });
 
-const menuItemSchema = z
-  .object({
-    id: z.string(),
-    label: z.string(),
-    href: z.string(),
-  })
-  .meta({ id: "MenuItem" });
-
 const siteContentSchema = z
   .object({
     brand: z.string(),
@@ -112,10 +97,6 @@ const siteContentSchema = z
       label: z.string(),
     }),
     avatar: z.object({ src: z.string(), alt: z.string() }),
-    menu: z.object({
-      label: z.string(),
-      items: z.array(menuItemSchema),
-    }),
   })
   .meta({ id: "SiteContent" });
 
@@ -173,7 +154,7 @@ const auditTabSchema = z
 
 export const contentResponseSchema = z
   .object({
-    site: siteContentSchema.describe("Site chrome, search copy and menu"),
+    site: siteContentSchema.describe("Site chrome and search copy"),
     heading: headingContentSchema.describe("Page heading copy"),
     reportingCard: z
       .object({
@@ -232,7 +213,7 @@ export const auditItemInputSchema = z
 export const auditItemResponseSchema = z
   .object({
     itemId: z.string().describe("Created audit item ID"),
-    tabId: z.string().describe("Audit tab the item was stored under"),
+    tab: z.string().describe("Audit tab label the item was stored under"),
     ipfsCid: z.string().describe("IPFS CID of the pinned item envelope"),
   })
   .meta({ id: "AuditItemResponse" });

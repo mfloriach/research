@@ -538,15 +538,15 @@ components:
         itemId:
           type: string
           description: Created audit item ID
-        tabId:
+        tab:
           type: string
-          description: Audit tab the item was stored under
+          description: Audit tab label the item was stored under
         ipfsCid:
           type: string
           description: IPFS CID of the pinned item envelope
       required:
         - itemId
-        - tabId
+        - tab
         - ipfsCid
     AuditTab:
       type: object
@@ -573,7 +573,7 @@ components:
         site:
           allOf:
             - $ref: '#/components/schemas/SiteContent'
-          description: Site chrome, search copy and menu
+          description: Site chrome and search copy
         heading:
           allOf:
             - $ref: '#/components/schemas/HeadingContent'
@@ -632,16 +632,12 @@ components:
         label:
           type: string
           maxLength: 60
-          description: Reporting tab label. Reuses the tab when it exists, otherwise creates it.
+          description: Article label. Groups the article in the reporting view.
         description:
           type: string
           minLength: 1
           maxLength: 20000
           description: Markdown report body. Blank-line separated paragraphs become stored paragraphs.
-        tabId:
-          type: string
-          minLength: 1
-          description: Existing reporting tab ID. Takes precedence over label.
       required:
         - title
         - description
@@ -651,9 +647,9 @@ components:
         articleId:
           type: string
           description: Created reporting article ID
-        tabId:
+        tab:
           type: string
-          description: Reporting tab the article was stored under
+          description: Article label the report was stored under
         paragraphIds:
           type: array
           items:
@@ -664,7 +660,7 @@ components:
           description: IPFS CID of the pinned report envelope
       required:
         - articleId
-        - tabId
+        - tab
         - paragraphIds
         - ipfsCid
     ErrorResponse:
@@ -721,19 +717,6 @@ components:
       required:
         - interpretationId
         - openCount
-    MenuItem:
-      type: object
-      properties:
-        id:
-          type: string
-        label:
-          type: string
-        href:
-          type: string
-      required:
-        - id
-        - label
-        - href
     reportCreateFormSchema:
       type: object
       properties:
@@ -844,25 +827,12 @@ components:
           required:
             - src
             - alt
-        menu:
-          type: object
-          properties:
-            label:
-              type: string
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/MenuItem'
-          required:
-            - label
-            - items
       required:
         - brand
         - title
         - description
         - search
         - avatar
-        - menu
     SourceOpenResponse:
       type: object
       properties:

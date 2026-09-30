@@ -12,11 +12,16 @@ import {
 } from "@/lib/anvil";
 import { Search } from "./search";
 
-export type SiteNavbarMenuItem = {
-  id: string;
-  label: string;
-  href: string;
-};
+/**
+ * Account dropdown entries. Hardcoded: there is no menu_items collection.
+ */
+const MENU_LABEL = "Account menu";
+
+const MENU_ITEMS: ReadonlyArray<{ id: string; label: string; href: string }> = [
+  { id: "profile", label: "Profile", href: "#profile" },
+  { id: "settings", label: "Settings", href: "#settings" },
+  { id: "sign-out", label: "Sign out", href: "#sign-out" },
+];
 
 type EthereumProvider = AnvilEthereumProvider;
 
@@ -35,10 +40,6 @@ export type SiteNavbarProps = {
   avatar: {
     src: string;
     alt: string;
-  };
-  menu: {
-    label: string;
-    items: SiteNavbarMenuItem[];
   };
   connect?: {
     label: string;
@@ -67,7 +68,6 @@ export function SiteNavbar({
   brand,
   search,
   avatar,
-  menu,
   connect = { label: "Connect wallet" },
   disconnect = {},
   walletAddress,
@@ -275,7 +275,7 @@ export function SiteNavbar({
               className="menu dropdown-content z-1 mt-3 w-52 rounded-box bg-base-100 p-2 shadow"
             >
               <li>
-                <span className="menu-title">{menu.label}</span>
+                <span className="menu-title">{MENU_LABEL}</span>
               </li>
               {address ? (
                 <li>
@@ -288,7 +288,7 @@ export function SiteNavbar({
                   </span>
                 </li>
               ) : null}
-              {menu.items.map((item) => (
+              {MENU_ITEMS.map((item) => (
                 <li key={item.id}>
                   <a href={item.href}>{item.label}</a>
                 </li>

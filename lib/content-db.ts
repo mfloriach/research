@@ -1,10 +1,10 @@
 /**
  * Read page content from MongoDB and reassemble it into the shapes
- * defined in `lib/content.ts`.
+ * defined in `db/content.ts`.
  */
 import { getDb } from "@/lib/mongodb";
-import { logger } from "@/lib/logger";
 import type { Article, CollapsibleItem, ContentTab } from "@/db/content";
+import { AUDIT_TABS } from "@/db/content";
 import { COLLECTIONS } from "@/db/migration";
 
 type SiteContent = {
@@ -13,7 +13,6 @@ type SiteContent = {
   description: string;
   search: { placeholder: string; label: string };
   avatar: { src: string; alt: string };
-  menu: { label: string; items: { id: string; label: string; href: string }[] };
 };
 
 type HeadingContent = {
@@ -38,7 +37,6 @@ export type DbContent = {
   auditCard: AuditCardContent;
 };
 
-type MenuItemDoc = { _id: string; label: string; href: string };
 type SiteConfigDoc = {
   _id: string;
   brand: string;
@@ -46,37 +44,31 @@ type SiteConfigDoc = {
   description: string;
   search: { placeholder: string; label: string };
   avatar: { src: string; alt: string };
-  menu: { label: string; itemIds: string[] };
 };
 type HeadingDoc = { _id: string; title: string; description: string };
-type ReportingTabDoc = { _id: string; label: string; order?: number };
-type ReportingArticleDoc = {
-  _id: string;
-  tabId: string;
-  title: string;
-  order?: number;
-};
-type ReportingParagraphDoc = {
-  _id: string;
-  articleId: string;
+type StoredParagraphDoc = {
+  id: string;
   text: string;
   auditItemIds: string[];
   order?: number;
 };
-type AuditTabDoc = {
+type ArticleDoc = {
   _id: string;
+  title: string;
+  type: string;
   label: string;
+  paragraphs: StoredParagraphDoc[];
+  ipfsCid?: string;
   order?: number;
-  author?: string;
-  date?: string;
 };
 type AuditItemDoc = {
   _id: string;
-  tabId: string;
+  tab: string;
   title: string;
   paragraphs: string[];
   author?: string;
   date?: string;
+  ipfsCid?: string;
   order?: number;
   openCount?: number;
 };
@@ -85,11 +77,6 @@ const byOrder = (a: { order?: number }, b: { order?: number }) =>
   (a.order ?? 0) - (b.order ?? 0);
 
 export async function getContentFromDb(): Promise<DbContent> {
-  // const started = performance.now();
-  // const contentLog = logger.child({
-  //   component: "content-db",
-  //   operation: "getContentFromDb",
-  // });
   const db = await getDb();
 
   const [siteDoc, headingDoc] = await Promise.all([
@@ -104,66 +91,48 @@ export async function getContentFromDb(): Promise<DbContent> {
     );
   }
 
-  const itemIds = siteDoc.menu.itemIds ?? [];
-  const menuDocs = itemIds.length
-    ? await db
-        .collection<MenuItemDoc>(COLLECTIONS.menuItems)
-        .find({ _id: { $in: itemIds } })
-        .toArray()
-    : [];
-  const menuById = new Map(menuDocs.map((d) => [d._id, d]));
-
-  const [
-    reportingTabs,
-    reportingArticles,
-    reportingParagraphs,
-    auditTabs,
-    auditItems,
-  ] = await Promise.all([
-    db
-      .collection<ReportingTabDoc>(COLLECTIONS.reportingTabs)
-      .find({})
-      .toArray(),
-    db
-      .collection<ReportingArticleDoc>(COLLECTIONS.reportingArticles)
-      .find({})
-      .toArray(),
-    db
-      .collection<ReportingParagraphDoc>(COLLECTIONS.reportingParagraphs)
-      .find({})
-      .toArray(),
-    db.collection<AuditTabDoc>(COLLECTIONS.auditTabs).find({}).toArray(),
+  const [articleDocs, auditItems] = await Promise.all([
+    db.collection<ArticleDoc>(COLLECTIONS.articles).find({}).toArray(),
     db.collection<AuditItemDoc>(COLLECTIONS.auditItems).find({}).toArray(),
   ]);
 
-  const paragraphsByArticle = new Map<
-    string,
-    { id: string; text: string; auditItemIds: string[]; order: number }[]
-  >();
-  for (const p of reportingParagraphs) {
-    const list = paragraphsByArticle.get(p.articleId) ?? [];
-    list.push({
-      id: p._id,
-      text: p.text,
-      auditItemIds: p.auditItemIds,
-      order: p.order ?? 0,
-    });
-    paragraphsByArticle.set(p.articleId, list);
-  }
-
-  const articlesByTab = new Map<string, (Article & { order: number })[]>();
-  for (const a of reportingArticles) {
-    const paragraphs = (paragraphsByArticle.get(a._id) ?? [])
+  const articlesByLabel = new Map<string, (Article & { order: number })[]>();
+  for (const doc of articleDocs) {
+    const paragraphs = (doc.paragraphs ?? [])
+      .slice()
       .sort(byOrder)
-      .map((p) => ({ id: p.id, text: p.text, auditItemIds: p.auditItemIds }));
-    const list = articlesByTab.get(a.tabId) ?? [];
-    list.push({ id: a._id, title: a.title, order: a.order ?? 0, paragraphs });
-    articlesByTab.set(a.tabId, list);
+      .map((paragraph) => ({
+        id: paragraph.id,
+        text: paragraph.text,
+        auditItemIds: paragraph.auditItemIds ?? [],
+      }));
+    const list = articlesByLabel.get(doc.label) ?? [];
+    list.push({
+      id: doc._id,
+      title: doc.title,
+      order: doc.order ?? 0,
+      paragraphs,
+    });
+    articlesByLabel.set(doc.label, list);
   }
+  const reportingTabs = [...articlesByLabel.entries()]
+    .map(([label, entries]) => ({
+      id: label,
+      label,
+      order: Math.min(...entries.map((entry) => entry.order)),
+      items: entries
+        .sort(byOrder)
+        .map((article) => ({
+          id: article.id,
+          title: article.title,
+          paragraphs: article.paragraphs,
+        })),
+    }))
+    .sort(byOrder);
 
   const itemsByTab = new Map<string, (CollapsibleItem & { order: number })[]>();
   for (const item of auditItems) {
-    const list = itemsByTab.get(item.tabId) ?? [];
+    const list = itemsByTab.get(item.tab) ?? [];
     list.push({
       id: item._id,
       title: item.title,
@@ -173,10 +142,10 @@ export async function getContentFromDb(): Promise<DbContent> {
       openCount: item.openCount ?? 0,
       order: item.order ?? 0,
     });
-    itemsByTab.set(item.tabId, list);
+    itemsByTab.set(item.tab, list);
   }
 
-  const result = {
+  return {
     site: {
       brand: siteDoc.brand,
       title: siteDoc.title,
@@ -186,14 +155,6 @@ export async function getContentFromDb(): Promise<DbContent> {
         label: siteDoc.search.label,
       },
       avatar: { src: siteDoc.avatar.src, alt: siteDoc.avatar.alt },
-      menu: {
-        label: siteDoc.menu.label,
-        items: itemIds.map((id) => ({
-          id,
-          label: menuById.get(id)?.label ?? id,
-          href: menuById.get(id)?.href ?? "#",
-        })),
-      },
     },
     heading: {
       title: headingDoc.title,
@@ -201,26 +162,16 @@ export async function getContentFromDb(): Promise<DbContent> {
     },
     reportingCard: {
       title: "Reporting",
-      tabs: reportingTabs.sort(byOrder).map((tab) => ({
-        id: tab._id,
-        label: tab.label,
-        items: (articlesByTab.get(tab._id) ?? [])
-          .sort(byOrder)
-          .map((article) => ({
-            id: article.id,
-            title: article.title,
-            paragraphs: article.paragraphs,
-          })),
-      })),
+      tabs: reportingTabs,
     },
     auditCard: {
       title: "Argument audit",
-      tabs: auditTabs.sort(byOrder).map((tab) => ({
-        id: tab._id,
+      tabs: AUDIT_TABS.map((tab) => ({
+        id: tab.label,
         label: tab.label,
         ...(tab.author ? { author: tab.author } : {}),
         ...(tab.date ? { date: tab.date } : {}),
-        items: (itemsByTab.get(tab._id) ?? []).sort(byOrder).map((item) => ({
+        items: (itemsByTab.get(tab.label) ?? []).sort(byOrder).map((item) => ({
           id: item.id,
           title: item.title,
           ...(item.author ? { author: item.author } : {}),
@@ -231,6 +182,4 @@ export async function getContentFromDb(): Promise<DbContent> {
       })),
     },
   };
-
-  return result;
 }

@@ -1,19 +1,13 @@
-import { randomUUID } from "node:crypto";
 import { NextResponse } from "next/server";
-import { Int32 } from "mongodb";
-import { getDb } from "@/lib/mongodb";
-import { COLLECTIONS } from "@/db/migration";
 import { debateInputSchema, splitMarkdownParagraphs } from "@/lib/api-schemas";
-import { pinJson } from "@/lib/ipfs";
 import { parseJson } from "@/lib/parse_json";
-
-type ReportingTabDoc = { _id: string; label: string; order?: number };
+import { createReport } from "@/app/server/repositories/reporting";
 
 /**
  * Create a debate report
  *
  * @description Pins the report to IPFS, then stores it as an article with
- * paragraphs, reusing or creating the target reporting tab.
+ * embedded paragraphs under its label.
  * @tag Debates
  * @requestBody DebateInput required
  * @response 201:DebateResponse:Report stored
@@ -24,15 +18,7 @@ type ReportingTabDoc = { _id: string; label: string; order?: number };
 export const POST = async (request: Request) => {
   const parsed = await parseJson(request, debateInputSchema);
 
-  const {
-    title: cleanTitle,
-    description: cleanDescription,
-    tabId: rawTabId,
-    label: rawLabel,
-  } = parsed;
-  const cleanLabel = rawLabel ?? "";
-
-  const chunks = splitMarkdownParagraphs(cleanDescription);
+  const chunks = splitMarkdownParagraphs(parsed.description);
   if (chunks.length === 0) {
     return NextResponse.json(
       { error: "Description must not be empty" },
@@ -40,116 +26,20 @@ export const POST = async (request: Request) => {
     );
   }
 
-  const db = await getDb();
-
-  let targetTabId =
-    typeof rawTabId === "string" && rawTabId.length > 0 ? rawTabId : null;
-  if (targetTabId) {
-    const tab = await db
-      .collection<ReportingTabDoc>(COLLECTIONS.reportingTabs)
-      .findOne({ _id: targetTabId }, { projection: { _id: 1 } });
-    if (!tab) {
-      return NextResponse.json(
-        { error: "Unknown reporting tab" },
-        { status: 400 },
-      );
-    }
-  } else if (cleanLabel.length > 0) {
-    const existing = await db
-      .collection<ReportingTabDoc>(COLLECTIONS.reportingTabs)
-      .findOne({ label: cleanLabel });
-    if (existing) {
-      targetTabId = existing._id;
-    } else {
-      const lastTab = await db
-        .collection<ReportingTabDoc>(COLLECTIONS.reportingTabs)
-        .find({})
-        .sort({ order: -1 })
-        .limit(1)
-        .toArray();
-      const nextOrder = (lastTab[0]?.order ?? -1) + 1;
-      targetTabId = randomUUID();
-      await db
-        .collection<{
-          _id: string;
-          label: string;
-          order: Int32;
-        }>(COLLECTIONS.reportingTabs)
-        .insertOne({
-          _id: targetTabId,
-          label: cleanLabel,
-          order: new Int32(nextOrder),
-        });
-    }
-  } else {
-    const firstTab = await db
-      .collection<ReportingTabDoc>(COLLECTIONS.reportingTabs)
-      .find({})
-      .sort({ order: 1 })
-      .limit(1)
-      .toArray();
-    if (firstTab.length === 0) {
-      return NextResponse.json(
-        { error: "No reporting tabs available" },
-        { status: 500 },
-      );
-    }
-    targetTabId = firstTab[0]._id;
-  }
-
-  const articleOrder = await db
-    .collection<{ _id: string }>(COLLECTIONS.reportingArticles)
-    .countDocuments({ tabId: targetTabId });
-  const articleId = randomUUID();
-
-  let ipfsCid = await pinJson({
-    kind: "report",
-    title: cleanTitle,
-    ...(cleanLabel.length > 0 ? { label: cleanLabel } : {}),
-    description: cleanDescription,
-    paragraphs: chunks,
-  });
-
-  await db
-    .collection<{
-      _id: string;
-      tabId: string;
-      title: string;
-      ipfsCid: string;
-      order: Int32;
-    }>(COLLECTIONS.reportingArticles)
-    .insertOne({
-      _id: articleId,
-      tabId: targetTabId,
-      title: cleanTitle,
-      ipfsCid,
-      order: new Int32(articleOrder),
-    });
-
-  const paragraphDocs = chunks.map((text, index) => ({
-    _id: randomUUID(),
-    articleId,
-    text,
-    auditItemIds: [] as string[],
-    order: new Int32(index),
-  }));
-  if (paragraphDocs.length > 0) {
-    await db
-      .collection<{
-        _id: string;
-        articleId: string;
-        text: string;
-        auditItemIds: string[];
-        order: Int32;
-      }>(COLLECTIONS.reportingParagraphs)
-      .insertMany(paragraphDocs);
-  }
+  const { articleId, tab, paragraphIds, ipfsCid } = await createReport(
+    {
+      title: parsed.title,
+      description: parsed.description,
+      ...(parsed.label ? { label: parsed.label } : {}),
+    },
+    chunks,
+  );
 
   return NextResponse.json(
     {
       articleId,
-      tabId: targetTabId,
-      paragraphIds: paragraphDocs.map((doc) => doc._id),
+      tab: tab,
+      paragraphIds,
       ipfsCid,
     },
     { status: 201 },

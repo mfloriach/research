@@ -24,23 +24,28 @@ function setup() {
   return { setQuery };
 }
 
+async function openModal(user: ReturnType<typeof userEvent.setup>) {
+  await user.click(screen.getByPlaceholderText("Search"));
+  expect(screen.getByRole("dialog")).toBeInTheDocument();
+}
+
 describe("Search", () => {
   it("opens the modal when the trigger is clicked", async () => {
     const user = userEvent.setup();
     setup();
 
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
-    await user.click(screen.getByRole("button", { name: "Open search" }));
+    await openModal(user);
 
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
-    expect(screen.getByPlaceholderText("Search the dossier")).toBeInTheDocument();
+    expect(
+      screen.getByPlaceholderText("Search the dossier"),
+    ).toBeInTheDocument();
   });
 
   it("closes the modal when clicking outside", async () => {
     const user = userEvent.setup();
     setup();
-    await user.click(screen.getByRole("button", { name: "Open search" }));
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    await openModal(user);
 
     fireEvent.click(document.querySelector(".fixed.inset-0") as HTMLElement);
 
@@ -50,8 +55,7 @@ describe("Search", () => {
   it("closes the modal on Escape", async () => {
     const user = userEvent.setup();
     setup();
-    await user.click(screen.getByRole("button", { name: "Open search" }));
-    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    await openModal(user);
 
     await user.keyboard("{Escape}");
 
@@ -61,12 +65,15 @@ describe("Search", () => {
   it("keeps the modal open when clicking inside and forwards typing", async () => {
     const user = userEvent.setup();
     const { setQuery } = setup();
-    await user.click(screen.getByRole("button", { name: "Open search" }));
+    await openModal(user);
 
     await user.click(screen.getByRole("dialog"));
     expect(screen.getByRole("dialog")).toBeInTheDocument();
 
-    await user.type(screen.getByPlaceholderText("Search the dossier"), "clima");
+    await user.type(
+      screen.getByPlaceholderText("Search the dossier"),
+      "clima",
+    );
     expect(setQuery).toHaveBeenLastCalledWith("clima");
   });
 });

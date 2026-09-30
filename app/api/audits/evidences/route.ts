@@ -20,10 +20,10 @@ export const POST = async (request: Request) => {
 
   const paragraphs = splitAuditParagraphs(data.content);
 
-  const { itemId, tabId, ipfsCid } = await createEvidence({
+  const { itemId, tab, ipfsCid } = await createEvidence({
     ...data,
     paragraphs,
   });
 
-  return NextResponse.json({ itemId, tabId, ipfsCid }, { status: 201 });
+  return NextResponse.json({ itemId, tab, ipfsCid }, { status: 201 });
 };

@@ -19,10 +19,10 @@ export const POST = async (request: Request) => {
   const data = await parseJson(request, auditItemSchema);
   const paragraphs = splitAuditParagraphs(data.content);
 
-  const { itemId, tabId, ipfsCid } = await createSource({
+  const { itemId, tab, ipfsCid } = await createSource({
     ...data,
     paragraphs,
   });
 
-  return NextResponse.json({ itemId, tabId, ipfsCid }, { status: 201 });
+  return NextResponse.json({ itemId, tab, ipfsCid }, { status: 201 });
 };

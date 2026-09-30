@@ -4,11 +4,11 @@ import { getDb } from "@/lib/mongodb";
 import { pinJson } from "@/lib/ipfs";
 import { COLLECTIONS } from "@/db/migration";
 
-export class AuditTabNotFoundError extends Error {}
-
 export class UnknownParagraphsError extends Error {}
 
 export class AuditItemNotFoundError extends Error {}
+
+const TAB = "Fallacies";
 
 export type CreateFallacyInput = {
   title: string;
@@ -21,32 +21,30 @@ export type CreateFallacyInput = {
 
 export type CreatedFallacy = {
   itemId: string;
-  tabId: string;
+  tab: string;
   ipfsCid: string;
 };
 
 export async function createFallacy(input: CreateFallacyInput): Promise<CreatedFallacy> {
   const db = await getDb();
 
-  const tab = await db
-    .collection<{ _id: string; label: string }>(COLLECTIONS.auditTabs)
-    .findOne({ label: "Fallacies" });
-  if (!tab) {
-    throw new AuditTabNotFoundError(`No Fallacies audit tab available`);
-  }
-
   if (input.paragraphIds.length > 0) {
-    const matched = await db
-      .collection<{ _id: string }>(COLLECTIONS.reportingParagraphs)
-      .countDocuments({ _id: { $in: input.paragraphIds } });
-    if (matched !== input.paragraphIds.length) {
+    const docs = await db
+      .collection<{ paragraphs: { id: string }[] }>(COLLECTIONS.articles)
+      .find(
+        { "paragraphs.id": { $in: input.paragraphIds } },
+        { projection: { paragraphs: 1 } },
+      )
+      .toArray();
+    const found = new Set(docs.flatMap((doc) => doc.paragraphs.map((p) => p.id)));
+    if (!input.paragraphIds.every((id) => found.has(id))) {
       throw new UnknownParagraphsError("One or more related paragraphs do not exist");
     }
   }
 
   const itemOrder = await db
     .collection<{ _id: string }>(COLLECTIONS.auditItems)
-    .countDocuments({ tabId: tab._id });
+    .countDocuments({ tab: TAB });
   const itemId = randomUUID();
 
   const ipfsCid = await pinJson({
@@ -62,7 +60,7 @@ export async function createFallacy(input: CreateFallacyInput): Promise<CreatedF
   await db
     .collection<{
       _id: string;
-      tabId: string;
+      tab: string;
       title: string;
       paragraphs: string[];
       author?: string;
@@ -72,7 +70,7 @@ export async function createFallacy(input: CreateFallacyInput): Promise<CreatedF
     }>(COLLECTIONS.auditItems)
     .insertOne({
       _id: itemId,
-      tabId: tab._id,
+      tab: TAB,
       title: input.title,
       paragraphs: input.paragraphs,
       ...(input.author ? { author: input.author } : {}),
@@ -82,12 +80,14 @@ export async function createFallacy(input: CreateFallacyInput): Promise<CreatedF
     });
 
   if (input.paragraphIds.length > 0) {
-    await db
-      .collection<{ _id: string }>(COLLECTIONS.reportingParagraphs)
-      .updateMany({ _id: { $in: input.paragraphIds } }, { $addToSet: { auditItemIds: itemId } });
+    await db.collection(COLLECTIONS.articles).updateMany(
+      { "paragraphs.id": { $in: input.paragraphIds } },
+      { $addToSet: { "paragraphs.$[p].auditItemIds": itemId } },
+      { arrayFilters: [{ "p.id": { $in: input.paragraphIds } }] },
+    );
   }
 
-  return { itemId, tabId: tab._id, ipfsCid };
+  return { itemId, tab: TAB, ipfsCid };
 }
 
 export async function incrementFallacyOpenCount(itemId: string): Promise<number> {

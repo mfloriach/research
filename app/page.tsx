@@ -52,7 +52,7 @@ export default function Home() {
 
   return (
     <>
-      <SiteNavbar brand={site.brand} search={site.search} avatar={site.avatar} menu={site.menu} />
+      <SiteNavbar brand={site.brand} search={site.search} avatar={site.avatar} />
 
       <main className="flex-1">
         <div className="mx-8 py-8 sm:py-10">

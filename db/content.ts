@@ -21,6 +21,14 @@ export type Article = {
   paragraphs: ReportingParagraph[];
 };
 
+/** Stored article document (`articles` collection): display fields plus storage metadata. */
+export type StoredArticle = Article & {
+  type: "text";
+  label: string;
+  ipfsCid?: string;
+  order: number;
+};
+
 export type CollapsibleItem = {
   id: string;
   title: string;
@@ -38,11 +46,21 @@ export type ContentTab<T> = {
   date?: string;
 };
 
-export type MenuItem = {
-  id: string;
+/**
+ * Canonical audit tabs, in display order. Tab names are hardcoded here
+ * (there is no audit_tabs collection); audit items reference them by label.
+ */
+export const AUDIT_TABS: ReadonlyArray<{
   label: string;
-  href: string;
-};
+  author?: string;
+  date?: string;
+}> = [
+  { label: "Contraargument" },
+  { label: "Fallacies", author: "J. Kim", date: "2025-02-14" },
+  { label: "Evidences" },
+  { label: "Sources" },
+  { label: "Interpretation", author: "T. Nguyen", date: "2025-04-17" },
+];
 
 export const site = {
   brand: "Epistimology",
@@ -56,26 +74,6 @@ export const site = {
   avatar: {
     src: "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp",
     alt: "Signed-in user avatar",
-  },
-  menu: {
-    label: "Account menu",
-    items: [
-      {
-        id: "32d73367-260e-4855-b7dc-dab080ed8929",
-        label: "Profile",
-        href: "#profile",
-      },
-      {
-        id: "99626ca3-7156-4461-b224-1616f023f6c2",
-        label: "Settings",
-        href: "#settings",
-      },
-      {
-        id: "f01fadf6-e614-4523-8bb3-aab85b8feaa3",
-        label: "Sign out",
-        href: "#sign-out",
-      },
-    ] satisfies MenuItem[],
   },
 };
 
