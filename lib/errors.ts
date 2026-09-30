@@ -1,4 +1,4 @@
-export class AppError extends Error {
+export class HttpResponse extends Error {
   constructor(
     public statusCode: number,
     message: string,
@@ -8,17 +8,27 @@ export class AppError extends Error {
   }
 }
 
-export class NotFoundError extends AppError {
+export class NotFoundError extends HttpResponse {
   constructor(message = "Resource not found") {
     super(404, message);
     this.name = "ResourceNotFound";
   }
 }
 
-export class BadRequestError extends AppError {
+export class BadRequestError extends HttpResponse {
   constructor(message = "Bad request") {
     super(400, message);
     this.name = "BadRequest";
+  }
+}
+
+export class AppError extends Error {
+  constructor(
+    public statusCode: number,
+    message: string,
+  ) {
+    super(message);
+    this.name = "AppError";
   }
 }
 

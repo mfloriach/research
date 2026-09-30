@@ -1,4 +1,5 @@
 import { z } from "zod";
+import {BadRequestError} from "@/lib/errors"
 
 export async function parseJson<T>(
   request: Request,
@@ -21,26 +22,4 @@ export async function parseJson<T>(
   }
 
   return result.data;
-}
-
-class HttpError extends Error {
-  constructor(
-    message: string,
-    public readonly status: number,
-  ) {
-    super(message);
-    this.name = "HttpError";
-  }
-}
-
-class BadRequestError extends HttpError {
-  constructor(message: string) {
-    super(message, 400);
-  }
-}
-
-class NotFoundError extends HttpError {
-  constructor(message = "Not found") {
-    super(message, 404);
-  }
 }

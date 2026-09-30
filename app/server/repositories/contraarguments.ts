@@ -3,10 +3,7 @@ import { Int32 } from "mongodb";
 import { getDb } from "@/lib/mongodb";
 import { pinJson } from "@/lib/ipfs";
 import { COLLECTIONS } from "@/db/migration";
-
-export class UnknownParagraphsError extends Error {}
-
-export class AuditItemNotFoundError extends Error {}
+import {NotFoundError} from "@/lib/errors"
 
 const TAB = "Contraargument";
 
@@ -40,7 +37,7 @@ export async function createContraargument(
       .toArray();
     const found = new Set(docs.flatMap((doc) => doc.paragraphs.map((p) => p.id)));
     if (!input.paragraphIds.every((id) => found.has(id))) {
-      throw new UnknownParagraphsError("One or more related paragraphs do not exist");
+      throw new NotFoundError("One or more related paragraphs do not exist");
     }
   }
 
@@ -105,7 +102,7 @@ export async function incrementContraargumentOpenCount(itemId: string): Promise<
       { returnDocument: "after" },
     );
   if (!updated) {
-    throw new AuditItemNotFoundError(`No contraargument with id ${itemId}`);
+    throw new NotFoundError(`No contraargument with id ${itemId}`);
   }
   return updated.openCount ?? 1;
 }

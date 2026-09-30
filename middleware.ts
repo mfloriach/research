@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getRequestLogger } from "@/lib/logger";
-import { IpfsUnavailableError } from "@/lib/errors";
+import { AppError, HttpResponse, IpfsUnavailableError } from "@/lib/errors";
 
 export function getRequestId(request: Request): string {
   return request.headers.get("x-request-id") ?? crypto.randomUUID();
@@ -76,8 +76,12 @@ export function middleware(request: NextRequest) {
       `${method} ${url.pathname} failed in ${durationMs}ms`,
     );
 
-    if (error instanceof IpfsUnavailableError) {
-      return NextResponse.json({ error: "IPFS unavailable" }, { status: 500 });
+    if (error instanceof HttpResponse) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
+    }
+
+    if (error instanceof AppError) {
+      return NextResponse.json({ error: error.message }, { status: error.statusCode });
     }
 
     return NextResponse.json(
