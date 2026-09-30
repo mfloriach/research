@@ -12,6 +12,7 @@ import { Int32 } from "mongodb";
 import { getDb, closeDb } from "../lib/mongodb";
 import { COLLECTIONS, migrate } from "./migration";
 import { argument, reportingCard, auditCard } from "./content";
+import { articleEmbeddingText, embedText } from "../lib/embeddings";
 
 const MAIN_ARGUMENT_ID = "main-argument";
 
@@ -61,6 +62,23 @@ export async function seed(): Promise<void> {
   }
   if (articleDocs.length > 0) {
     await articles.insertMany(articleDocs);
+    console.log(`[seed] embedding ${articleDocs.length} articles…`);
+    const embeddings = db.collection<{ _id: string; articleId: string; embedding: number[] }>(
+      COLLECTIONS.articleEmbeddings,
+    );
+    for (const doc of articleDocs) {
+      const paragraphs = ((doc.paragraphs ?? []) as { text?: string }[]).map(
+        (paragraph) => paragraph.text ?? "",
+      );
+      const embedding = await embedText(
+        articleEmbeddingText(String(doc.title), paragraphs),
+      );
+      await embeddings.insertOne({
+        _id: `emb-${String(doc._id)}`,
+        articleId: String(doc._id),
+        embedding,
+      });
+    }
   }
 
   const replyDocs: SeedDoc[] = [];

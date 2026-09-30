@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
   ANVIL_CHAIN_ID_HEX,
@@ -80,15 +80,27 @@ export function SiteNavbar({
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
+  const lastSubmittedQuery = useRef<string | null>(null);
+
+  async function fetchSearch(value: string) {
+    const data = await fetch(`/api/search?q=${encodeURIComponent(value)}`)
+    console.log(data)
+  }
+
+  async function handleSearchSubmit(value: string) {
+    lastSubmittedQuery.current = value;
+    await fetchSearch(value);
+  }
 
   useEffect(() => {
     if (query.trim() === "") {
       return;
     }
     const timer = setTimeout(() => {
-      fetch(`/api/search?q=${encodeURIComponent(query)}`).catch(() => {
-        // Search logging is best-effort; ignore network errors.
-      });
+      if (lastSubmittedQuery.current === query) {
+        return;
+      }
+      fetchSearch(query);
     }, 300);
     return () => clearTimeout(timer);
   }, [query]);
@@ -252,7 +264,7 @@ export function SiteNavbar({
       </div>
 
       <div className="navbar-end gap-2">
-        <Search query={query} setQuery={setQuery} search={search} />
+        <Search query={query} setQuery={setQuery} search={search} onSubmitSearch={handleSearchSubmit} />
 
         {isConnected ? (
           <div className="dropdown dropdown-end">

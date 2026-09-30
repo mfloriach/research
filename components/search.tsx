@@ -9,9 +9,11 @@ export type SearchProps = {
   };
   query: string;
   setQuery: (query: string) => void;
+  /** Called with the current query when the form is submitted (Enter). */
+  onSubmitSearch?: (query: string) => void;
 };
 
-export function Search({ search, query, setQuery }: SearchProps) {
+export function Search({ search, query, setQuery, onSubmitSearch }: SearchProps) {
   const [open, setOpen] = useState(false);
 
   useEffect(() => {
@@ -69,6 +71,16 @@ export function Search({ search, query, setQuery }: SearchProps) {
             onClick={(event) => event.stopPropagation()}
           >
             <div className="card-body">
+              <form
+                onSubmit={async (event) => {
+                  event.preventDefault();
+                  if (query.trim() === "") {
+                    return;
+                  }
+                  await onSubmitSearch?.(query);
+                  setOpen(false);
+                }}
+              >
               <label className="input w-full">
                 <svg
                   className="h-[1em] opacity-50"
@@ -100,6 +112,7 @@ export function Search({ search, query, setQuery }: SearchProps) {
                   }}
                 />
               </label>
+              </form>
             </div>
           </div>
         </div>

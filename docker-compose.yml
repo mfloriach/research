@@ -2,11 +2,15 @@ services:
   anvil:
     image: ghcr.io/foundry-rs/foundry:latest
     container_name: anvil-node
+    restart: unless-stopped
     ports:
       - "8545:8545"
-    # Adjust arguments based on your project's needs (e.g., adding a fork URL)
-    entrypoint: ["anvil", "--host", "0.0.0.0", "--port", "8545"]
-    restart: unless-stopped
+    entrypoint:
+      - anvil
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8545"
 
   ipfs:
     image: ipfs/kubo:latest
@@ -20,46 +24,44 @@ services:
       - ipfs-data:/data/ipfs
     healthcheck:
       test: ["CMD", "ipfs", "version"]
-      interval: 30s
-      timeout: 5s
-      retries: 3
-      start_period: 20s
-
-  mongodb:
-    image: mongo:7
-    container_name: epistimology-mongodb
-    restart: unless-stopped
-    ports:
-      - "27017:27017"
-    environment:
-      MONGO_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
-      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-admin123}
-      MONGO_INITDB_DATABASE: ${MONGODB_DB:-epistimology}
-    volumes:
-      - mongodb-data:/data/db
-    healthcheck:
-      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping')"]
       interval: 10s
       timeout: 5s
       retries: 5
       start_period: 20s
 
+  mongodb:
+    image: mongodb/mongodb-atlas-local:7
+    container_name: epistimology-mongodb
+    hostname: mongodb
+    restart: unless-stopped
+    ports:
+      - "27017:27017"
+    environment:
+      MONGODB_INITDB_ROOT_USERNAME: ${MONGO_ROOT_USER:-admin}
+      MONGODB_INITDB_ROOT_PASSWORD: ${MONGO_ROOT_PASSWORD:-admin123}
+    volumes:
+      - mongodb-data:/data/db
+      - mongodb-config:/data/configdb
+      - mongodb-mongot:/data/mongot
+
   mongo-express:
     image: mongo-express:latest
-    container_name: mongo-express
+    container_name: epistimology-mongo-express
     restart: unless-stopped
     ports:
       - "8081:8081"
     environment:
-      ME_CONFIG_MONGODB_SERVER: mongodb
-      ME_CONFIG_MONGODB_ADMINUSERNAME: ${MONGO_ROOT_USER:-admin}
-      ME_CONFIG_MONGODB_ADMINPASSWORD: ${MONGO_ROOT_PASSWORD:-admin123}
+      ME_CONFIG_MONGODB_URL: mongodb://admin:admin123@mongodb:27017/?authSource=admin
+      ME_CONFIG_MONGODB_ENABLE_ADMIN: "true"
       ME_CONFIG_BASICAUTH_ENABLED: "true"
       ME_CONFIG_BASICAUTH_USERNAME: webuser
       ME_CONFIG_BASICAUTH_PASSWORD: webpassword
     depends_on:
-      - mongodb
+      mongodb:
+        condition: service_healthy
 
 volumes:
   mongodb-data:
+  mongodb-config:
+  mongodb-mongot:
   ipfs-data:

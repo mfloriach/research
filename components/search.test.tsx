@@ -5,8 +5,9 @@ import { Search } from "./search";
 
 const search = { placeholder: "Search the dossier", label: "Search" };
 
-function setup() {
+function setup(onSubmitSearch?: (query: string) => void) {
   const setQuery = jest.fn();
+  const handleSubmit = jest.fn();
   function Harness() {
     const [query, setInnerQuery] = useState("");
     return (
@@ -17,11 +18,15 @@ function setup() {
           setInnerQuery(value);
           setQuery(value);
         }}
+        onSubmitSearch={(value: string) => {
+          handleSubmit(value);
+          onSubmitSearch?.(value);
+        }}
       />
     );
   }
   render(<Harness />);
-  return { setQuery };
+  return { setQuery, handleSubmit };
 }
 
 async function openModal(user: ReturnType<typeof userEvent.setup>) {
@@ -75,5 +80,32 @@ describe("Search", () => {
       "clima",
     );
     expect(setQuery).toHaveBeenLastCalledWith("clima");
+  });
+
+  it("submits the query on Enter and closes the modal", async () => {
+    const user = userEvent.setup();
+    const { handleSubmit } = setup();
+    await openModal(user);
+
+    await user.type(
+      screen.getByPlaceholderText("Search the dossier"),
+      "clima{Enter}",
+    );
+
+    expect(handleSubmit).toHaveBeenCalledWith("clima");
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("ignores submit with an empty query", async () => {
+    const user = userEvent.setup();
+    const { handleSubmit } = setup();
+    await openModal(user);
+
+    fireEvent.submit(
+      screen.getByPlaceholderText("Search the dossier").closest("form") as HTMLFormElement,
+    );
+
+    expect(handleSubmit).not.toHaveBeenCalled();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 });

@@ -2,6 +2,7 @@ import { randomUUID } from "node:crypto";
 import { Int32 } from "mongodb";
 import { getDb } from "@/lib/mongodb";
 import { pinJson } from "@/lib/ipfs";
+import { articleEmbeddingText, embedText } from "@/lib/embeddings";
 import { COLLECTIONS } from "@/db/migration";
 
 export type CreateReportInput = {
@@ -91,6 +92,22 @@ export async function createReport(
       paragraphs: paragraphDocs,
       ipfsCid,
       order: new Int32(articleOrder),
+    });
+
+  const embedding = await embedText(
+    articleEmbeddingText(
+      input.title,
+      chunks,
+    ),
+  );
+  await db
+    .collection<{ _id: string; articleId: string; embedding: number[] }>(
+      COLLECTIONS.articleEmbeddings,
+    )
+    .insertOne({
+      _id: `emb-${articleId}`,
+      articleId,
+      embedding,
     });
 
   return {

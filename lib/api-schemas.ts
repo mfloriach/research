@@ -83,7 +83,16 @@ export const searchQuerySchema = z
 export const searchResponseSchema = z
   .object({
     query: z.string().describe("Query after server-side truncation"),
-    logged: z.boolean().describe("Whether the query was logged"),
+    match: z.boolean().describe("Whether the top similarity reached 70%"),
+    score: z.number().describe("Top cosine similarity score"),
+    matches: z
+      .array(
+        z.object({
+          articleId: z.string().describe("Matched article ID"),
+          score: z.number().describe("Cosine similarity score"),
+        }),
+      )
+      .describe("Top vector matches in rank order"),
   })
   .meta({ id: "SearchResponse" });
 

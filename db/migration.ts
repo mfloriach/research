@@ -4,6 +4,7 @@
  * - arguments    -> argument (singleton: the debated thesis)
  * - articles     -> Article (paragraphs and label embedded, references arguments)
  * - replies      -> audit reply (tab is a hardcoded label string)
+ * - article_embeddings -> embedding vector per article (Atlas Vector Search)
  *
  * Removed collections (dropped when present): site_config, headings,
  * audit_items, menu_items, reporting_tabs, reporting_articles,
@@ -17,11 +18,13 @@ config({ path: ".env.local" });
 config();
 
 import { getDb, closeDb } from "../lib/mongodb";
+import { EMBEDDING_DIMENSIONS } from "../lib/embeddings";
 
 export const COLLECTIONS = {
   arguments: "arguments",
   articles: "articles",
   replies: "replies",
+  articleEmbeddings: "article_embeddings",
 } as const;
 
 const REMOVED_COLLECTIONS = [
@@ -93,10 +96,49 @@ const VALIDATORS: Record<string, object> = {
       },
     },
   },
+  [COLLECTIONS.articleEmbeddings]: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["_id", "articleId", "embedding"],
+      properties: {
+        _id: { bsonType: "string" },
+        articleId: { bsonType: "string" },
+        embedding: { bsonType: "array", items: { bsonType: "double" } },
+      },
+    },
+  },
 };
+
+export const VECTOR_INDEX_NAME = "vector_index";
+
+async function ensureVectorIndex(db: Awaited<ReturnType<typeof getDb>>): Promise<void> {
+  const collection = db.collection(COLLECTIONS.articleEmbeddings);
+  const existing = await collection.listSearchIndexes().toArray();
+  if (existing.some((index) => index.name === VECTOR_INDEX_NAME)) {
+    console.log("[migration] vector search index already exists");
+    return;
+  }
+  await collection.createSearchIndex({
+    name: VECTOR_INDEX_NAME,
+    definition: {
+      mappings: {
+        dynamic: false,
+        fields: {
+          embedding: {
+            type: "knnVector",
+            dimensions: EMBEDDING_DIMENSIONS,
+            similarity: "cosine",
+          },
+        },
+      },
+    },
+  });
+  console.log("[migration] created vector search index");
+}
 
 export async function migrate(): Promise<void> {
   const db = await getDb();
+  await waitForPrimary(db);
   const existing = new Set((await db.listCollections().toArray()).map((c) => c.name));
 
   for (const name of Object.values(COLLECTIONS)) {
@@ -120,6 +162,34 @@ export async function migrate(): Promise<void> {
   await db.collection(COLLECTIONS.articles).createIndex({ argumentId: 1 });
   await db.collection(COLLECTIONS.replies).createIndex({ tab: 1, order: 1 });
   console.log("[migration] indexes ensured");
+
+  await ensureVectorIndex(db);
+}
+
+/** Wait until the node elects itself primary (single-node replica set). */
+async function waitForPrimary(
+  db: Awaited<ReturnType<typeof getDb>>,
+  timeoutMs = 60000,
+): Promise<void> {
+  const started = Date.now();
+  for (;;) {
+    try {
+      const hello = (await db.command({ hello: 1 })) as {
+        isWritablePrimary?: boolean;
+      };
+      if (hello.isWritablePrimary) {
+        return;
+      }
+    } catch {
+      // Not ready yet; fall through to retry.
+    }
+    if (Date.now() - started > timeoutMs) {
+      throw new Error(
+        "MongoDB did not become primary in time. Check `docker logs epistimology-mongodb`.",
+      );
+    }
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
 }
 
 const isMain = process.argv[1]?.endsWith("migration.ts") ?? false;

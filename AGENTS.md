@@ -3,10 +3,11 @@
 ## Tech Stack
 
 - Next.js 16 with App route
-- TypeScript
+- TypeScript, Next.js
 - Tailwind CSS with DaisyUI
 - MongoDB
 - Zod and react-hook-form
+- Foundry, Openzepelin
 
 ## Conventions
 

@@ -339,8 +339,8 @@ paths:
   /search:
     get:
       operationId: get-search
-      summary: Log a search query
-      description: Validates the `q` query parameter, truncates it to 200
+      summary: Vector search over articles
+      description: Embeds the `q` query with a local sentence model and runs
       tags:
         - Search
       parameters:
@@ -354,13 +354,19 @@ paths:
           example: example
       responses:
         '200':
-          description: Logged query
+          description: Search result
           content:
             application/json:
               schema:
                 $ref: '#/components/schemas/SearchResponse'
         '400':
           description: Invalid query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Search failed
           content:
             application/json:
               schema:
@@ -787,12 +793,32 @@ components:
         query:
           type: string
           description: Query after server-side truncation
-        logged:
+        match:
           type: boolean
-          description: Whether the query was logged
+          description: Whether the top similarity reached 70%
+        score:
+          type: number
+          description: Top cosine similarity score
+        matches:
+          type: array
+          items:
+            type: object
+            properties:
+              articleId:
+                type: string
+                description: Matched article ID
+              score:
+                type: number
+                description: Cosine similarity score
+            required:
+              - articleId
+              - score
+          description: Top vector matches in rank order
       required:
         - query
-        - logged
+        - match
+        - score
+        - matches
     SourceOpenResponse:
       type: object
       properties:

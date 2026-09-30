@@ -90,6 +90,21 @@ with a gateway link. Start the node with `docker compose up -d ipfs`
 (RPC `:5001`, gateway `:8080`); `IPFS_RPC_URL` and
 `NEXT_PUBLIC_IPFS_GATEWAY_URL` configure endpoints (see `.env.example`).
 
+## Vector search
+
+`/api/search` embeds the query with a local sentence model
+(`@xenova/transformers`, `Xenova/all-MiniLM-L6-v2`, 384 dims, CPU — model
+downloads once to `~/.cache/huggingface`) and runs Atlas Vector Search over
+article embeddings (`article_embeddings`, cosine). It returns
+`{query, match, score, matches}` where `match` is true when the top
+similarity reaches 70%. Articles are embedded at seed time and on creation
+(`lib/embeddings.ts`, `db/seed.ts`, `reporting.ts`).
+
+Local MongoDB runs the `mongodb-atlas-local` image (same `mongodb` service,
+no new container) because community MongoDB has no Vector Search; it runs
+without auth locally, so `MONGODB_URI` carries no credentials. Swapping the
+image requires `docker compose down -v` followed by `db:setup`.
+
 Local flow (Anvil is already part of `docker-compose.yml`):
 
 ```bash
