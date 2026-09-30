@@ -24,10 +24,3 @@ export function Field({ label, error, children }: FieldProps) {
     </label>
   );
 }
-
-export type TextInputProps = InputHTMLAttributes<HTMLInputElement>;
-
-/** Text input matching the app's form styling. */
-export function TextInput(props: TextInputProps) {
-  return <input type="text" className="input input-bordered w-full" {...props} />;
-}

@@ -18,6 +18,7 @@ import {
   type SignedAudit,
 } from "@/app/hooks/use-audit-sign";
 import { SignaturePanel } from "@/components/signature-panel";
+import { Field } from "@/components/form-field";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
@@ -203,10 +204,7 @@ function CreateSourceForm() {
         )}
 
         <form onSubmit={handleSubmit(onValid)} className="mt-6 space-y-6">
-          <label className="form-control w-full">
-            <span className="label">
-              <span className="label-text font-medium">Title</span>
-            </span>
+          <Field label="Title" error={errors.title?.message}>
             <input
               type="text"
               className="input input-bordered w-full"
@@ -215,20 +213,10 @@ function CreateSourceForm() {
               disabled={!isConnected || submitting}
               {...register("title")}
             />
-            {errors.title ? (
-              <span className="label">
-                <span role="alert" className="label-text text-error">
-                  {errors.title.message}
-                </span>
-              </span>
-            ) : null}
-          </label>
+          </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
-            <label className="form-control w-full">
-              <span className="label">
-                <span className="label-text font-medium">Author (optional)</span>
-              </span>
+            <Field label="Author (optional)" error={errors.author?.message}>
               <input
                 type="text"
                 className="input input-bordered w-full"
@@ -237,38 +225,18 @@ function CreateSourceForm() {
                 disabled={!isConnected || submitting}
                 {...register("author")}
               />
-              {errors.author ? (
-                <span className="label">
-                  <span role="alert" className="label-text text-error">
-                    {errors.author.message}
-                  </span>
-                </span>
-              ) : null}
-            </label>
-            <label className="form-control w-full">
-              <span className="label">
-                <span className="label-text font-medium">Date (optional)</span>
-              </span>
+            </Field>
+            <Field label="Date (optional)" error={errors.date?.message}>
               <input
                 type="date"
                 className="input input-bordered w-full"
                 disabled={!isConnected || submitting}
                 {...register("date")}
               />
-              {errors.date ? (
-                <span className="label">
-                  <span role="alert" className="label-text text-error">
-                    {errors.date.message}
-                  </span>
-                </span>
-              ) : null}
-            </label>
+            </Field>
           </div>
 
-          <div>
-            <span className="label">
-              <span className="label-text font-medium">Content (markdown)</span>
-            </span>
+          <Field label="Content (markdown)" error={errors.content?.message}>
             <div data-color-mode="light">
               <Controller
                 name="content"
@@ -284,14 +252,7 @@ function CreateSourceForm() {
                 )}
               />
             </div>
-            {errors.content ? (
-              <span className="label">
-                <span role="alert" className="label-text text-error">
-                  {errors.content.message}
-                </span>
-              </span>
-            ) : null}
-          </div>
+          </Field>
 
           {error ? (
             <p role="alert" className="text-sm text-error">

@@ -1,5 +1,5 @@
 import { render, screen } from "@testing-library/react";
-import { Field, TextInput } from "./form-field";
+import { Field } from "./form-field"
 
 describe("Field", () => {
   it("renders the label and children", () => {
@@ -21,17 +21,5 @@ describe("Field", () => {
     );
     const alert = screen.getByRole("alert");
     expect(alert).toHaveTextContent("Title must be between 3 and 200 characters");
-  });
-});
-
-describe("TextInput", () => {
-  it("forwards props to the input", () => {
-    render(
-      <TextInput placeholder="Evidence title" maxLength={200} disabled name="title" />,
-    );
-    const input = screen.getByPlaceholderText("Evidence title");
-    expect(input).toHaveAttribute("maxLength", "200");
-    expect(input).toBeDisabled();
-    expect(input).toHaveAttribute("name", "title");
   });
 });

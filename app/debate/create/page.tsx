@@ -17,6 +17,7 @@ import {
   type SignedAudit,
 } from "@/app/hooks/use-audit-sign";
 import { SignaturePanel } from "@/components/signature-panel";
+import { Field } from "@/components/form-field";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
@@ -129,10 +130,7 @@ export default function CreateDebatePage() {
         ) : null}
 
         <form onSubmit={handleSubmit(onValid)} className="mt-6 space-y-6">
-          <label className="form-control w-full">
-            <span className="label">
-              <span className="label-text font-medium">Title</span>
-            </span>
+          <Field label="Title" error={errors.title?.message}>
             <input
               type="text"
               className="input input-bordered w-full"
@@ -141,19 +139,9 @@ export default function CreateDebatePage() {
               disabled={!isConnected || submitting}
               {...register("title")}
             />
-            {errors.title ? (
-              <span className="label">
-                <span role="alert" className="label-text text-error">
-                  {errors.title.message}
-                </span>
-              </span>
-            ) : null}
-          </label>
+          </Field>
 
-          <label className="form-control w-full">
-            <span className="label">
-              <span className="label-text font-medium">Label</span>
-            </span>
+          <Field label="Label" error={errors.label?.message}>
             <input
               type="text"
               className="input input-bordered w-full"
@@ -162,19 +150,9 @@ export default function CreateDebatePage() {
               disabled={!isConnected || submitting}
               {...register("label")}
             />
-            {errors.label ? (
-              <span className="label">
-                <span role="alert" className="label-text text-error">
-                  {errors.label.message}
-                </span>
-              </span>
-            ) : null}
-          </label>
+          </Field>
 
-          <div>
-            <span className="label">
-              <span className="label-text font-medium">Description (markdown)</span>
-            </span>
+          <Field label="Description (markdown)" error={errors.description?.message}>
             <div data-color-mode="light">
               <Controller
                 name="description"
@@ -190,14 +168,7 @@ export default function CreateDebatePage() {
                 )}
               />
             </div>
-            {errors.description ? (
-              <span className="label">
-                <span role="alert" className="label-text text-error">
-                  {errors.description.message}
-                </span>
-              </span>
-            ) : null}
-          </div>
+          </Field>
 
           {error ? (
             <p role="alert" className="text-sm text-error">
