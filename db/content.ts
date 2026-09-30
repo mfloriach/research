@@ -77,7 +77,7 @@ export const site = {
   },
 };
 
-export const heading = {
+export const argument = {
   title: "Carbon border taxes, audited",
   description:
     "Current reporting on climate and the economy, read against a structured audit of the argument — counterarguments, fallacies, evidence, sources and interpretation.",

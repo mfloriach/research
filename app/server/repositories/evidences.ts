@@ -43,7 +43,7 @@ export async function createEvidence(input: CreateEvidenceInput): Promise<Create
   }
 
   const itemOrder = await db
-    .collection<{ _id: string }>(COLLECTIONS.auditItems)
+    .collection<{ _id: string }>(COLLECTIONS.replies)
     .countDocuments({ tab: TAB });
   const itemId = randomUUID();
 
@@ -62,16 +62,18 @@ export async function createEvidence(input: CreateEvidenceInput): Promise<Create
       _id: string;
       tab: string;
       title: string;
+      type: string;
       paragraphs: string[];
       author?: string;
       date?: string;
       ipfsCid: string;
       order: Int32;
-    }>(COLLECTIONS.auditItems)
+    }>(COLLECTIONS.replies)
     .insertOne({
       _id: itemId,
       tab: TAB,
       title: input.title,
+      type: "text",
       paragraphs: input.paragraphs,
       ...(input.author ? { author: input.author } : {}),
       ...(input.date ? { date: input.date } : {}),
@@ -94,7 +96,7 @@ export async function incrementEvidenceOpenCount(itemId: string): Promise<number
   const db = await getDb();
 
   const updated = await db
-    .collection<{ _id: string; openCount?: number }>(COLLECTIONS.auditItems)
+    .collection<{ _id: string; openCount?: number }>(COLLECTIONS.replies)
     .findOneAndUpdate(
       { _id: itemId },
       { $inc: { openCount: 1 } },

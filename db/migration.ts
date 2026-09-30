@@ -1,13 +1,13 @@
 /**
  * MongoDB migration for content collections.
  *
- * - articles      -> Article (paragraphs and label embedded)
- * - audit_items   -> CollapsibleItem (tab is a hardcoded label string)
- * - site_config   -> site (singleton, no menu)
- * - headings      -> heading (singleton)
+ * - arguments    -> argument (singleton: the debated thesis)
+ * - articles     -> Article (paragraphs and label embedded, references arguments)
+ * - replies      -> audit reply (tab is a hardcoded label string)
  *
- * Removed collections (dropped when present): menu_items, reporting_tabs,
- * reporting_articles, reporting_paragraphs, audit_tabs.
+ * Removed collections (dropped when present): site_config, headings,
+ * audit_items, menu_items, reporting_tabs, reporting_articles,
+ * reporting_paragraphs, audit_tabs.
  *
  * Run with: npm run db:migrate
  */
@@ -19,13 +19,15 @@ config();
 import { getDb, closeDb } from "../lib/mongodb";
 
 export const COLLECTIONS = {
+  arguments: "arguments",
   articles: "articles",
-  auditItems: "audit_items",
-  siteConfig: "site_config",
-  headings: "headings",
+  replies: "replies",
 } as const;
 
 const REMOVED_COLLECTIONS = [
+  "site_config",
+  "headings",
+  "audit_items",
   "menu_items",
   "reporting_tabs",
   "reporting_articles",
@@ -34,15 +36,27 @@ const REMOVED_COLLECTIONS = [
 ];
 
 const VALIDATORS: Record<string, object> = {
+  [COLLECTIONS.arguments]: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["_id", "title", "description"],
+      properties: {
+        _id: { bsonType: "string" },
+        title: { bsonType: "string" },
+        description: { bsonType: "string" },
+      },
+    },
+  },
   [COLLECTIONS.articles]: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["_id", "title", "type", "label", "paragraphs", "order"],
+      required: ["_id", "title", "type", "label", "argumentId", "paragraphs", "order"],
       properties: {
         _id: { bsonType: "string" },
         title: { bsonType: "string" },
         type: { enum: ["text"] },
         label: { bsonType: "string" },
+        argumentId: { bsonType: "string" },
         paragraphs: {
           bsonType: "array",
           items: {
@@ -61,59 +75,21 @@ const VALIDATORS: Record<string, object> = {
       },
     },
   },
-  [COLLECTIONS.auditItems]: {
+  [COLLECTIONS.replies]: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["_id", "tab", "title", "paragraphs", "order"],
+      required: ["_id", "tab", "title", "type", "paragraphs", "order"],
       properties: {
         _id: { bsonType: "string" },
         tab: { bsonType: "string" },
         title: { bsonType: "string" },
+        type: { enum: ["text"] },
         paragraphs: { bsonType: "array", items: { bsonType: "string" } },
         author: { bsonType: "string" },
         date: { bsonType: "string" },
         ipfsCid: { bsonType: "string" },
         order: { bsonType: "int" },
         openCount: { bsonType: "int" },
-      },
-    },
-  },
-  [COLLECTIONS.siteConfig]: {
-    $jsonSchema: {
-      bsonType: "object",
-      required: ["_id", "brand", "title", "description", "search", "avatar"],
-      properties: {
-        _id: { bsonType: "string" },
-        brand: { bsonType: "string" },
-        title: { bsonType: "string" },
-        description: { bsonType: "string" },
-        search: {
-          bsonType: "object",
-          required: ["placeholder", "label"],
-          properties: {
-            placeholder: { bsonType: "string" },
-            label: { bsonType: "string" },
-          },
-        },
-        avatar: {
-          bsonType: "object",
-          required: ["src", "alt"],
-          properties: {
-            src: { bsonType: "string" },
-            alt: { bsonType: "string" },
-          },
-        },
-      },
-    },
-  },
-  [COLLECTIONS.headings]: {
-    $jsonSchema: {
-      bsonType: "object",
-      required: ["_id", "title", "description"],
-      properties: {
-        _id: { bsonType: "string" },
-        title: { bsonType: "string" },
-        description: { bsonType: "string" },
       },
     },
   },
@@ -141,7 +117,8 @@ export async function migrate(): Promise<void> {
   }
 
   await db.collection(COLLECTIONS.articles).createIndex({ label: 1, order: 1 });
-  await db.collection(COLLECTIONS.auditItems).createIndex({ tab: 1, order: 1 });
+  await db.collection(COLLECTIONS.articles).createIndex({ argumentId: 1 });
+  await db.collection(COLLECTIONS.replies).createIndex({ tab: 1, order: 1 });
   console.log("[migration] indexes ensured");
 }
 

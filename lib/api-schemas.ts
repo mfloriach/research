@@ -87,25 +87,12 @@ export const searchResponseSchema = z
   })
   .meta({ id: "SearchResponse" });
 
-const siteContentSchema = z
-  .object({
-    brand: z.string(),
-    title: z.string(),
-    description: z.string(),
-    search: z.object({
-      placeholder: z.string(),
-      label: z.string(),
-    }),
-    avatar: z.object({ src: z.string(), alt: z.string() }),
-  })
-  .meta({ id: "SiteContent" });
-
-const headingContentSchema = z
+const argumentContentSchema = z
   .object({
     title: z.string(),
     description: z.string(),
   })
-  .meta({ id: "HeadingContent" });
+  .meta({ id: "Argument" });
 
 const reportingParagraphSchema = z
   .object({
@@ -154,8 +141,7 @@ const auditTabSchema = z
 
 export const contentResponseSchema = z
   .object({
-    site: siteContentSchema.describe("Site chrome and search copy"),
-    heading: headingContentSchema.describe("Page heading copy"),
+    argument: argumentContentSchema.describe("Debated argument copy"),
     reportingCard: z
       .object({
         title: z.string(),

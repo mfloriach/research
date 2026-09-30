@@ -7,15 +7,7 @@ import type { Article, CollapsibleItem, ContentTab } from "@/db/content";
 import { AUDIT_TABS } from "@/db/content";
 import { COLLECTIONS } from "@/db/migration";
 
-type SiteContent = {
-  brand: string;
-  title: string;
-  description: string;
-  search: { placeholder: string; label: string };
-  avatar: { src: string; alt: string };
-};
-
-type HeadingContent = {
+type ArgumentContent = {
   title: string;
   description: string;
 };
@@ -31,21 +23,12 @@ type AuditCardContent = {
 };
 
 export type DbContent = {
-  site: SiteContent;
-  heading: HeadingContent;
+  argument: ArgumentContent;
   reportingCard: ReportingCardContent;
   auditCard: AuditCardContent;
 };
 
-type SiteConfigDoc = {
-  _id: string;
-  brand: string;
-  title: string;
-  description: string;
-  search: { placeholder: string; label: string };
-  avatar: { src: string; alt: string };
-};
-type HeadingDoc = { _id: string; title: string; description: string };
+type ArgumentDoc = { _id: string; title: string; description: string };
 type StoredParagraphDoc = {
   id: string;
   text: string;
@@ -57,14 +40,16 @@ type ArticleDoc = {
   title: string;
   type: string;
   label: string;
+  argumentId: string;
   paragraphs: StoredParagraphDoc[];
   ipfsCid?: string;
   order?: number;
 };
-type AuditItemDoc = {
+type ReplyDoc = {
   _id: string;
   tab: string;
   title: string;
+  type: string;
   paragraphs: string[];
   author?: string;
   date?: string;
@@ -79,21 +64,20 @@ const byOrder = (a: { order?: number }, b: { order?: number }) =>
 export async function getContentFromDb(): Promise<DbContent> {
   const db = await getDb();
 
-  const [siteDoc, headingDoc] = await Promise.all([
-    db
-      .collection<SiteConfigDoc>(COLLECTIONS.siteConfig)
-      .findOne({ _id: "site" }),
-    db.collection<HeadingDoc>(COLLECTIONS.headings).findOne({ _id: "heading" }),
-  ]);
-  if (!siteDoc || !headingDoc) {
+  const [argumentDoc] = await db
+    .collection<ArgumentDoc>(COLLECTIONS.arguments)
+    .find({})
+    .limit(1)
+    .toArray();
+  if (!argumentDoc) {
     throw new Error(
       "Content collections are empty. Run `npm run db:seed` first.",
     );
   }
 
-  const [articleDocs, auditItems] = await Promise.all([
+  const [articleDocs, replies] = await Promise.all([
     db.collection<ArticleDoc>(COLLECTIONS.articles).find({}).toArray(),
-    db.collection<AuditItemDoc>(COLLECTIONS.auditItems).find({}).toArray(),
+    db.collection<ReplyDoc>(COLLECTIONS.replies).find({}).toArray(),
   ]);
 
   const articlesByLabel = new Map<string, (Article & { order: number })[]>();
@@ -131,7 +115,7 @@ export async function getContentFromDb(): Promise<DbContent> {
     .sort(byOrder);
 
   const itemsByTab = new Map<string, (CollapsibleItem & { order: number })[]>();
-  for (const item of auditItems) {
+  for (const item of replies) {
     const list = itemsByTab.get(item.tab) ?? [];
     list.push({
       id: item._id,
@@ -146,19 +130,9 @@ export async function getContentFromDb(): Promise<DbContent> {
   }
 
   return {
-    site: {
-      brand: siteDoc.brand,
-      title: siteDoc.title,
-      description: siteDoc.description,
-      search: {
-        placeholder: siteDoc.search.placeholder,
-        label: siteDoc.search.label,
-      },
-      avatar: { src: siteDoc.avatar.src, alt: siteDoc.avatar.alt },
-    },
-    heading: {
-      title: headingDoc.title,
-      description: headingDoc.description,
+    argument: {
+      title: argumentDoc.title,
+      description: argumentDoc.description,
     },
     reportingCard: {
       title: "Reporting",

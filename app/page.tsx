@@ -7,16 +7,15 @@ import { ReportingAuditSection } from "@/components/reporting-audit-section";
 import { SiteNavbar } from "@/components/site-navbar";
 import {
   auditCard as auditCardFallback,
-  heading as headingFallback,
+  argument as argumentFallback,
   reportingCard as reportingCardFallback,
-  site as siteFallback,
+  site,
 } from "@/db/content";
 import type { DbContent } from "@/lib/content-db";
 import { useWallet } from "@/app/hooks/use-wallet";
 
 const fallbackContent: DbContent = {
-  site: siteFallback,
-  heading: headingFallback,
+  argument: argumentFallback,
   reportingCard: reportingCardFallback,
   auditCard: auditCardFallback,
 };
@@ -48,7 +47,7 @@ export default function Home() {
     };
   }, []);
 
-  const { site, heading, reportingCard, auditCard } = content;
+  const { argument, reportingCard, auditCard } = content;
 
   return (
     <>
@@ -57,7 +56,7 @@ export default function Home() {
       <main className="flex-1">
         <div className="mx-8 py-8 sm:py-10">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <PageHeading title={heading.title} description={heading.description} />
+            <PageHeading title={argument.title} description={argument.description} />
             <button
               type="button"
               className="btn btn-primary"

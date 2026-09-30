@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { site as siteFallback } from "@/db/content";
+import { argument as argumentFallback } from "@/db/content";
 import { getContentFromDb } from "@/lib/content-db";
 import "./globals.css";
 
@@ -16,10 +16,10 @@ const geistMono = Geist_Mono({
 
 export async function generateMetadata(): Promise<Metadata> {
   try {
-    const { site } = await getContentFromDb();
-    return { title: site.title, description: site.description };
+    const { argument } = await getContentFromDb();
+    return { title: argument.title, description: argument.description };
   } catch {
-    return { title: siteFallback.title, description: siteFallback.description };
+    return { title: argumentFallback.title, description: argumentFallback.description };
   }
 }
 

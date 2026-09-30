@@ -448,6 +448,16 @@ servers:
     description: API server
 components:
   schemas:
+    Argument:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+      required:
+        - title
+        - description
     auditCreateFormSchema:
       type: object
       properties:
@@ -570,14 +580,10 @@ components:
     ContentResponse:
       type: object
       properties:
-        site:
+        argument:
           allOf:
-            - $ref: '#/components/schemas/SiteContent'
-          description: Site chrome and search copy
-        heading:
-          allOf:
-            - $ref: '#/components/schemas/HeadingContent'
-          description: Page heading copy
+            - $ref: '#/components/schemas/Argument'
+          description: Debated argument copy
         reportingCard:
           type: object
           properties:
@@ -605,8 +611,7 @@ components:
             - tabs
           description: Audit items grouped by tab
       required:
-        - site
-        - heading
+        - argument
         - reportingCard
         - auditCard
     ContraargumentOpenResponse:
@@ -695,16 +700,6 @@ components:
       required:
         - fallacyId
         - openCount
-    HeadingContent:
-      type: object
-      properties:
-        title:
-          type: string
-        description:
-          type: string
-      required:
-        - title
-        - description
     InterpretationOpenResponse:
       type: object
       properties:
@@ -798,41 +793,6 @@ components:
       required:
         - query
         - logged
-    SiteContent:
-      type: object
-      properties:
-        brand:
-          type: string
-        title:
-          type: string
-        description:
-          type: string
-        search:
-          type: object
-          properties:
-            placeholder:
-              type: string
-            label:
-              type: string
-          required:
-            - placeholder
-            - label
-        avatar:
-          type: object
-          properties:
-            src:
-              type: string
-            alt:
-              type: string
-          required:
-            - src
-            - alt
-      required:
-        - brand
-        - title
-        - description
-        - search
-        - avatar
     SourceOpenResponse:
       type: object
       properties:

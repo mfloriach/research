@@ -20,13 +20,23 @@ export type CreatedReport = {
 /**
  * Store a debate report as an article with embedded paragraphs.
  * Uses the given label, or the alphabetically first existing label when
- * omitted. Throws when no label can be resolved.
+ * omitted. Articles always reference the singleton argument.
+ * Throws when no label or argument can be resolved.
  */
 export async function createReport(
   input: CreateReportInput,
   chunks: string[],
 ): Promise<CreatedReport> {
   const db = await getDb();
+
+  const [argument] = await db
+    .collection<{ _id: string }>(COLLECTIONS.arguments)
+    .find({})
+    .limit(1)
+    .toArray();
+  if (!argument) {
+    throw new Error("No argument available");
+  }
 
   const cleanLabel = input.label?.trim() ?? "";
   let label = cleanLabel;
@@ -67,6 +77,7 @@ export async function createReport(
       title: string;
       type: string;
       label: string;
+      argumentId: string;
       paragraphs: { id: string; text: string; auditItemIds: string[]; order: Int32 }[];
       ipfsCid: string;
       order: Int32;
@@ -76,6 +87,7 @@ export async function createReport(
       title: input.title,
       type: "text",
       label,
+      argumentId: argument._id,
       paragraphs: paragraphDocs,
       ipfsCid,
       order: new Int32(articleOrder),

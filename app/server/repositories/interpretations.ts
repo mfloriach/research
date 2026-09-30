@@ -45,7 +45,7 @@ export async function createInterpretation(
   }
 
   const itemOrder = await db
-    .collection<{ _id: string }>(COLLECTIONS.auditItems)
+    .collection<{ _id: string }>(COLLECTIONS.replies)
     .countDocuments({ tab: TAB });
   const itemId = randomUUID();
 
@@ -64,16 +64,18 @@ export async function createInterpretation(
       _id: string;
       tab: string;
       title: string;
+      type: string;
       paragraphs: string[];
       author?: string;
       date?: string;
       ipfsCid: string;
       order: Int32;
-    }>(COLLECTIONS.auditItems)
+    }>(COLLECTIONS.replies)
     .insertOne({
       _id: itemId,
       tab: TAB,
       title: input.title,
+      type: "text",
       paragraphs: input.paragraphs,
       ...(input.author ? { author: input.author } : {}),
       ...(input.date ? { date: input.date } : {}),
@@ -96,7 +98,7 @@ export async function incrementInterpretationOpenCount(itemId: string): Promise<
   const db = await getDb();
 
   const updated = await db
-    .collection<{ _id: string; openCount?: number }>(COLLECTIONS.auditItems)
+    .collection<{ _id: string; openCount?: number }>(COLLECTIONS.replies)
     .findOneAndUpdate(
       { _id: itemId },
       { $inc: { openCount: 1 } },

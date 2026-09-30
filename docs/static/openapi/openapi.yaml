@@ -31,7 +31,7 @@ paths:
     post:
       operationId: post-audits-contraarguments
       summary: Create a contraargument audit item
-      description: Validates the audit item payload, splits the markdown body
+      description: Validates the audit item payload, pins it to IPFS, splits
       tags:
         - Contraarguments
       parameters: []
@@ -100,7 +100,7 @@ paths:
     post:
       operationId: post-debates
       summary: Create a debate report
-      description: Stores a new report as an article with paragraphs, reusing or
+      description: Pins the report to IPFS, then stores it as an article with
       tags:
         - Debates
       parameters: []
@@ -133,7 +133,7 @@ paths:
     post:
       operationId: post-audits-evidences
       summary: Create an evidence audit item
-      description: Validates the audit item payload, splits the markdown body
+      description: Validates the audit item payload, pins it to IPFS, splits
       tags:
         - Evidences
       parameters: []
@@ -202,7 +202,7 @@ paths:
     post:
       operationId: post-audits-fallacies
       summary: Create a fallacy audit item
-      description: Validates the audit item payload, splits the markdown body
+      description: Validates the audit item payload, pins it to IPFS, splits
       tags:
         - Fallacies
       parameters: []
@@ -271,7 +271,7 @@ paths:
     post:
       operationId: post-audits-interpretations
       summary: Create an interpretation audit item
-      description: Validates the audit item payload, splits the markdown body
+      description: Validates the audit item payload, pins it to IPFS, splits
       tags:
         - Interpretations
       parameters: []
@@ -369,7 +369,7 @@ paths:
     post:
       operationId: post-audits-sources
       summary: Create a source audit item
-      description: Validates the audit item payload, splits the markdown body
+      description: Validates the audit item payload, pins it to IPFS, splits
       tags:
         - Sources
       parameters: []
@@ -448,6 +448,37 @@ servers:
     description: API server
 components:
   schemas:
+    Argument:
+      type: object
+      properties:
+        title:
+          type: string
+        description:
+          type: string
+      required:
+        - title
+        - description
+    auditCreateFormSchema:
+      type: object
+      properties:
+        title:
+          type: string
+          minLength: 3
+          maxLength: 200
+        content:
+          type: string
+          minLength: 1
+          maxLength: 20000
+        author:
+          type: string
+          maxLength: 120
+          default: ''
+        date:
+          type: string
+          default: ''
+      required:
+        - title
+        - content
     AuditItem:
       type: object
       properties:
@@ -517,12 +548,16 @@ components:
         itemId:
           type: string
           description: Created audit item ID
-        tabId:
+        tab:
           type: string
-          description: Audit tab the item was stored under
+          description: Audit tab label the item was stored under
+        ipfsCid:
+          type: string
+          description: IPFS CID of the pinned item envelope
       required:
         - itemId
-        - tabId
+        - tab
+        - ipfsCid
     AuditTab:
       type: object
       properties:
@@ -545,14 +580,10 @@ components:
     ContentResponse:
       type: object
       properties:
-        site:
+        argument:
           allOf:
-            - $ref: '#/components/schemas/SiteContent'
-          description: Site chrome, search copy and menu
-        heading:
-          allOf:
-            - $ref: '#/components/schemas/HeadingContent'
-          description: Page heading copy
+            - $ref: '#/components/schemas/Argument'
+          description: Debated argument copy
         reportingCard:
           type: object
           properties:
@@ -580,8 +611,7 @@ components:
             - tabs
           description: Audit items grouped by tab
       required:
-        - site
-        - heading
+        - argument
         - reportingCard
         - auditCard
     ContraargumentOpenResponse:
@@ -607,16 +637,12 @@ components:
         label:
           type: string
           maxLength: 60
-          description: Reporting tab label. Reuses the tab when it exists, otherwise creates it.
+          description: Article label. Groups the article in the reporting view.
         description:
           type: string
           minLength: 1
           maxLength: 20000
           description: Markdown report body. Blank-line separated paragraphs become stored paragraphs.
-        tabId:
-          type: string
-          minLength: 1
-          description: Existing reporting tab ID. Takes precedence over label.
       required:
         - title
         - description
@@ -626,18 +652,22 @@ components:
         articleId:
           type: string
           description: Created reporting article ID
-        tabId:
+        tab:
           type: string
-          description: Reporting tab the article was stored under
+          description: Article label the report was stored under
         paragraphIds:
           type: array
           items:
             type: string
           description: Stored paragraph IDs in document order
+        ipfsCid:
+          type: string
+          description: IPFS CID of the pinned report envelope
       required:
         - articleId
-        - tabId
+        - tab
         - paragraphIds
+        - ipfsCid
     ErrorResponse:
       type: object
       properties:
@@ -670,16 +700,6 @@ components:
       required:
         - fallacyId
         - openCount
-    HeadingContent:
-      type: object
-      properties:
-        title:
-          type: string
-        description:
-          type: string
-      required:
-        - title
-        - description
     InterpretationOpenResponse:
       type: object
       properties:
@@ -692,19 +712,24 @@ components:
       required:
         - interpretationId
         - openCount
-    MenuItem:
+    reportCreateFormSchema:
       type: object
       properties:
-        id:
+        title:
           type: string
+          minLength: 3
+          maxLength: 200
         label:
           type: string
-        href:
+          maxLength: 60
+          default: ''
+        description:
           type: string
+          minLength: 1
+          maxLength: 20000
       required:
-        - id
-        - label
-        - href
+        - title
+        - description
     ReportingArticle:
       type: object
       properties:
@@ -768,54 +793,6 @@ components:
       required:
         - query
         - logged
-    SiteContent:
-      type: object
-      properties:
-        brand:
-          type: string
-        title:
-          type: string
-        description:
-          type: string
-        search:
-          type: object
-          properties:
-            placeholder:
-              type: string
-            label:
-              type: string
-          required:
-            - placeholder
-            - label
-        avatar:
-          type: object
-          properties:
-            src:
-              type: string
-            alt:
-              type: string
-          required:
-            - src
-            - alt
-        menu:
-          type: object
-          properties:
-            label:
-              type: string
-            items:
-              type: array
-              items:
-                $ref: '#/components/schemas/MenuItem'
-          required:
-            - label
-            - items
-      required:
-        - brand
-        - title
-        - description
-        - search
-        - avatar
-        - menu
     SourceOpenResponse:
       type: object
       properties:

@@ -11,7 +11,9 @@ config();
 import { Int32 } from "mongodb";
 import { getDb, closeDb } from "../lib/mongodb";
 import { COLLECTIONS, migrate } from "./migration";
-import { site, heading, reportingCard, auditCard } from "./content";
+import { argument, reportingCard, auditCard } from "./content";
+
+const MAIN_ARGUMENT_ID = "main-argument";
 
 type SeedDoc = {
   _id: string;
@@ -25,24 +27,14 @@ export async function seed(): Promise<void> {
 
   await Promise.all(Object.values(COLLECTIONS).map((name) => db.collection(name).deleteMany({})));
 
-  const siteConfig = db.collection<SeedDoc>(COLLECTIONS.siteConfig);
-  const headings = db.collection<SeedDoc>(COLLECTIONS.headings);
+  const arguments_ = db.collection<SeedDoc>(COLLECTIONS.arguments);
   const articles = db.collection<SeedDoc>(COLLECTIONS.articles);
-  const auditItems = db.collection<SeedDoc>(COLLECTIONS.auditItems);
+  const replies = db.collection<SeedDoc>(COLLECTIONS.replies);
 
-  await siteConfig.insertOne({
-    _id: "site",
-    brand: site.brand,
-    title: site.title,
-    description: site.description,
-    search: { placeholder: site.search.placeholder, label: site.search.label },
-    avatar: { src: site.avatar.src, alt: site.avatar.alt },
-  });
-
-  await headings.insertOne({
-    _id: "heading",
-    title: heading.title,
-    description: heading.description,
+  await arguments_.insertOne({
+    _id: MAIN_ARGUMENT_ID,
+    title: argument.title,
+    description: argument.description,
   });
 
   const articleDocs: SeedDoc[] = [];
@@ -56,6 +48,7 @@ export async function seed(): Promise<void> {
         title: article.title,
         type: "text",
         label: tab.label,
+        argumentId: MAIN_ARGUMENT_ID,
         paragraphs: article.paragraphs.map((paragraph, paraOrder) => ({
           id: paragraph.id,
           text: paragraph.text,
@@ -70,7 +63,7 @@ export async function seed(): Promise<void> {
     await articles.insertMany(articleDocs);
   }
 
-  const auditItemDocs: SeedDoc[] = [];
+  const replyDocs: SeedDoc[] = [];
   const tabOrder = new Map<string, number>();
   for (const tab of auditCard.tabs) {
     for (const item of tab.items) {
@@ -78,10 +71,11 @@ export async function seed(): Promise<void> {
       tabOrder.set(tab.label, order + 1);
       const author = "author" in item ? item.author : undefined;
       const date = "date" in item ? item.date : undefined;
-      auditItemDocs.push({
+      replyDocs.push({
         _id: item.id,
         tab: tab.label,
         title: item.title,
+        type: "text",
         ...(author ? { author } : {}),
         ...(date ? { date } : {}),
         paragraphs: item.paragraphs,
@@ -90,14 +84,14 @@ export async function seed(): Promise<void> {
       });
     }
   }
-  if (auditItemDocs.length > 0) {
-    await auditItems.insertMany(auditItemDocs);
+  if (replyDocs.length > 0) {
+    await replies.insertMany(replyDocs);
   }
 
-  const knownAuditIds = new Set(auditItemDocs.map((doc) => doc._id));
+  const knownReplyIds = new Set(replyDocs.map((doc) => doc._id));
   const dangling = articleDocs.flatMap((doc) =>
     ((doc.paragraphs ?? []) as { auditItemIds?: string[] }[]).flatMap(
-      (paragraph) => (paragraph.auditItemIds ?? []).filter((id) => !knownAuditIds.has(id)),
+      (paragraph) => (paragraph.auditItemIds ?? []).filter((id) => !knownReplyIds.has(id)),
     ),
   );
   if (dangling.length > 0) {
@@ -105,8 +99,8 @@ export async function seed(): Promise<void> {
   }
 
   console.log(
-    `[seed] inserted ${articleDocs.length} articles, ` +
-      `${auditItemDocs.length} audit items`,
+    `[seed] inserted 1 argument, ${articleDocs.length} articles, ` +
+      `${replyDocs.length} replies`,
   );
 }
 
