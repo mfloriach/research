@@ -18,6 +18,7 @@ import {
   type AuditCreateFormInput,
   type AuditCreateFormValues,
 } from "@/lib/form-schemas";
+import {Field} from "@/components/form-field"
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
@@ -204,10 +205,7 @@ function CreateEvidenceForm() {
         )}
 
         <form onSubmit={handleSubmit(onValid)} className="mt-6 space-y-6">
-          <label className="form-control w-full">
-            <span className="label">
-              <span className="label-text font-medium">Title</span>
-            </span>
+          <Field label="Title" error={errors.title?.message}>
             <input
               type="text"
               className="input input-bordered w-full"
@@ -216,14 +214,7 @@ function CreateEvidenceForm() {
               disabled={!isConnected || submitting}
               {...register("title")}
             />
-            {errors.title ? (
-              <span className="label">
-                <span role="alert" className="label-text text-error">
-                  {errors.title.message}
-                </span>
-              </span>
-            ) : null}
-          </label>
+          </Field>
 
           <div className="grid gap-4 sm:grid-cols-2">
             <label className="form-control w-full">
