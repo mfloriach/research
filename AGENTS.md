@@ -4,7 +4,7 @@
 
 - Next.js 16 with App route
 - TypeScript
-- Tailwind CSS
+- Tailwind CSS with DaisyUI
 - MongoDB
 - Zod and react-hook-form
 
@@ -14,7 +14,7 @@
 - Follow REST API naming conventions
 - Write test for all new components
 - Capture exceptions on the @app/middleware.ts
-- Do not queries on the @app/api
+- Do not add database queries on the @app/api
 - All database queries must be in @app/server/repositories
 - Do not add logic on the components use/create @app/hooks
 - All API must be documented using OpenAPI stardards, after update run build openapi file.
