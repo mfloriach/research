@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { auditItemSchema, splitAuditParagraphs } from "./schemas";
 import { createFallacy } from "@/app/server/repositories/fallacies";
 import { parseJson } from "@/lib/parse_json";
-import { IpfsUnavailableError } from "@/lib/ipfs";
 
 /**
  * Create a fallacy audit item
@@ -21,17 +20,10 @@ export const POST = async (request: Request) => {
 
   const paragraphs = splitAuditParagraphs(data.content);
 
-  try {
-    const { itemId, tabId, ipfsCid } = await createFallacy({
-      ...data,
-      paragraphs,
-    });
+  const { itemId, tabId, ipfsCid } = await createFallacy({
+    ...data,
+    paragraphs,
+  });
 
-    return NextResponse.json({ itemId, tabId, ipfsCid }, { status: 201 });
-  } catch (error) {
-    if (error instanceof IpfsUnavailableError) {
-      return NextResponse.json({ error: "IPFS unavailable" }, { status: 500 });
-    }
-    throw error;
-  }
+  return NextResponse.json({ itemId, tabId, ipfsCid }, { status: 201 });
 };

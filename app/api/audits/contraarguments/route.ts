@@ -2,7 +2,6 @@ import { NextResponse } from "next/server";
 import { auditItemSchema, splitAuditParagraphs } from "./schemas";
 import { createContraargument } from "@/app/server/repositories/contraarguments";
 import { parseJson } from "@/lib/parse_json";
-import { IpfsUnavailableError } from "@/lib/ipfs";
 
 /**
  * Create a contraargument audit item
@@ -20,17 +19,10 @@ export const POST = async (request: Request) => {
   const data = await parseJson(request, auditItemSchema);
   const paragraphs = splitAuditParagraphs(data.content);
 
-  try {
-    const { itemId, tabId, ipfsCid } = await createContraargument({
-      ...data,
-      paragraphs,
-    });
+  const { itemId, tabId, ipfsCid } = await createContraargument({
+    ...data,
+    paragraphs,
+  });
 
-    return NextResponse.json({ itemId, tabId, ipfsCid }, { status: 201 });
-  } catch (error) {
-    if (error instanceof IpfsUnavailableError) {
-      return NextResponse.json({ error: "IPFS unavailable" }, { status: 500 });
-    }
-    throw error;
-  }
+  return NextResponse.json({ itemId, tabId, ipfsCid }, { status: 201 });
 };

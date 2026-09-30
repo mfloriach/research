@@ -4,7 +4,8 @@ import { Int32 } from "mongodb";
 import { getDb } from "@/lib/mongodb";
 import { COLLECTIONS } from "@/db/migration";
 import { debateInputSchema, splitMarkdownParagraphs } from "@/lib/api-schemas";
-import { IpfsUnavailableError, pinJson } from "@/lib/ipfs";
+import { pinJson } from "@/lib/ipfs";
+import { parseJson } from "@/lib/parse_json";
 
 type ReportingTabDoc = { _id: string; label: string; order?: number };
 
@@ -21,27 +22,14 @@ type ReportingTabDoc = { _id: string; label: string; order?: number };
  * @openapi
  */
 export const POST = async (request: Request) => {
-  let body: unknown;
-  try {
-    body = await request.json();
-  } catch {
-    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
-  }
-
-  const parsed = debateInputSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid request body" },
-      { status: 400 },
-    );
-  }
+  const parsed = await parseJson(request, debateInputSchema);
 
   const {
     title: cleanTitle,
     description: cleanDescription,
     tabId: rawTabId,
     label: rawLabel,
-  } = parsed.data;
+  } = parsed;
   const cleanLabel = rawLabel ?? "";
 
   const chunks = splitMarkdownParagraphs(cleanDescription);
@@ -114,21 +102,13 @@ export const POST = async (request: Request) => {
     .countDocuments({ tabId: targetTabId });
   const articleId = randomUUID();
 
-  let ipfsCid: string;
-  try {
-    ipfsCid = await pinJson({
-      kind: "report",
-      title: cleanTitle,
-      ...(cleanLabel.length > 0 ? { label: cleanLabel } : {}),
-      description: cleanDescription,
-      paragraphs: chunks,
-    });
-  } catch (error) {
-    if (error instanceof IpfsUnavailableError) {
-      return NextResponse.json({ error: "IPFS unavailable" }, { status: 500 });
-    }
-    throw error;
-  }
+  let ipfsCid = await pinJson({
+    kind: "report",
+    title: cleanTitle,
+    ...(cleanLabel.length > 0 ? { label: cleanLabel } : {}),
+    description: cleanDescription,
+    paragraphs: chunks,
+  });
 
   await db
     .collection<{

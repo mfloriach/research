@@ -1,5 +1,5 @@
 import { create, type KuboRPCClient } from "kubo-rpc-client";
-
+import { IpfsUnavailableError } from "@/lib/errors";
 export { getIpfsGatewayUrl, ipfsGatewayUrl } from "@/lib/ipfs-gateway";
 
 /**
@@ -24,13 +24,6 @@ export function getIpfsClient(): KuboRPCClient {
   return client;
 }
 
-export class IpfsUnavailableError extends Error {
-  constructor(message = "IPFS unavailable") {
-    super(message);
-    this.name = "IpfsUnavailableError";
-  }
-}
-
 /** Pin a JSON envelope and return its CID string. */
 export async function pinJson(payload: unknown): Promise<string> {
   try {
@@ -40,7 +33,9 @@ export async function pinJson(payload: unknown): Promise<string> {
     return result.cid.toString();
   } catch (error) {
     throw new IpfsUnavailableError(
-      error instanceof Error ? `IPFS unavailable: ${error.message}` : "IPFS unavailable",
+      error instanceof Error
+        ? `IPFS unavailable: ${error.message}`
+        : "IPFS unavailable",
     );
   }
 }
@@ -56,7 +51,9 @@ export async function catJson<T>(cid: string): Promise<T> {
     return JSON.parse(text) as T;
   } catch (error) {
     throw new IpfsUnavailableError(
-      error instanceof Error ? `IPFS unavailable: ${error.message}` : "IPFS unavailable",
+      error instanceof Error
+        ? `IPFS unavailable: ${error.message}`
+        : "IPFS unavailable",
     );
   }
 }
