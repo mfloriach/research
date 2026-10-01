@@ -38,49 +38,45 @@ export const GET = async (request: Request) => {
   const rawQuery = parsed.data.q ?? "";
   const query = rawQuery.slice(0, MAX_SEARCH_QUERY_LENGTH);
 
-  try {
-    const queryVector = await embedText(query);
-    const db = await getDb();
-    const hits = (await db
-      .collection(COLLECTIONS.articleEmbeddings)
-      .aggregate([
-        {
-          $vectorSearch: {
-            index: VECTOR_INDEX_NAME,
-            path: "embedding",
-            queryVector,
-            numCandidates: 50,
-            limit: 5,
-          },
+  const queryVector = await embedText(query);
+  const db = await getDb();
+  const hits = (await db
+    .collection(COLLECTIONS.articleEmbeddings)
+    .aggregate([
+      {
+        $vectorSearch: {
+          index: VECTOR_INDEX_NAME,
+          path: "embedding",
+          queryVector,
+          numCandidates: 50,
+          limit: 5,
         },
-        {
-          $project: {
-            _id: 0,
-            articleId: 1,
-            score: { $meta: "vectorSearchScore" },
-          },
+      },
+      {
+        $project: {
+          _id: 0,
+          articleId: 1,
+          score: { $meta: "vectorSearchScore" },
         },
-      ])
-      .toArray()) as VectorHit[];
+      },
+    ])
+    .toArray()) as VectorHit[];
 
-    const matches = hits.map((hit) => ({
-      articleId: hit.articleId,
-      score: hit.score,
-    }));
-    const top = matches[0]?.score ?? 0;
-    console.log({
-      query,
-      match: isMatch(top),
-      score: top,
-      matches,
-    })
-    return NextResponse.json({
-      query,
-      match: isMatch(top),
-      score: top,
-      matches,
-    });
-  } catch {
-    return NextResponse.json({ error: "Search failed" }, { status: 500 });
-  }
+  const matches = hits.map((hit) => ({
+    articleId: hit.articleId,
+    score: hit.score,
+  }));
+  const top = matches[0]?.score ?? 0;
+  console.log({
+    query,
+    match: isMatch(top),
+    score: top,
+    matches,
+  })
+  return NextResponse.json({
+    query,
+    match: isMatch(top),
+    score: top,
+    matches,
+  });
 };

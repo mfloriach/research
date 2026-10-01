@@ -82,9 +82,13 @@ export function SiteNavbar({
   const [connectError, setConnectError] = useState<string | null>(null);
   const lastSubmittedQuery = useRef<string | null>(null);
 
-  async function fetchSearch(value: string) {
-    const data = await fetch(`/api/search?q=${encodeURIComponent(value)}`)
-    console.log(data)
+  async function fetchSearch(value: string): Promise<unknown> {
+    const response = await fetch(`/api/search?q=${encodeURIComponent(value)}`);
+    if (!response.ok) {
+      return null;
+    }
+    console.log(await response.json());
+    return (await response.json().catch(() => null)) as unknown;
   }
 
   async function handleSearchSubmit(value: string) {
@@ -264,7 +268,12 @@ export function SiteNavbar({
       </div>
 
       <div className="navbar-end gap-2">
-        <Search query={query} setQuery={setQuery} search={search} onSubmitSearch={handleSearchSubmit} />
+        <Search
+          query={query}
+          setQuery={setQuery}
+          search={search}
+          onSubmitSearch={handleSearchSubmit}
+        />
 
         {isConnected ? (
           <div className="dropdown dropdown-end">

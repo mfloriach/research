@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { Search } from "./search";
 
 const search = { placeholder: "Search the dossier", label: "Search" };
 
-function setup(onSubmitSearch?: (query: string) => void) {
+function setup(onSubmitSearch?: (query: string) => unknown) {
   const setQuery = jest.fn();
   const handleSubmit = jest.fn();
   function Harness() {
@@ -18,9 +18,9 @@ function setup(onSubmitSearch?: (query: string) => void) {
           setInnerQuery(value);
           setQuery(value);
         }}
-        onSubmitSearch={(value: string) => {
+        onSubmitSearch={async (value: string) => {
           handleSubmit(value);
-          onSubmitSearch?.(value);
+          await onSubmitSearch?.(value);
         }}
       />
     );
@@ -107,5 +107,26 @@ describe("Search", () => {
 
     expect(handleSubmit).not.toHaveBeenCalled();
     expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("awaits an async submit handler before closing", async () => {
+    const user = userEvent.setup();
+    let resolveGate!: (value: unknown) => void;
+    const gate = new Promise((resolve) => {
+      resolveGate = resolve;
+    });
+    setup(() => gate);
+    await openModal(user);
+
+    await user.type(
+      screen.getByPlaceholderText("Search the dossier"),
+      "clima{Enter}",
+    );
+
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+    await act(async () => {
+      resolveGate(null);
+    });
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 });

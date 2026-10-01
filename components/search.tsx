@@ -10,7 +10,7 @@ export type SearchProps = {
   query: string;
   setQuery: (query: string) => void;
   /** Called with the current query when the form is submitted (Enter). */
-  onSubmitSearch?: (query: string) => void;
+  onSubmitSearch?: (query: string) => void | Promise<void>;
 };
 
 export function Search({ search, query, setQuery, onSubmitSearch }: SearchProps) {
@@ -77,8 +77,11 @@ export function Search({ search, query, setQuery, onSubmitSearch }: SearchProps)
                   if (query.trim() === "") {
                     return;
                   }
-                  await onSubmitSearch?.(query);
-                  setOpen(false);
+                  try {
+                    await onSubmitSearch?.(query);
+                  } finally {
+                    setOpen(false);
+                  }
                 }}
               >
               <label className="input w-full">
