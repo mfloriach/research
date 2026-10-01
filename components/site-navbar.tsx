@@ -6,11 +6,11 @@ import {
   ANVIL_CHAIN_ID_HEX,
   ensureAnvilChain,
   getAnvilAccountsViaRpc,
-  getAnvilRpcUrl,
   isAnvilReachable,
   type AnvilEthereumProvider,
 } from "@/lib/anvil";
 import { Search } from "./search";
+import { config } from "@/lib/config";
 
 /**
  * Account dropdown entries. Hardcoded: there is no menu_items collection.
@@ -195,7 +195,7 @@ export function SiteNavbar({
     const reachable = await isAnvilReachable();
     if (!reachable) {
       throw new Error(
-        `Anvil is not reachable at ${getAnvilRpcUrl()}. Start it with \`anvil\`.`,
+        `Anvil is not reachable at ${config.anvilRpcUrl}. Start it with \`anvil\`.`,
       );
     }
     const accounts = await getAnvilAccountsViaRpc();

@@ -5,9 +5,9 @@ config();
 
 import { MongoClient, type Db } from "mongodb";
 import { logger } from "@/lib/logger";
+import { getServerConfig } from "@/lib/config";
 
-const uri = process.env.MONGODB_URI ?? "";
-const dbName = process.env.MONGODB_DB ?? "epistimology";
+const { mongoUri: uri, mongoDb: dbName } = getServerConfig();
 
 const mongoLog = logger.child({ component: "mongodb", dbName });
 
@@ -18,10 +18,6 @@ function safeHost(value: string): string {
   } catch {
     return "unknown-host";
   }
-}
-
-if (!uri) {
-  mongoLog.warn("MONGODB_URI is not set. Database calls will fail.");
 }
 
 let clientPromise: Promise<MongoClient> | null = null;
@@ -73,11 +69,6 @@ function attachMonitoring(client: MongoClient) {
 
 function getClientPromise(): Promise<MongoClient> {
   if (!clientPromise) {
-    if (!uri) {
-      throw new Error(
-        "MONGODB_URI is not set. Copy .env.example to .env.local and start MongoDB with `docker compose up -d`.",
-      );
-    }
     mongoLog.info(
       { event: "mongodb.connecting", host: safeHost(uri) },
       "Connecting to MongoDB",
@@ -116,16 +107,9 @@ function getClientPromise(): Promise<MongoClient> {
 }
 
 export async function getDb(): Promise<Db> {
-  const started = performance.now();
   const client = await getClientPromise();
   const db = client.db(dbName);
-  // mongoLog.debug(
-  //   {
-  //     event: "mongodb.getDb",
-  //     durationMs: Math.round(performance.now() - started),
-  //   },
-  //   "Acquired MongoDB database handle",
-  // );
+
   return db;
 }
 

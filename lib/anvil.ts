@@ -1,7 +1,12 @@
+import { config } from "@/lib/config";
+
 export type AnvilEthereumProvider = {
   request: (args: { method: string; params?: unknown }) => Promise<unknown>;
   on?: (event: string, listener: (...args: unknown[]) => void) => void;
-  removeListener?: (event: string, listener: (...args: unknown[]) => void) => void;
+  removeListener?: (
+    event: string,
+    listener: (...args: unknown[]) => void,
+  ) => void;
 };
 
 export const ANVIL_CHAIN_ID_DEC = 31337;
@@ -10,11 +15,7 @@ export const ANVIL_CHAIN_NAME = "Anvil Local";
 export const ANVIL_CURRENCY = { name: "Ether", symbol: "ETH", decimals: 18 };
 
 export function getAnvilRpcUrl(): string {
-  const fromEnv = process.env.NEXT_PUBLIC_ANVIL_RPC_URL?.trim();
-  if (fromEnv) {
-    return fromEnv;
-  }
-  return "http://127.0.0.1:8545";
+  return config.anvilRpcUrl;
 }
 
 /**
@@ -22,8 +23,9 @@ export function getAnvilRpcUrl(): string {
  * Tries `wallet_switchEthereumChain`, falls back to `wallet_addEthereumChain`
  * when Anvil is not yet registered (error 4902).
  */
-export async function ensureAnvilChain(provider: AnvilEthereumProvider): Promise<void> {
-  const rpcUrl = getAnvilRpcUrl();
+export async function ensureAnvilChain(
+  provider: AnvilEthereumProvider,
+): Promise<void> {
   try {
     await provider.request({
       method: "wallet_switchEthereumChain",
@@ -47,14 +49,14 @@ export async function ensureAnvilChain(provider: AnvilEthereumProvider): Promise
         chainId: ANVIL_CHAIN_ID_HEX,
         chainName: ANVIL_CHAIN_NAME,
         nativeCurrency: ANVIL_CURRENCY,
-        rpcUrls: [rpcUrl],
+        rpcUrls: [config.anvilRpcUrl],
       },
     ],
   });
 }
 
 async function rpcCall<T>(method: string, params: unknown[] = []): Promise<T> {
-  const response = await fetch(getAnvilRpcUrl(), {
+  const response = await fetch(config.anvilRpcUrl, {
     method: "POST",
     headers: { "content-type": "application/json" },
     body: JSON.stringify({ jsonrpc: "2.0", id: 1, method, params }),
@@ -62,7 +64,10 @@ async function rpcCall<T>(method: string, params: unknown[] = []): Promise<T> {
   if (!response.ok) {
     throw new Error(`Anvil RPC responded with status ${response.status}`);
   }
-  const data = (await response.json()) as { result?: T; error?: { message?: string } };
+  const data = (await response.json()) as {
+    result?: T;
+    error?: { message?: string };
+  };
   if (data.error) {
     throw new Error(data.error.message ?? `Anvil RPC error on ${method}`);
   }

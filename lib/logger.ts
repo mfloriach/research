@@ -1,14 +1,15 @@
 import pino from "pino";
+import { config } from "@/lib/config";
 
-const isProduction = process.env.NODE_ENV === "production";
+const isProduction = config.isProduction;
 
-const level = process.env.LOG_LEVEL ?? (isProduction ? "info" : "debug");
+const level = config.logLevel;
 
 export const logger = pino({
   level,
   base: {
-    service: process.env.OTEL_SERVICE_NAME ?? "epistimology-app",
-    env: process.env.NODE_ENV ?? "development",
+    service: config.otelServiceName,
+    env: config.nodeEnv,
   },
   redact: {
     paths: [

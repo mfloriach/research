@@ -11,11 +11,8 @@ import {
   type EIP1193Provider,
   type Hex,
 } from "viem";
-import {
-  ensureAnvilChain,
-  getAnvilRpcUrl,
-  type AnvilEthereumProvider,
-} from "@/lib/anvil";
+import { ensureAnvilChain, type AnvilEthereumProvider } from "@/lib/anvil";
+import { config } from "@/lib/config";
 import { useWallet } from "@/app/hooks/use-wallet";
 
 export const attestationAbi = [
@@ -121,7 +118,7 @@ export function uuidToBytes16(itemId: string): Hex {
 }
 
 export function getAttestationContractAddress(): Address | null {
-  const raw = process.env.NEXT_PUBLIC_ATTESTATION_CONTRACT_ADDRESS?.trim();
+  const raw = config.attestationContractAddress;
   if (!raw) {
     return null;
   }
@@ -133,14 +130,14 @@ export function getAnvilChain() {
     id: 31337,
     name: "Anvil Local",
     nativeCurrency: { name: "Ether", symbol: "ETH", decimals: 18 },
-    rpcUrls: { default: { http: [getAnvilRpcUrl()] } },
+    rpcUrls: { default: { http: [config.anvilRpcUrl] } },
   });
 }
 
 export function getPublicClient() {
   return createPublicClient({
     chain: getAnvilChain(),
-    transport: http(getAnvilRpcUrl()),
+    transport: http(config.anvilRpcUrl),
   });
 }
 
@@ -217,10 +214,7 @@ export function useAttestations(
   const [actionError, setActionError] = useState<string | null>(null);
 
   const idsKey = useMemo(() => [...itemIds].sort().join(","), [itemIds]);
-  const ids = useMemo(
-    () => (idsKey === "" ? [] : idsKey.split(",")),
-    [idsKey],
-  );
+  const ids = useMemo(() => (idsKey === "" ? [] : idsKey.split(",")), [idsKey]);
 
   useEffect(() => {
     if (!contract || ids.length === 0) {
@@ -301,9 +295,7 @@ export function useAttestations(
       try {
         key = uuidToBytes16(itemId);
       } catch (error) {
-        setActionError(
-          error instanceof Error ? error.message : String(error),
-        );
+        setActionError(error instanceof Error ? error.message : String(error));
         return;
       }
       const provider: AnvilEthereumProvider | undefined =
@@ -312,7 +304,9 @@ export function useAttestations(
         setActionError("Connect your wallet to attest.");
         return;
       }
-      setPendingIds((prev) => (prev.includes(itemId) ? prev : [...prev, itemId]));
+      setPendingIds((prev) =>
+        prev.includes(itemId) ? prev : [...prev, itemId],
+      );
       try {
         await ensureAnvilChain(provider);
         const walletClient = createWalletClient({

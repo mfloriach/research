@@ -35,8 +35,6 @@ export const GET = async (request: Request) => {
 
   const { matches, top } = await searchArticlesByText(query);
 
-  console.log(matches);
-
   const { answer, model } = await getLlmProvider().generateAnswer({ query });
 
   return NextResponse.json({

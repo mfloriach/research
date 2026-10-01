@@ -1,5 +1,6 @@
 import { Fragment } from "react";
 import type { Article, ReportingParagraph } from "@/db/content";
+import { config } from "@/lib/config";
 
 /** Content constraint: no article may exceed this many words. */
 export const ARTICLE_WORD_LIMIT = 500;
@@ -28,7 +29,7 @@ function Article({
 }) {
   const words = countWords(article.paragraphs);
 
-  if (process.env.NODE_ENV !== "production" && words > ARTICLE_WORD_LIMIT) {
+  if (!config.isProduction && words > ARTICLE_WORD_LIMIT) {
     console.warn(
       `[article] "${article.title}" is ${words} words, over the ${ARTICLE_WORD_LIMIT}-word limit.`,
     );

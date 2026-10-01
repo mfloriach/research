@@ -1,8 +1,14 @@
+import { config, getServerConfig } from "@/lib/config";
+
 export async function register() {
+  // NEXT_RUNTIME is provided by Next.js itself, not .env: keep the direct
+  // read as the single sanctioned exception (see eslint.config.mjs).
+  // eslint-disable-next-line no-restricted-properties
   if (process.env.NEXT_RUNTIME !== "nodejs") {
     return;
   }
-  if (process.env.OTEL_ENABLED === "false") {
+  const server = getServerConfig();
+  if (!server.otelEnabled) {
     return;
   }
 
@@ -16,20 +22,20 @@ export async function register() {
   );
 
   let traceExporter;
-  const otlpEndpoint = process.env.OTEL_EXPORTER_OTLP_ENDPOINT;
-  if (otlpEndpoint) {
+  if (server.otelExporterOtlpEndpoint) {
     const { OTLPTraceExporter } = await import(
       "@opentelemetry/exporter-trace-otlp-http"
     );
-    traceExporter = new OTLPTraceExporter({ url: otlpEndpoint });
+    traceExporter = new OTLPTraceExporter({
+      url: server.otelExporterOtlpEndpoint,
+    });
   }
 
   const sdk = new NodeSDK({
     resource: resourceFromAttributes({
-      [ATTR_SERVICE_NAME]:
-        process.env.OTEL_SERVICE_NAME ?? "epistimology-app",
-      [ATTR_SERVICE_VERSION]: process.env.npm_package_version ?? "0.1.0",
-      "deployment.environment": process.env.NODE_ENV ?? "development",
+      [ATTR_SERVICE_NAME]: config.otelServiceName,
+      [ATTR_SERVICE_VERSION]: server.appVersion,
+      "deployment.environment": config.nodeEnv,
     }),
     ...(traceExporter ? { traceExporter } : {}),
     instrumentations: [

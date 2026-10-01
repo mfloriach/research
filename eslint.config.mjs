@@ -5,6 +5,24 @@ import nextTs from "eslint-config-next/typescript";
 const eslintConfig = defineConfig([
   ...nextVitals,
   ...nextTs,
+  {
+    rules: {
+      "no-restricted-properties": [
+        "error",
+        {
+          object: "process",
+          property: "env",
+          message: "Read environment through @/lib/config instead of process.env.",
+        },
+      ],
+    },
+  },
+  {
+    files: ["lib/config.ts", "lib/config.test.ts", "jest.setup.ts"],
+    rules: {
+      "no-restricted-properties": "off",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:

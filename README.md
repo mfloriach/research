@@ -32,6 +32,11 @@ Required environment variables (`MONGODB_URI`, `MONGODB_DB`):
 | `MONGODB_URI` | `mongodb://admin:admin123@localhost:27017/epistimology?authSource=admin` |
 | `MONGODB_DB`  | `epistimology`                                                       |
 
+All variables are centralized and validated in `lib/config.ts` (the only
+module allowed to read `process.env`). Server secrets (`MONGODB_URI`,
+`OPENAI_API_KEY`) are required at startup: the app throws on import when
+they are missing or malformed.
+
 Create collections/indexes and load the seed data:
 
 ```bash
