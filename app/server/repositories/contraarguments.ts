@@ -3,7 +3,7 @@ import { Int32 } from "mongodb";
 import { getDb } from "@/lib/mongodb";
 import { pinJson } from "@/lib/ipfs";
 import { COLLECTIONS } from "@/db/migration";
-import {NotFoundError} from "@/lib/errors"
+import { NotFoundError } from "@/lib/errors";
 
 const TAB = "Contraargument";
 
@@ -18,7 +18,6 @@ export type CreateContraargumentInput = {
 
 export type CreatedContraargument = {
   itemId: string;
-  tab: string;
   ipfsCid: string;
 };
 
@@ -35,7 +34,9 @@ export async function createContraargument(
         { projection: { paragraphs: 1 } },
       )
       .toArray();
-    const found = new Set(docs.flatMap((doc) => doc.paragraphs.map((p) => p.id)));
+    const found = new Set(
+      docs.flatMap((doc) => doc.paragraphs.map((p) => p.id)),
+    );
     if (!input.paragraphIds.every((id) => found.has(id))) {
       throw new NotFoundError("One or more related paragraphs do not exist");
     }
@@ -81,17 +82,21 @@ export async function createContraargument(
     });
 
   if (input.paragraphIds.length > 0) {
-    await db.collection(COLLECTIONS.articles).updateMany(
-      { "paragraphs.id": { $in: input.paragraphIds } },
-      { $addToSet: { "paragraphs.$[p].auditItemIds": itemId } },
-      { arrayFilters: [{ "p.id": { $in: input.paragraphIds } }] },
-    );
+    await db
+      .collection(COLLECTIONS.articles)
+      .updateMany(
+        { "paragraphs.id": { $in: input.paragraphIds } },
+        { $addToSet: { "paragraphs.$[p].auditItemIds": itemId } },
+        { arrayFilters: [{ "p.id": { $in: input.paragraphIds } }] },
+      );
   }
 
-  return { itemId, tab: TAB, ipfsCid };
+  return { itemId, ipfsCid };
 }
 
-export async function incrementContraargumentOpenCount(itemId: string): Promise<number> {
+export async function incrementContraargumentOpenCount(
+  itemId: string,
+): Promise<number> {
   const db = await getDb();
 
   const updated = await db
