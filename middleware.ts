@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import { getRequestLogger } from "@/lib/logger";
-import { AppError, HttpResponse, IpfsUnavailableError } from "@/lib/errors";
+import { AppError, HttpResponse } from "@/lib/errors";
 
 export function getRequestId(request: Request): string {
   return request.headers.get("x-request-id") ?? crypto.randomUUID();
