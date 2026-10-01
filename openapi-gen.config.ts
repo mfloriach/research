@@ -16,6 +16,13 @@ export default defineConfig({
   outputFile: "openapi.yaml",
   includeOpenApiRoutes: false,
   ignoreRoutes: [],
-  excludeSchemas: ["auditItemSchema"],
+  excludeSchemas: [
+    "auditItemSchema",
+    "publicSchema",
+    "serverSchema",
+    "logLevelSchema",
+    "llmProviderSchema",
+    "nodeEnvSchema",
+  ],
   debug: false,
 });

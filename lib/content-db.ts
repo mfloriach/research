@@ -10,6 +10,7 @@ import { COLLECTIONS } from "@/db/migration";
 type ArgumentContent = {
   title: string;
   description: string;
+  labels: readonly string[];
 };
 
 type ReportingCardContent = {
@@ -28,7 +29,7 @@ export type DbContent = {
   auditCard: AuditCardContent;
 };
 
-type ArgumentDoc = { _id: string; title: string; description: string };
+type ArgumentDoc = { _id: string; title: string; description: string; labels?: string[] };
 type StoredParagraphDoc = {
   id: string;
   text: string;
@@ -39,7 +40,7 @@ type ArticleDoc = {
   _id: string;
   title: string;
   type: string;
-  label: string;
+  labels: string[];
   argumentId: string;
   paragraphs: StoredParagraphDoc[];
   ipfsCid?: string;
@@ -90,14 +91,18 @@ export async function getContentFromDb(): Promise<DbContent> {
         text: paragraph.text,
         auditItemIds: paragraph.auditItemIds ?? [],
       }));
-    const list = articlesByLabel.get(doc.label) ?? [];
-    list.push({
-      id: doc._id,
-      title: doc.title,
-      order: doc.order ?? 0,
-      paragraphs,
-    });
-    articlesByLabel.set(doc.label, list);
+    const labels = [...new Set(doc.labels ?? [])];
+    for (const label of labels) {
+      const list = articlesByLabel.get(label) ?? [];
+      list.push({
+        id: doc._id,
+        title: doc.title,
+        labels,
+        order: doc.order ?? 0,
+        paragraphs,
+      });
+      articlesByLabel.set(label, list);
+    }
   }
   const reportingTabs = [...articlesByLabel.entries()]
     .map(([label, entries]) => ({
@@ -109,6 +114,7 @@ export async function getContentFromDb(): Promise<DbContent> {
         .map((article) => ({
           id: article.id,
           title: article.title,
+          labels: article.labels,
           paragraphs: article.paragraphs,
         })),
     }))
@@ -133,6 +139,7 @@ export async function getContentFromDb(): Promise<DbContent> {
     argument: {
       title: argumentDoc.title,
       description: argumentDoc.description,
+      labels: argumentDoc.labels ?? [],
     },
     reportingCard: {
       title: "Reporting",

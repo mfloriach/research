@@ -8,20 +8,21 @@ import { COLLECTIONS } from "@/db/migration";
 export type CreateReportInput = {
   title: string;
   description: string;
-  label?: string;
+  labels?: string[];
 };
 
 export type CreatedReport = {
   articleId: string;
-  tab: string;
+  tabs: string[];
   paragraphIds: string[];
   ipfsCid: string;
 };
 
 /**
  * Store a debate report as an article with embedded paragraphs.
- * Uses the given label, or the alphabetically first existing label when
- * omitted. Articles always reference the singleton argument.
+ * Uses the given labels, or the alphabetically first existing label when
+ * omitted. The article appears under every matching reporting tab.
+ * Articles always reference the singleton argument.
  * Throws when no label or argument can be resolved.
  */
 export async function createReport(
@@ -39,28 +40,29 @@ export async function createReport(
     throw new Error("No argument available");
   }
 
-  const cleanLabel = input.label?.trim() ?? "";
-  let label = cleanLabel;
-  if (!label) {
-    const labels = await db
-      .collection<{ label: string }>(COLLECTIONS.articles)
-      .distinct("label");
-    const sorted = (labels as string[]).sort();
+  const labels = [...new Set((input.labels ?? []).map((label) => label.trim()))].filter(
+    (label) => label.length > 0,
+  );
+  if (labels.length === 0) {
+    const existing = await db
+      .collection(COLLECTIONS.articles)
+      .distinct("labels");
+    const sorted = (existing as string[]).sort();
     if (sorted.length === 0) {
       throw new Error("No reporting labels available");
     }
-    label = sorted[0];
+    labels.push(sorted[0] as string);
   }
 
   const articleOrder = await db
     .collection<{ _id: string }>(COLLECTIONS.articles)
-    .countDocuments({ label });
+    .countDocuments({ labels: labels[0] });
   const articleId = randomUUID();
 
   const ipfsCid = await pinJson({
     kind: "report",
     title: input.title,
-    ...(label.length > 0 ? { label } : {}),
+    labels,
     description: input.description,
     paragraphs: chunks,
   });
@@ -77,7 +79,7 @@ export async function createReport(
       _id: string;
       title: string;
       type: string;
-      label: string;
+      labels: string[];
       argumentId: string;
       paragraphs: { id: string; text: string; auditItemIds: string[]; order: Int32 }[];
       ipfsCid: string;
@@ -87,7 +89,7 @@ export async function createReport(
       _id: articleId,
       title: input.title,
       type: "text",
-      label,
+      labels,
       argumentId: argument._id,
       paragraphs: paragraphDocs,
       ipfsCid,
@@ -112,7 +114,7 @@ export async function createReport(
 
   return {
     articleId,
-    tab: label,
+    tabs: labels,
     paragraphIds: paragraphDocs.map((doc) => doc.id),
     ipfsCid,
   };

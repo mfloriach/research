@@ -1,14 +1,17 @@
 /**
  * MongoDB migration for content collections.
  *
- * - arguments    -> argument (singleton: the debated thesis)
- * - articles     -> Article (paragraphs and label embedded, references arguments)
+ * - arguments    -> argument (singleton: the debated thesis, with labels)
+ * - articles     -> Article (paragraphs and labels embedded, references arguments)
  * - replies      -> audit reply (tab is a hardcoded label string)
  * - article_embeddings -> embedding vector per article (Atlas Vector Search)
  *
  * Removed collections (dropped when present): site_config, headings,
  * audit_items, menu_items, reporting_tabs, reporting_articles,
  * reporting_paragraphs, audit_tabs.
+ *
+ * Backfills single `label` article docs to `labels` arrays and ensures the
+ * argument document carries labels.
  *
  * Run with: npm run db:migrate
  */
@@ -19,6 +22,7 @@ config();
 
 import { getDb, closeDb } from "../lib/mongodb";
 import { EMBEDDING_DIMENSIONS } from "../lib/embeddings";
+import { ARGUMENT_LABELS } from "./content";
 
 export const COLLECTIONS = {
   arguments: "arguments",
@@ -42,23 +46,24 @@ const VALIDATORS: Record<string, object> = {
   [COLLECTIONS.arguments]: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["_id", "title", "description"],
+      required: ["_id", "title", "description", "labels"],
       properties: {
         _id: { bsonType: "string" },
         title: { bsonType: "string" },
         description: { bsonType: "string" },
+        labels: { bsonType: "array", items: { bsonType: "string" } },
       },
     },
   },
   [COLLECTIONS.articles]: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["_id", "title", "type", "label", "argumentId", "paragraphs", "order"],
+      required: ["_id", "title", "type", "labels", "argumentId", "paragraphs", "order"],
       properties: {
         _id: { bsonType: "string" },
         title: { bsonType: "string" },
         type: { enum: ["text"] },
-        label: { bsonType: "string" },
+        labels: { bsonType: "array", minItems: 1, items: { bsonType: "string" } },
         argumentId: { bsonType: "string" },
         paragraphs: {
           bsonType: "array",
@@ -158,10 +163,29 @@ export async function migrate(): Promise<void> {
     }
   }
 
-  await db.collection(COLLECTIONS.articles).createIndex({ label: 1, order: 1 });
+  await db.collection(COLLECTIONS.articles).createIndex({ labels: 1, order: 1 });
   await db.collection(COLLECTIONS.articles).createIndex({ argumentId: 1 });
   await db.collection(COLLECTIONS.replies).createIndex({ tab: 1, order: 1 });
   console.log("[migration] indexes ensured");
+
+  const backfilledArticles = (
+    await db.collection(COLLECTIONS.articles).updateMany(
+      { label: { $exists: true } },
+      [{ $set: { labels: ["$label"] } }, { $unset: "label" }],
+    )
+  ).modifiedCount;
+  if (backfilledArticles > 0) {
+    console.log(`[migration] backfilled labels for ${backfilledArticles} articles`);
+  }
+  const backfilledArguments = (
+    await db.collection(COLLECTIONS.arguments).updateMany(
+      { labels: { $exists: false } },
+      { $set: { labels: [...ARGUMENT_LABELS] } },
+    )
+  ).modifiedCount;
+  if (backfilledArguments > 0) {
+    console.log(`[migration] backfilled labels for ${backfilledArguments} arguments`);
+  }
 
   await ensureVectorIndex(db);
 }

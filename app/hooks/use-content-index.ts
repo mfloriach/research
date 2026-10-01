@@ -16,7 +16,7 @@ import {
 export type ArticleView = {
   id: string;
   title: string;
-  label: string;
+  labels: string[];
   total: number;
   counts: ArticleTypeCount[];
   rows: ArticleTableRow[];
@@ -65,7 +65,7 @@ export function useContentIndex(): ContentIndexView {
   const articles: ArticleView[] = (index?.articles ?? []).map((article) => ({
     id: article.id,
     title: article.title,
-    label: article.label,
+    labels: article.labels,
     total: article.auditItemIds.length,
     counts: index ? summarizeArticle(index, article.id) : [],
     rows: index ? articleTableRows(index, article.id) : [],

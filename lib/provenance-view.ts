@@ -4,7 +4,7 @@ import type { DbContent } from "@/lib/content-db";
 export type IndexedArticle = {
   id: string;
   title: string;
-  label: string;
+  labels: string[];
   auditItemIds: string[];
 };
 
@@ -22,20 +22,27 @@ export type ContentIndex = {
 };
 
 export function buildContentIndex(content: DbContent): ContentIndex {
-  const articles: IndexedArticle[] = [];
+  const byId = new Map<string, IndexedArticle>();
   for (const tab of content.reportingCard.tabs) {
     for (const item of tab.items) {
       const auditItemIds = [
         ...new Set(item.paragraphs.flatMap((p) => p.auditItemIds)),
       ];
-      articles.push({
-        id: item.id,
-        title: item.title,
-        label: tab.label,
-        auditItemIds,
-      });
+      const existing = byId.get(item.id);
+      if (existing) {
+        existing.labels = [...new Set([...existing.labels, tab.label, ...item.labels])];
+        existing.auditItemIds = [...new Set([...existing.auditItemIds, ...auditItemIds])];
+      } else {
+        byId.set(item.id, {
+          id: item.id,
+          title: item.title,
+          labels: [...new Set([tab.label, ...item.labels])],
+          auditItemIds,
+        });
+      }
     }
   }
+  const articles = [...byId.values()];
 
   const auditItems = new Map<string, IndexedAuditItem>();
   for (const tab of content.auditCard.tabs) {

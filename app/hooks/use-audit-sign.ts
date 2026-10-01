@@ -94,8 +94,11 @@ export async function buildSignMessage(input: {
   body: Record<string, unknown>;
 }): Promise<{ message: string; contentHash: Hex }> {
   const contentHash = await sha256Hex(canonicalJson(input.body));
+  const labels = Array.isArray(input.body.labels)
+    ? (input.body.labels as unknown[]).map(String).join(", ")
+    : undefined;
   const title = String(
-    input.body.title ?? input.body.label ?? input.kind,
+    input.body.title ?? labels ?? input.body.label ?? input.kind,
   );
   const message = [
     SIGN_MESSAGE_HEADER,

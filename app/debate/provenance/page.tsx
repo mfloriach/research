@@ -73,6 +73,20 @@ export default function ProvenancePage() {
                         </h3>
                         <CopyButton value={article.id} label="article ID" />
                       </div>
+                      {article.labels.length > 0 ? (
+                        <ul
+                          aria-label="Article labels"
+                          className="flex flex-wrap justify-center gap-1.5"
+                        >
+                          {article.labels.map((label) => (
+                            <li key={label}>
+                              <span className="badge badge-outline badge-sm">
+                                {label}
+                              </span>
+                            </li>
+                          ))}
+                        </ul>
+                      ) : null}
                       {article.rows.length === 0 ? (
                         <p className="text-xs opacity-60">
                           No linked audit items.

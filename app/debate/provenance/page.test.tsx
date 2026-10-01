@@ -14,7 +14,7 @@ jest.mock("@/app/hooks/use-provenance", () => ({
 const mockFetch = jest.fn();
 
 const content = {
-  argument: { title: "Argument", description: "Description" },
+  argument: { title: "Argument", description: "Description", labels: ["Clima"] },
   reportingCard: {
     title: "Reporting",
     tabs: [
@@ -25,6 +25,7 @@ const content = {
           {
             id: "article-1",
             title: "Article One",
+            labels: ["Clima", "Science"],
             paragraphs: [
               { id: "p1", text: "a", auditItemIds: ["evidence-1", "source-1"] },
             ],

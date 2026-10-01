@@ -8,7 +8,7 @@ import {
 } from "./provenance-view";
 
 const fixture: DbContent = {
-  argument: { title: "Argument", description: "Description" },
+  argument: { title: "Argument", description: "Description", labels: ["Clima"] },
   reportingCard: {
     title: "Reporting",
     tabs: [
@@ -19,6 +19,7 @@ const fixture: DbContent = {
           {
             id: "article-1",
             title: "Article One",
+            labels: ["Clima"],
             paragraphs: [
               { id: "p1", text: "a", auditItemIds: ["evidence-1", "source-1"] },
               { id: "p2", text: "b", auditItemIds: ["evidence-1", "fallacy-1"] },
@@ -27,6 +28,7 @@ const fixture: DbContent = {
           {
             id: "article-2",
             title: "Article Two",
+            labels: ["Clima"],
             paragraphs: [],
           },
         ],
@@ -77,7 +79,7 @@ describe("provenance-view", () => {
     expect(index.articles[0]).toEqual({
       id: "article-1",
       title: "Article One",
-      label: "Clima",
+      labels: ["Clima"],
       auditItemIds: ["evidence-1", "source-1", "fallacy-1"],
     });
     expect(index.auditItems.get("source-1")).toEqual({
@@ -92,6 +94,53 @@ describe("provenance-view", () => {
       tab: "Evidences",
       date: "2025-01-10",
       excerpt: "Evidence paragraph one",
+    });
+  });
+
+  it("merges multi-tab articles into one entry with all labels", () => {
+    const index = buildContentIndex({
+      ...fixture,
+      reportingCard: {
+        title: "Reporting",
+        tabs: [
+          {
+            id: "tab-clima",
+            label: "Clima",
+            items: [
+              {
+                id: "article-1",
+                title: "Article One",
+                labels: ["Clima", "Science"],
+                paragraphs: [
+                  { id: "p1", text: "a", auditItemIds: ["evidence-1"] },
+                ],
+              },
+            ],
+          },
+          {
+            id: "tab-science",
+            label: "Science",
+            items: [
+              {
+                id: "article-1",
+                title: "Article One",
+                labels: ["Clima", "Science"],
+                paragraphs: [
+                  { id: "p1", text: "a", auditItemIds: ["evidence-1"] },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    expect(index.articles).toHaveLength(1);
+    expect(index.articles[0]).toEqual({
+      id: "article-1",
+      title: "Article One",
+      labels: ["Clima", "Science"],
+      auditItemIds: ["evidence-1"],
     });
   });
 

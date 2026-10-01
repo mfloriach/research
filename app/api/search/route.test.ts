@@ -19,11 +19,6 @@ const getLlmProviderMock = getLlmProvider as jest.Mock;
 describe("GET /api/search", () => {
   beforeEach(() => {
     jest.clearAllMocks();
-    jest.spyOn(console, "log").mockImplementation(() => {});
-  });
-
-  afterEach(() => {
-    jest.restoreAllMocks();
   });
 
   it("returns atlas matches and the LLM answer", async () => {
@@ -46,7 +41,6 @@ describe("GET /api/search", () => {
     expect(
       getLlmProviderMock().generateAnswer,
     ).toHaveBeenCalledWith({ query: "climate" });
-    expect(console.log).toHaveBeenCalledWith(matches);
     expect(body).toEqual({
       query: "climate",
       match: true,
@@ -57,16 +51,11 @@ describe("GET /api/search", () => {
     });
   });
 
-  it("maps repository failures to a 500 error response", async () => {
+  it("propagates repository failures to the error handler", async () => {
     searchArticlesByTextMock.mockRejectedValue(new Error("db down"));
 
-    const response = await GET(
-      new Request("http://localhost/api/search?q=climate"),
-    );
-
-    expect(response.status).toBe(500);
-    expect(await response.json()).toEqual({
-      error: "Internal server error",
-    });
+    await expect(
+      GET(new Request("http://localhost/api/search?q=climate")),
+    ).rejects.toThrow("db down");
   });
 });

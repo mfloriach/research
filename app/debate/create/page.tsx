@@ -8,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import "@uiw/react-md-editor/markdown-editor.css";
 import { useWallet } from "@/app/hooks/use-wallet";
 import {
+  parseLabelsInput,
   reportCreateFormSchema,
   type ReportCreateFormInput,
   type ReportCreateFormValues,
@@ -32,7 +33,7 @@ export default function CreateDebatePage() {
   } = useForm<ReportCreateFormInput, unknown, ReportCreateFormValues>({
     resolver: zodResolver(reportCreateFormSchema),
     mode: "onChange",
-    defaultValues: { title: "", label: "", description: "" },
+    defaultValues: { title: "", labels: "", description: "" },
   });
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
@@ -56,7 +57,7 @@ export default function CreateDebatePage() {
     try {
       const body = {
         title: values.title,
-        label: values.label,
+        labels: parseLabelsInput(values.labels),
         description: values.description,
       };
       const signResult = await signPayload({ kind: "report", body });
@@ -141,14 +142,14 @@ export default function CreateDebatePage() {
             />
           </Field>
 
-          <Field label="Label" error={errors.label?.message}>
+          <Field label="Labels (comma-separated)" error={errors.labels?.message}>
             <input
               type="text"
               className="input input-bordered w-full"
-              placeholder="Section label (e.g. Clima)"
-              maxLength={60}
+              placeholder="Section labels (e.g. Clima, Policy)"
+              maxLength={200}
               disabled={!isConnected || submitting}
-              {...register("label")}
+              {...register("labels")}
             />
           </Field>
 

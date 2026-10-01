@@ -56,7 +56,11 @@ export default function Home() {
       <main className="flex-1">
         <div className="mx-8 py-8 sm:py-10">
           <div className="flex flex-wrap items-start justify-between gap-4">
-            <PageHeading title={argument.title} description={argument.description} />
+            <PageHeading
+              title={argument.title}
+              description={argument.description}
+              labels={argument.labels}
+            />
             <button
               type="button"
               className="btn btn-primary"

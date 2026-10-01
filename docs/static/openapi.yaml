@@ -461,9 +461,14 @@ components:
           type: string
         description:
           type: string
+        labels:
+          type: array
+          items:
+            type: string
       required:
         - title
         - description
+        - labels
     auditCreateFormSchema:
       type: object
       properties:
@@ -640,10 +645,13 @@ components:
           minLength: 3
           maxLength: 200
           description: Report title, 3-200 characters
-        label:
-          type: string
-          maxLength: 60
-          description: Article label. Groups the article in the reporting view.
+        labels:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 60
+          description: Article labels. The article appears under every matching reporting tab.
         description:
           type: string
           minLength: 1
@@ -658,9 +666,11 @@ components:
         articleId:
           type: string
           description: Created reporting article ID
-        tab:
-          type: string
-          description: Article label the report was stored under
+        tabs:
+          type: array
+          items:
+            type: string
+          description: Reporting tabs the article was stored under
         paragraphIds:
           type: array
           items:
@@ -671,7 +681,7 @@ components:
           description: IPFS CID of the pinned report envelope
       required:
         - articleId
-        - tab
+        - tabs
         - paragraphIds
         - ipfsCid
     ErrorResponse:
@@ -725,9 +735,8 @@ components:
           type: string
           minLength: 3
           maxLength: 200
-        label:
+        labels:
           type: string
-          maxLength: 60
           default: ''
         description:
           type: string
@@ -743,6 +752,10 @@ components:
           type: string
         title:
           type: string
+        labels:
+          type: array
+          items:
+            type: string
         paragraphs:
           type: array
           items:
@@ -750,6 +763,7 @@ components:
       required:
         - id
         - title
+        - labels
         - paragraphs
     ReportingParagraph:
       type: object

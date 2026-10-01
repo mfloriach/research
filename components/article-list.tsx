@@ -38,6 +38,15 @@ function Article({
   return (
     <article className="space-y-4">
       <h3 className="text-lg font-semibold leading-7">{article.title}</h3>
+      {article.labels.length > 0 ? (
+        <ul aria-label="Article labels" className="flex flex-wrap gap-1.5">
+          {article.labels.map((label) => (
+            <li key={label}>
+              <span className="badge badge-outline badge-sm">{label}</span>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {article.paragraphs.map((paragraph, index) => {
         const isSelected =
           selected?.articleId === article.id && selected?.paragraphId === paragraph.id;

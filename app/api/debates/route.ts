@@ -7,7 +7,7 @@ import { createReport } from "@/app/server/repositories/reporting";
  * Create a debate report
  *
  * @description Pins the report to IPFS, then stores it as an article with
- * embedded paragraphs under its label.
+ * embedded paragraphs under every given label.
  * @tag Debates
  * @requestBody DebateInput required
  * @response 201:DebateResponse:Report stored
@@ -26,11 +26,11 @@ export const POST = async (request: Request) => {
     );
   }
 
-  const { articleId, tab, paragraphIds, ipfsCid } = await createReport(
+  const { articleId, tabs, paragraphIds, ipfsCid } = await createReport(
     {
       title: parsed.title,
       description: parsed.description,
-      ...(parsed.label ? { label: parsed.label } : {}),
+      labels: parsed.labels,
     },
     chunks,
   );
@@ -38,7 +38,7 @@ export const POST = async (request: Request) => {
   return NextResponse.json(
     {
       articleId,
-      tab: tab,
+      tabs,
       paragraphIds,
       ipfsCid,
     },

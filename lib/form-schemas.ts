@@ -53,6 +53,12 @@ export const auditCreateFormSchema = z.object({
 export type AuditCreateFormValues = z.infer<typeof auditCreateFormSchema>;
 export type AuditCreateFormInput = z.input<typeof auditCreateFormSchema>;
 
+export function parseLabelsInput(value: string): string[] {
+  return [...new Set(value.split(",").map((label) => label.trim()))].filter(
+    (label) => label.length > 0,
+  );
+}
+
 export const reportCreateFormSchema = z.object({
   title: z
     .string()
@@ -63,12 +69,18 @@ export const reportCreateFormSchema = z.object({
     .max(MAX_TITLE_LENGTH, {
       message: `Title must be between 3 and ${MAX_TITLE_LENGTH} characters`,
     }),
-  label: z
+  labels: z
     .string()
     .trim()
-    .max(MAX_LABEL_LENGTH, {
-      message: `Label must be at most ${MAX_LABEL_LENGTH} characters`,
-    })
+    .refine(
+      (value) =>
+        parseLabelsInput(value).every(
+          (label) => label.length <= MAX_LABEL_LENGTH,
+        ),
+      {
+        message: `Each label must be at most ${MAX_LABEL_LENGTH} characters`,
+      },
+    )
     .optional()
     .default(""),
   description: z

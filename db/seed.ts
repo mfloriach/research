@@ -11,7 +11,7 @@ config();
 import { Int32 } from "mongodb";
 import { getDb, closeDb } from "../lib/mongodb";
 import { COLLECTIONS, migrate } from "./migration";
-import { argument, reportingCard, auditCard } from "./content";
+import { ARGUMENT_LABELS, argument, reportingCard, auditCard } from "./content";
 import { articleEmbeddingText, embedText } from "../lib/embeddings";
 
 const MAIN_ARGUMENT_ID = "main-argument";
@@ -36,19 +36,24 @@ export async function seed(): Promise<void> {
     _id: MAIN_ARGUMENT_ID,
     title: argument.title,
     description: argument.description,
+    labels: [...ARGUMENT_LABELS],
   });
 
   const articleDocs: SeedDoc[] = [];
   const labelOrder = new Map<string, number>();
   for (const tab of reportingCard.tabs) {
     for (const article of tab.items) {
-      const order = labelOrder.get(tab.label) ?? 0;
-      labelOrder.set(tab.label, order + 1);
+      const labels = [...new Set([tab.label, ...article.labels])];
+      const firstLabel = labels[0] as string;
+      const order = labelOrder.get(firstLabel) ?? 0;
+      for (const label of labels) {
+        labelOrder.set(label, (labelOrder.get(label) ?? 0) + 1);
+      }
       articleDocs.push({
         _id: article.id,
         title: article.title,
         type: "text",
-        label: tab.label,
+        labels,
         argumentId: MAIN_ARGUMENT_ID,
         paragraphs: article.paragraphs.map((paragraph, paraOrder) => ({
           id: paragraph.id,

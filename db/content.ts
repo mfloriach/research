@@ -18,13 +18,14 @@ export type ReportingParagraph = {
 export type Article = {
   id: string;
   title: string;
+  /** Reporting labels. An article appears under every matching tab. */
+  labels: string[];
   paragraphs: ReportingParagraph[];
 };
 
 /** Stored article document (`articles` collection): display fields plus storage metadata. */
 export type StoredArticle = Article & {
   type: "text";
-  label: string;
   ipfsCid?: string;
   order: number;
 };
@@ -77,10 +78,23 @@ export const site = {
   },
 };
 
+/**
+ * Canonical argument labels. Seeded onto the argument document and used as
+ * the default reporting labels for articles.
+ */
+export const ARGUMENT_LABELS: readonly string[] = [
+  "Clima",
+  "Economy",
+  "Policy",
+  "Science",
+  "Trade",
+];
+
 export const argument = {
   title: "Carbon border taxes, audited",
   description:
     "Current reporting on climate and the economy, read against a structured audit of the argument — counterarguments, fallacies, evidence, sources and interpretation.",
+  labels: ARGUMENT_LABELS,
 };
 
 export const reportingCard = {
@@ -93,6 +107,7 @@ export const reportingCard = {
         {
           id: "33c84ebe-6f7d-4100-9fa0-0100f30d128f",
           title: "Climate sensitivity is a range, not a number",
+          labels: ["Clima", "Science"],
           paragraphs: [
             {
               id: "1cb8e607-f3a7-4614-a44c-da704f1b6780",
@@ -151,6 +166,7 @@ export const reportingCard = {
         {
           id: "ac11660e-454a-416a-82e2-37e32e21f0fc",
           title: "What productivity numbers can and cannot tell us",
+          labels: ["Economy"],
           paragraphs: [
             {
               id: "02985276-a8d5-4c5c-afbc-d615beb85b1c",
@@ -195,6 +211,35 @@ export const reportingCard = {
                 "a5279f38-dca3-4921-aad8-9c6b049ce5c0",
                 "a7d6e08d-8071-4a2d-b8c5-d4a88d1a9c6c",
                 "2746480b-1cfa-4650-954c-43283dea532f",
+              ],
+            },
+          ],
+        },
+      ],
+    },
+    {
+      id: "e04f7a5b-3c6d-4e5f-9a8b-5c9d0e1f2a3b",
+      label: "Policy",
+      items: [
+        {
+          id: "b71c4d2e-9f3a-4a1b-8c5d-2e6f7a8b9c0d",
+          title: "Border adjustments live or die on calibration",
+          labels: ["Policy"],
+          paragraphs: [
+            {
+              id: "c82d5e3f-1a4b-4c2d-9e6f-3a7b8c9d0e1f",
+              text: "A border adjustment that mirrors the domestic carbon price removes the incentive to chase weaker jurisdictions. One set too low becomes protectionism with green paint; one set too high invites retaliation before it cuts a tonne of emissions.",
+              auditItemIds: [
+                "95b87e22-bdc7-4761-a186-a3a4488caba9",
+                "37adaa72-5215-4edb-a297-08bfa9b46623",
+              ],
+            },
+            {
+              id: "d93e6f4a-2b5c-4d3e-8f7a-4b8c9d0e1f2a",
+              text: "The political reading matters as much as the arithmetic. Framed as pricing rather than punishment, the instrument gives legislatures cover to price carbon at home; framed as a sanction, it is judged against a standard it was never designed to meet.",
+              auditItemIds: [
+                "37adaa72-5215-4edb-a297-08bfa9b46623",
+                "a7d6e08d-8071-4a2d-b8c5-d4a88d1a9c6c",
               ],
             },
           ],

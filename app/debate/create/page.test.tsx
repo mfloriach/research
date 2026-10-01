@@ -114,7 +114,7 @@ describe("CreateDebatePage", () => {
         kind: "report",
         body: {
           title: "A valid title",
-          label: "",
+          labels: [],
           description: "Some description",
         },
       });

@@ -30,14 +30,21 @@ export const debateInputSchema = z
         error: `Title must be between 3 and ${MAX_DEBATE_TITLE_LENGTH} characters`,
       })
       .describe("Report title, 3-200 characters"),
-    label: z
-      .string({ error: "Label must be a string" })
-      .trim()
-      .max(MAX_DEBATE_LABEL_LENGTH, {
-        error: `Label must be at most ${MAX_DEBATE_LABEL_LENGTH} characters`,
-      })
+    labels: z
+      .array(
+        z
+          .string({ error: "Each label must be a string" })
+          .trim()
+          .min(1, { error: "Labels must not be empty" })
+          .max(MAX_DEBATE_LABEL_LENGTH, {
+            error: `Each label must be at most ${MAX_DEBATE_LABEL_LENGTH} characters`,
+          }),
+      )
       .optional()
-      .describe("Article label. Groups the article in the reporting view."),
+      .default([])
+      .describe(
+        "Article labels. The article appears under every matching reporting tab.",
+      ),
     description: z
       .string({ error: "Description must be a string" })
       .trim()
@@ -61,7 +68,9 @@ export type DebateInput = z.infer<typeof debateInputSchema>;
 export const debateResponseSchema = z
   .object({
     articleId: z.string().describe("Created reporting article ID"),
-    tab: z.string().describe("Article label the report was stored under"),
+    tabs: z
+      .array(z.string())
+      .describe("Reporting tabs the article was stored under"),
     paragraphIds: z
       .array(z.string())
       .describe("Stored paragraph IDs in document order"),
@@ -102,6 +111,7 @@ const argumentContentSchema = z
   .object({
     title: z.string(),
     description: z.string(),
+    labels: z.array(z.string()),
   })
   .meta({ id: "Argument" });
 
@@ -117,6 +127,7 @@ const reportingArticleSchema = z
   .object({
     id: z.string(),
     title: z.string(),
+    labels: z.array(z.string()),
     paragraphs: z.array(reportingParagraphSchema),
   })
   .meta({ id: "ReportingArticle" });

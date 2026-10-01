@@ -56,8 +56,12 @@ export function ProvenanceSummary({ articles }: ProvenanceSummaryProps) {
             <div className="card-body gap-3 p-5">
               <div className="flex items-start justify-between gap-2">
                 <h3 className="font-semibold leading-snug">{article.title}</h3>
-                <span className="badge badge-outline badge-sm shrink-0">
-                  {article.label}
+                <span className="flex shrink-0 flex-wrap justify-end gap-1">
+                  {article.labels.map((label) => (
+                    <span key={label} className="badge badge-outline badge-sm">
+                      {label}
+                    </span>
+                  ))}
                 </span>
               </div>
               <p className="text-sm text-base-content/70">
