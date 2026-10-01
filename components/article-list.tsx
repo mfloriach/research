@@ -36,8 +36,8 @@ function Article({
   }
 
   return (
-    <article className="space-y-4">
-      <h3 className="text-lg font-semibold leading-7">{article.title}</h3>
+    <article id={article.id} className="scroll-mt-24 space-y-4">
+      <h3 className="font-serif text-xl font-semibold leading-8">{article.title}</h3>
       {article.labels.length > 0 ? (
         <ul aria-label="Article labels" className="flex flex-wrap gap-1.5">
           {article.labels.map((label) => (
@@ -63,7 +63,7 @@ function Article({
               "block w-full rounded-md text-left leading-7 transition-colors",
               "text-base-content/80",
               clickable
-                ? "cursor-pointer px-2 py-1 hover:bg-base-200/70 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                ? "cursor-pointer px-2 py-1 hover:bg-base-300/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                 : "cursor-default",
               isSelected ? "bg-primary/10 outline outline-1 outline-primary" : "",
             ].join(" ")}

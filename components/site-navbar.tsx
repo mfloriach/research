@@ -9,7 +9,7 @@ import {
   isAnvilReachable,
   type AnvilEthereumProvider,
 } from "@/lib/anvil";
-import { Search } from "./search";
+import { Search, type SearchResults } from "./search";
 import { config } from "@/lib/config";
 
 /**
@@ -80,34 +80,70 @@ export function SiteNavbar({
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
-  const lastSubmittedQuery = useRef<string | null>(null);
+  const [searchStatus, setSearchStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [searchError, setSearchError] = useState<string | null>(null);
+  const [searchResults, setSearchResults] = useState<SearchResults>(null);
+  const titlesCache = useRef<Map<string, string> | null>(null);
 
-  async function fetchSearch(value: string): Promise<unknown> {
-    const response = await fetch(`/api/search?q=${encodeURIComponent(value)}`);
-    if (!response.ok) {
-      return null;
+  async function fetchArticleTitles(): Promise<Map<string, string>> {
+    if (titlesCache.current) {
+      return titlesCache.current;
     }
-    console.log(await response.json());
-    return (await response.json().catch(() => null)) as unknown;
+    const titles = new Map<string, string>();
+    try {
+      const response = await fetch("/api/content");
+      if (response.ok) {
+        const data = (await response.json()) as {
+          reportingCard: {
+            tabs: { items: { id: string; title: string }[] }[];
+          };
+        };
+        for (const tab of data.reportingCard.tabs) {
+          for (const item of tab.items) {
+            titles.set(item.id, item.title);
+          }
+        }
+      }
+    } catch {
+      // Titles are a progressive enhancement; fall back to IDs.
+    }
+    titlesCache.current = titles;
+    return titles;
   }
 
   async function handleSearchSubmit(value: string) {
-    lastSubmittedQuery.current = value;
-    await fetchSearch(value);
-  }
-
-  useEffect(() => {
-    if (query.trim() === "") {
+    const query = value.trim();
+    if (query === "") {
       return;
     }
-    const timer = setTimeout(() => {
-      if (lastSubmittedQuery.current === query) {
-        return;
+    setSearchStatus("loading");
+    setSearchError(null);
+    try {
+      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      if (!response.ok) {
+        throw new Error(`status ${response.status}`);
       }
-      fetchSearch(query);
-    }, 300);
-    return () => clearTimeout(timer);
-  }, [query]);
+      const data = (await response.json()) as {
+        matches: { articleId: string; score: number }[];
+        answer: string;
+        model: string;
+      };
+      const titles = await fetchArticleTitles();
+      setSearchResults({
+        matches: data.matches.map((match) => ({
+          articleId: match.articleId,
+          title: titles.get(match.articleId) ?? match.articleId,
+          score: match.score,
+        })),
+        answer: data.answer,
+        model: data.model,
+      });
+      setSearchStatus("done");
+    } catch {
+      setSearchStatus("error");
+      setSearchError("Search failed. Check the query and try again.");
+    }
+  }
 
   const address = walletAddress !== undefined ? walletAddress : internalAddress;
   const isOnAnvil =
@@ -272,6 +308,9 @@ export function SiteNavbar({
           query={query}
           setQuery={setQuery}
           search={search}
+          status={searchStatus}
+          results={searchResults}
+          error={searchError}
           onSubmitSearch={handleSearchSubmit}
         />
 

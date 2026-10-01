@@ -17,6 +17,8 @@ export type TabbedCardProps = {
   tabs: readonly TabbedCardTab[];
   /** Tab selected on first paint. Falls back to the first tab. */
   defaultTabId?: string;
+  /** Reading surface: paper for documents, plain for ledgers. */
+  tone?: "paper" | "plain";
 };
 
 /**
@@ -25,7 +27,7 @@ export type TabbedCardProps = {
  * Tabs use radio inputs, so switching them is pure CSS and this component
  * stays a Server Component — no hydration cost.
  */
-export function TabbedCard({ name, tabs, defaultTabId }: TabbedCardProps) {
+export function TabbedCard({ name, tabs, defaultTabId, tone = "plain" }: TabbedCardProps) {
   if (tabs.length === 0) {
     return null;
   }
@@ -46,7 +48,11 @@ export function TabbedCard({ name, tabs, defaultTabId }: TabbedCardProps) {
                 autoComplete="off"
                 defaultChecked={tab.id === activeId}
               />
-              <div className="tab-content max-h-[60vh] overflow-y-auto overscroll-contain border-base-300 bg-base-100 p-4 [scrollbar-gutter:stable] sm:p-6 lg:max-h-[70vh]">
+              <div
+            className={`tab-content max-h-[60vh] overflow-y-auto overscroll-contain border-base-300 p-4 [scrollbar-gutter:stable] sm:p-6 lg:max-h-[70vh] ${
+              tone === "paper" ? "bg-base-200" : "bg-base-100"
+            }`}
+          >
                 {tab.content}
               </div>
             </Fragment>

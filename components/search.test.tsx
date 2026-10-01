@@ -1,11 +1,20 @@
 import { useState } from "react";
 import { act, fireEvent, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
-import { Search } from "./search";
+import { Search, type SearchResults } from "./search";
 
 const search = { placeholder: "Search the dossier", label: "Search" };
 
-function setup(onSubmitSearch?: (query: string) => unknown) {
+const idleProps = {
+  status: "idle" as const,
+  results: null,
+  error: null,
+};
+
+function setup(
+  onSubmitSearch?: (query: string) => unknown,
+  extra?: Partial<Parameters<typeof Search>[0]>,
+) {
   const setQuery = jest.fn();
   const handleSubmit = jest.fn();
   function Harness() {
@@ -22,6 +31,8 @@ function setup(onSubmitSearch?: (query: string) => unknown) {
           handleSubmit(value);
           await onSubmitSearch?.(value);
         }}
+        {...idleProps}
+        {...extra}
       />
     );
   }
@@ -67,6 +78,16 @@ describe("Search", () => {
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
   });
 
+  it("closes the modal with the close button", async () => {
+    const user = userEvent.setup();
+    setup();
+    await openModal(user);
+
+    await user.click(screen.getByRole("button", { name: "Close search" }));
+
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
   it("keeps the modal open when clicking inside and forwards typing", async () => {
     const user = userEvent.setup();
     const { setQuery } = setup();
@@ -82,7 +103,7 @@ describe("Search", () => {
     expect(setQuery).toHaveBeenLastCalledWith("clima");
   });
 
-  it("submits the query on Enter and closes the modal", async () => {
+  it("submits the query on Enter and stays open for results", async () => {
     const user = userEvent.setup();
     const { handleSubmit } = setup();
     await openModal(user);
@@ -93,7 +114,7 @@ describe("Search", () => {
     );
 
     expect(handleSubmit).toHaveBeenCalledWith("clima");
-    expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
   it("ignores submit with an empty query", async () => {
@@ -109,7 +130,7 @@ describe("Search", () => {
     expect(screen.getByRole("dialog")).toBeInTheDocument();
   });
 
-  it("awaits an async submit handler before closing", async () => {
+  it("awaits an async submit handler without closing", async () => {
     const user = userEvent.setup();
     let resolveGate!: (value: unknown) => void;
     const gate = new Promise((resolve) => {
@@ -127,6 +148,59 @@ describe("Search", () => {
     await act(async () => {
       resolveGate(null);
     });
+    expect(screen.getByRole("dialog")).toBeInTheDocument();
+  });
+
+  it("shows a loading state while searching", async () => {
+    const user = userEvent.setup();
+    setup(undefined, { status: "loading" });
+    await openModal(user);
+
+    expect(screen.getByRole("status")).toHaveTextContent(
+      "Searching the dossier…",
+    );
+  });
+
+  it("shows an error state when search fails", async () => {
+    const user = userEvent.setup();
+    setup(undefined, { status: "error", error: "Search failed." });
+    await openModal(user);
+
+    expect(screen.getByRole("alert")).toHaveTextContent("Search failed.");
+  });
+
+  it("renders matches with scores and jumps to the article on click", async () => {
+    const user = userEvent.setup();
+    const results: SearchResults = {
+      matches: [
+        { articleId: "article-1", title: "Article One", score: 0.85 },
+        { articleId: "article-2", title: "Article Two", score: 0.42 },
+      ],
+      answer: "An answer",
+      model: "gpt-4o-mini",
+    };
+    setup(undefined, { status: "done", results });
+    await openModal(user);
+
+    expect(screen.getByText("An answer")).toBeInTheDocument();
+    expect(screen.getByText("85%")).toBeInTheDocument();
+    const link = screen.getByRole("link", { name: /Article One/ });
+    expect(link).toHaveAttribute("href", "#article-1");
+
+    await user.click(link);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();
+  });
+
+  it("explains an empty result set", async () => {
+    const user = userEvent.setup();
+    setup(undefined, {
+      status: "done",
+      results: { matches: [], answer: "", model: "" },
+    });
+    await openModal(user);
+
+    expect(
+      screen.getByText("No matches in the dossier. Try different words."),
+    ).toBeInTheDocument();
   });
 });

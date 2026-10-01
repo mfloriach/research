@@ -17,7 +17,10 @@ export type FallacyTabContentProps = {
   selectedParagraphId: string | null;
 };
 
-export function FallacyTabContent({ tab, selectedParagraphId }: FallacyTabContentProps) {
+export function FallacyTabContent({
+  tab,
+  selectedParagraphId,
+}: FallacyTabContentProps) {
   const { isConnected } = useWallet();
   const router = useRouter();
   const createHref = selectedParagraphId
@@ -51,19 +54,24 @@ export function FallacyTabContent({ tab, selectedParagraphId }: FallacyTabConten
   async function handleOpen(itemId: string) {
     setOpenCounts((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? 0) + 1 }));
     try {
-      const response = await fetch(
-        `/api/audits/fallacies/${itemId}/open`,
-        { method: "POST" },
-      );
+      const response = await fetch(`/api/audits/fallacies/${itemId}/open`, {
+        method: "POST",
+      });
       if (!response.ok) {
         throw new Error(`status ${response.status}`);
       }
       const data = (await response.json()) as { openCount?: number };
       if (typeof data.openCount === "number") {
-        setOpenCounts((prev) => ({ ...prev, [itemId]: data.openCount as number }));
+        setOpenCounts((prev) => ({
+          ...prev,
+          [itemId]: data.openCount as number,
+        }));
       }
     } catch {
-      setOpenCounts((prev) => ({ ...prev, [itemId]: Math.max((prev[itemId] ?? 1) - 1, 0) }));
+      setOpenCounts((prev) => ({
+        ...prev,
+        [itemId]: Math.max((prev[itemId] ?? 1) - 1, 0),
+      }));
     }
   }
 
@@ -86,27 +94,17 @@ export function FallacyTabContent({ tab, selectedParagraphId }: FallacyTabConten
           type="button"
           className="btn btn-sm btn-outline"
           disabled={!isConnected}
-          title={isConnected ? "Create a new fallacy" : "Connect your wallet to create"}
+          title={
+            isConnected
+              ? "Create a new fallacy"
+              : "Connect your wallet to create"
+          }
           onClick={() => router.push(createHref)}
         >
           Create fallacy
         </button>
       </div>
-      {(tab.author ?? tab.date) && (
-        <p className="text-xs text-base-content/60">
-          {tab.author && <span>By {tab.author}</span>}
-          {tab.author && tab.date && <span aria-hidden="true"> · </span>}
-          {tab.date && (
-            <time dateTime={tab.date}>
-              {new Date(`${tab.date}T00:00:00`).toLocaleDateString(undefined, {
-                year: "numeric",
-                month: "short",
-                day: "numeric",
-              })}
-            </time>
-          )}
-        </p>
-      )}
+
       <CollapseList
         items={sortedItems}
         openCounts={openCounts}

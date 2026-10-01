@@ -2,6 +2,18 @@
 
 import { useEffect, useState } from "react";
 
+export type SearchMatchView = {
+  articleId: string;
+  title: string;
+  score: number;
+};
+
+export type SearchResults = {
+  matches: SearchMatchView[];
+  answer: string;
+  model: string;
+} | null;
+
 export type SearchProps = {
   search: {
     placeholder: string;
@@ -11,10 +23,22 @@ export type SearchProps = {
   setQuery: (query: string) => void;
   /** Called with the current query when the form is submitted (Enter). */
   onSubmitSearch?: (query: string) => void | Promise<void>;
+  status: "idle" | "loading" | "done" | "error";
+  results: SearchResults;
+  error: string | null;
 };
 
-export function Search({ search, query, setQuery, onSubmitSearch }: SearchProps) {
+export function Search({
+  search,
+  query,
+  setQuery,
+  onSubmitSearch,
+  status,
+  results,
+  error,
+}: SearchProps) {
   const [open, setOpen] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   useEffect(() => {
     if (!open) {
@@ -29,7 +53,7 @@ export function Search({ search, query, setQuery, onSubmitSearch }: SearchProps)
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [open]);
+  }, [open ]);
 
   return (
     <>
@@ -67,55 +91,133 @@ export function Search({ search, query, setQuery, onSubmitSearch }: SearchProps)
             role="dialog"
             aria-modal="true"
             aria-label={search.label}
-            className="card w-full max-w-md bg-base-100 shadow-xl"
+            className="card max-h-[80vh] w-full max-w-md overflow-y-auto bg-base-100 shadow-xl"
             onClick={(event) => event.stopPropagation()}
           >
-            <div className="card-body">
+            <div className="card-body gap-4">
+              <div className="flex items-center justify-between gap-2">
+                <h2 className="font-serif text-lg font-semibold">
+                  {search.label}
+                </h2>
+                <button
+                  type="button"
+                  className="btn btn-ghost btn-xs"
+                  onClick={() => setOpen(false)}
+                  aria-label="Close search"
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    className="h-3.5 w-3.5"
+                    aria-hidden="true"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      d="M6 18 18 6M6 6l12 12"
+                    />
+                  </svg>
+                </button>
+              </div>
               <form
                 onSubmit={async (event) => {
                   event.preventDefault();
-                  if (query.trim() === "") {
+                  if (query.trim() === "" || submitting) {
                     return;
                   }
+                  setSubmitting(true);
                   try {
                     await onSubmitSearch?.(query);
                   } finally {
-                    setOpen(false);
+                    setSubmitting(false);
                   }
                 }}
               >
-              <label className="input w-full">
-                <svg
-                  className="h-[1em] opacity-50"
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <g
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                    strokeWidth="2.5"
-                    fill="none"
-                    stroke="currentColor"
+                <label className="input w-full">
+                  <svg
+                    className="h-[1em] opacity-50"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 24 24"
+                    aria-hidden="true"
                   >
-                    <circle cx="11" cy="11" r="8" />
-                    <path d="m21 21-4.3-4.3" />
-                  </g>
-                </svg>
-                <input
-                  type="search"
-                  required
-                  placeholder={search.placeholder}
-                  aria-label={search.label}
-                  className="grow"
-                  value={query}
-                  onChange={(event) => setQuery(event.target.value)}
-                  ref={(element) => {
-                    element?.focus();
-                  }}
-                />
-              </label>
+                    <g
+                      strokeLinejoin="round"
+                      strokeLinecap="round"
+                      strokeWidth="2.5"
+                      fill="none"
+                      stroke="currentColor"
+                    >
+                      <circle cx="11" cy="11" r="8" />
+                      <path d="m21 21-4.3-4.3" />
+                    </g>
+                  </svg>
+                  <input
+                    type="search"
+                    required
+                    placeholder={search.placeholder}
+                    aria-label={search.label}
+                    className="grow"
+                    value={query}
+                    onChange={(event) => setQuery(event.target.value)}
+                    ref={(element) => {
+                      element?.focus();
+                    }}
+                  />
+                </label>
               </form>
+
+              {status === "loading" || submitting ? (
+                <p className="text-sm opacity-70" role="status">
+                  Searching the dossier…
+                </p>
+              ) : null}
+
+              {status === "error" && error ? (
+                <p role="alert" className="text-sm text-error">
+                  {error}
+                </p>
+              ) : null}
+
+              {status === "done" && results ? (
+                <div className="space-y-4">
+                  {results.answer ? (
+                    <div className="rounded-lg bg-base-200 p-3">
+                      <p className="text-sm leading-6">{results.answer}</p>
+                      <p className="mt-1 font-mono text-xs opacity-60">
+                        {results.model}
+                      </p>
+                    </div>
+                  ) : null}
+                  {results.matches.length > 0 ? (
+                    <ul className="divide-y divide-base-300">
+                      {results.matches.map((match) => (
+                        <li key={match.articleId}>
+                          <a
+                            href={`#${match.articleId}`}
+                            className="flex items-center justify-between gap-3 py-2 text-left text-sm transition-colors hover:text-primary"
+                            onClick={() => setOpen(false)}
+                            title={match.title}
+                          >
+                            <span className="truncate font-medium">
+                              {match.title}
+                            </span>
+                            <span className="shrink-0 font-mono text-xs tabular-nums opacity-70">
+                              {Math.round(match.score * 100)}%
+                            </span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-sm opacity-70">
+                      No matches in the dossier. Try different words.
+                    </p>
+                  )}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

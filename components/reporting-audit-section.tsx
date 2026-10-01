@@ -9,7 +9,12 @@ import { FallacyTabContent } from "@/components/fallacy-tab-content";
 import { InterpretationTabContent } from "@/components/interpretation-tab-content";
 import { SourceTabContent } from "@/components/source-tab-content";
 import { TabbedCard } from "@/components/tabbed-card";
-import type { Article, CollapsibleItem, ContentTab, ReportingParagraph } from "@/db/content";
+import type {
+  Article,
+  CollapsibleItem,
+  ContentTab,
+  ReportingParagraph,
+} from "@/db/content";
 
 export type SelectedParagraph = {
   articleId: string;
@@ -31,7 +36,11 @@ export type ReportingAuditSectionProps = {
   };
 };
 
-export function ReportingAuditSection({ reportingCard, auditCard }: ReportingAuditSectionProps) {  const [selected, setSelected] = useState<SelectedParagraph | null>(null);
+export function ReportingAuditSection({
+  reportingCard,
+  auditCard,
+}: ReportingAuditSectionProps) {
+  const [selected, setSelected] = useState<SelectedParagraph | null>(null);
 
   const handleParagraphClick = (
     article: Article,
@@ -68,41 +77,77 @@ export function ReportingAuditSection({ reportingCard, auditCard }: ReportingAud
   }, [selected, auditCard.tabs]);
 
   return (
-    <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:items-start lg:gap-8">
-      <TabbedCard
-        name="reporting"
-        title={reportingCard.title}
-        defaultTabId={reportingCard.tabs[0]?.id}
-        tabs={reportingCard.tabs.map((tab) => ({
-          id: tab.id,
-          label: tab.label,
-          content: (
-            <ArticleList
-              articles={tab.items}
-              selected={selected}
-              onParagraphClick={handleParagraphClick}
-            />
-          ),
-        }))}
-      />
-
-      <div className="space-y-3">
+    <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8 xl:grid-cols-12">
+      <div className="xl:col-span-7">
         <TabbedCard
-          key={selected?.paragraphId ?? "all"}
-          name="audit"
-          title={auditCard.title}
-          defaultTabId={auditTabsToShow[0]?.id}
-          tabs={auditTabsToShow.map((tab) => ({
+          name="reporting"
+          title={reportingCard.title}
+          tone="paper"
+          defaultTabId={reportingCard.tabs[0]?.id}
+          tabs={reportingCard.tabs.map((tab) => ({
             id: tab.id,
-            label: `${tab.label} (${tab.items.length})`,
+            label: tab.label,
             content: (
-              <AuditTabContent
-                tab={tab}
-                selectedParagraphId={selected?.paragraphId ?? null}
+              <ArticleList
+                articles={tab.items}
+                selected={selected}
+                onParagraphClick={handleParagraphClick}
               />
             ),
           }))}
         />
+      </div>
+
+      <div className="space-y-3 xl:col-span-5">
+        <div className="xl:sticky xl:top-20">
+          {selected ? (
+            <p className="mb-3 flex items-center justify-between gap-3 rounded-lg bg-primary/10 px-3 py-2 text-sm">
+              <span>
+                Linked to paragraph {selected.paragraphIndex + 1} of{" "}
+                <span className="font-medium">{selected.articleTitle}</span>
+              </span>
+              <button
+                type="button"
+                className="btn btn-ghost btn-xs shrink-0"
+                onClick={() => setSelected(null)}
+                aria-label="Clear paragraph selection"
+                title="Show all audit items"
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  className="h-3.5 w-3.5"
+                  aria-hidden="true"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18 18 6M6 6l12 12"
+                  />
+                </svg>
+              </button>
+            </p>
+          ) : null}
+          <TabbedCard
+            key={selected?.paragraphId ?? "all"}
+            name="audit"
+            title={auditCard.title}
+            defaultTabId={auditTabsToShow[0]?.id}
+            tabs={auditTabsToShow.map((tab) => ({
+              id: tab.id,
+              label: `${tab.label} (${tab.items.length})`,
+              content: (
+                <AuditTabContent
+                  tab={tab}
+                  selectedParagraphId={selected?.paragraphId ?? null}
+                />
+              ),
+            }))}
+          />
+        </div>
       </div>
     </div>
   );
@@ -116,19 +161,35 @@ function AuditTabContent({
   selectedParagraphId: string | null;
 }) {
   if (tab.label === "Contraargument") {
-    return <ContraargumentTabContent tab={tab} selectedParagraphId={selectedParagraphId} />;
+    return (
+      <ContraargumentTabContent
+        tab={tab}
+        selectedParagraphId={selectedParagraphId}
+      />
+    );
   }
   if (tab.label === "Fallacies") {
-    return <FallacyTabContent tab={tab} selectedParagraphId={selectedParagraphId} />;
+    return (
+      <FallacyTabContent tab={tab} selectedParagraphId={selectedParagraphId} />
+    );
   }
   if (tab.label === "Evidences") {
-    return <EvidenceTabContent tab={tab} selectedParagraphId={selectedParagraphId} />;
+    return (
+      <EvidenceTabContent tab={tab} selectedParagraphId={selectedParagraphId} />
+    );
   }
   if (tab.label === "Sources") {
-    return <SourceTabContent tab={tab} selectedParagraphId={selectedParagraphId} />;
+    return (
+      <SourceTabContent tab={tab} selectedParagraphId={selectedParagraphId} />
+    );
   }
   if (tab.label === "Interpretation") {
-    return <InterpretationTabContent tab={tab} selectedParagraphId={selectedParagraphId} />;
+    return (
+      <InterpretationTabContent
+        tab={tab}
+        selectedParagraphId={selectedParagraphId}
+      />
+    );
   }
   return (
     <div className="space-y-4">
