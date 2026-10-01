@@ -93,6 +93,8 @@ export const searchResponseSchema = z
         }),
       )
       .describe("Top vector matches in rank order"),
+    answer: z.string().describe("LLM answer for the query"),
+    model: z.string().describe("LLM model that produced the answer"),
   })
   .meta({ id: "SearchResponse" });
 

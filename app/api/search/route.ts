@@ -1,23 +1,19 @@
 import { NextResponse } from "next/server";
-import { getDb } from "@/lib/mongodb";
-import { COLLECTIONS, VECTOR_INDEX_NAME } from "@/db/migration";
+import { BadRequestError } from "@/lib/errors";
 import { MAX_SEARCH_QUERY_LENGTH, searchQuerySchema } from "@/lib/api-schemas";
-import { embedText, isMatch } from "@/lib/embeddings";
-
-type VectorHit = {
-  articleId: string;
-  score: number;
-};
+import { isMatch } from "@/lib/embeddings";
+import { searchArticlesByText } from "@/app/server/repositories/search";
+import { getLlmProvider } from "@/app/server/services/llm/factory";
 
 /**
- * Vector search over articles
+ * Vector search over articles with an LLM answer
  *
- * @description Embeds the `q` query with a local sentence model and runs
- * Atlas Vector Search over article embeddings. Returns a match when the
- * top similarity is at least 70%.
+ * @description Runs Atlas Vector Search over article embeddings, logs the
+ * Atlas hits server-side, then answers the raw query with the configured
+ * LLM provider. Returns both the Atlas matches and the LLM answer.
  * @tag Search
  * @query SearchQuery
- * @response SearchResponse:Search result
+ * @response SearchResponse:Search result with LLM answer
  * @response 400:ErrorResponse:Invalid query
  * @response 500:ErrorResponse:Search failed
  * @openapi
@@ -29,54 +25,26 @@ export const GET = async (request: Request) => {
     q: searchParams.get("q") ?? undefined,
   });
   if (!parsed.success) {
-    return NextResponse.json(
-      { error: parsed.error.issues[0]?.message ?? "Invalid query" },
-      { status: 400 },
+    throw new BadRequestError(
+      parsed.error.issues[0]?.message ?? "Invalid query",
     );
   }
 
   const rawQuery = parsed.data.q ?? "";
   const query = rawQuery.slice(0, MAX_SEARCH_QUERY_LENGTH);
 
-  const queryVector = await embedText(query);
-  const db = await getDb();
-  const hits = (await db
-    .collection(COLLECTIONS.articleEmbeddings)
-    .aggregate([
-      {
-        $vectorSearch: {
-          index: VECTOR_INDEX_NAME,
-          path: "embedding",
-          queryVector,
-          numCandidates: 50,
-          limit: 5,
-        },
-      },
-      {
-        $project: {
-          _id: 0,
-          articleId: 1,
-          score: { $meta: "vectorSearchScore" },
-        },
-      },
-    ])
-    .toArray()) as VectorHit[];
+  const { matches, top } = await searchArticlesByText(query);
 
-  const matches = hits.map((hit) => ({
-    articleId: hit.articleId,
-    score: hit.score,
-  }));
-  const top = matches[0]?.score ?? 0;
-  console.log({
-    query,
-    match: isMatch(top),
-    score: top,
-    matches,
-  })
+  console.log(matches);
+
+  const { answer, model } = await getLlmProvider().generateAnswer({ query });
+
   return NextResponse.json({
     query,
     match: isMatch(top),
     score: top,
     matches,
+    answer,
+    model,
   });
 };

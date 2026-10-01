@@ -339,8 +339,8 @@ paths:
   /search:
     get:
       operationId: get-search
-      summary: Vector search over articles
-      description: Embeds the `q` query with a local sentence model and runs
+      summary: Vector search over articles with an LLM answer
+      description: Runs Atlas Vector Search over article embeddings, logs the
       tags:
         - Search
       parameters:
@@ -354,7 +354,7 @@ paths:
           example: example
       responses:
         '200':
-          description: Search result
+          description: Search result with LLM answer
           content:
             application/json:
               schema:
@@ -814,11 +814,19 @@ components:
               - articleId
               - score
           description: Top vector matches in rank order
+        answer:
+          type: string
+          description: LLM answer for the query
+        model:
+          type: string
+          description: LLM model that produced the answer
       required:
         - query
         - match
         - score
         - matches
+        - answer
+        - model
     SourceOpenResponse:
       type: object
       properties:
