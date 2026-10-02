@@ -29,11 +29,16 @@ export type Article = {
   authorAddress?: string;
   /** How many times the article card has been opened. */
   openCount?: number;
+  /** Media kind. Absent or "text" renders as text. */
+  type?: "text" | "video";
+  /** YouTube URL; only meaningful when `type` is "video". */
+  videoUrl?: string;
 };
 
 /** Stored article document (`articles` collection): display fields plus storage metadata. */
 export type StoredArticle = Article & {
-  type: "text";
+  type: "text" | "video";
+  videoUrl?: string;
   ipfsCid?: string;
   order: number;
 };
@@ -165,6 +170,35 @@ export const reportingCard = {
                 "a7d6e08d-8071-4a2d-b8c5-d4a88d1a9c6c",
                 "580d58a3-779b-4d98-9970-021478894e6e",
                 "dfa621c5-cde8-4468-9249-a341e98a5a36",
+              ],
+            },
+          ],
+        },
+        {
+          id: "4f8c2a91-5d3e-4b7c-9a1f-6e0c8b2d4f37",
+          title: "What the IPCC Sixth Assessment Report found",
+          labels: ["Clima", "Science"],
+          author: "IPCC",
+          date: "2021-06-30",
+          authorAddress: "0x4444444444444444444444444444444444444444",
+          openCount: 34,
+          type: "video",
+          videoUrl: "https://www.youtube.com/watch?v=yzmTNoiOtiY",
+          paragraphs: [
+            {
+              id: "b1c9e4a2-7f60-4d8e-9a3c-5b7d1e2f4a60",
+              text: "The Sixth Assessment Report consolidates three working groups and the Synthesis Report into a single statement of what is known about climate risk. Its summary framing is deliberately narrow: human influence on the climate is unequivocal, and the effects are already visible in every region.",
+              auditItemIds: [
+                "17dae7c0-edb0-4f2b-8611-4a72d5dd53d1",
+                "0eb94504-0b6b-4070-931c-10e2ad242af2",
+              ],
+            },
+            {
+              id: "d5e2a7f8-3c41-4b9a-8e6d-1f0a3b5c7d92",
+              text: "The report is best read as a distribution rather than a point estimate, which is the same caution the written articles in this tab apply to the underlying measurements.",
+              auditItemIds: [
+                "a7d6e08d-8071-4a2d-b8c5-d4a88d1a9c6c",
+                "2746480b-1cfa-4650-954c-43283dea532f",
               ],
             },
           ],

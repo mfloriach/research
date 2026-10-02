@@ -814,6 +814,15 @@ components:
           type: array
           items:
             type: string
+        type:
+          type: string
+          enum:
+            - text
+            - video
+          description: Media kind; absent means text
+        videoUrl:
+          type: string
+          description: YouTube URL; only when type is video
         author:
           type: string
         date:

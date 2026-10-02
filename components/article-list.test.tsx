@@ -170,6 +170,86 @@ describe("ArticleList", () => {
     expect(screen.queryByLabelText(/opens$/)).toBeNull();
   });
 
+  it("embeds the YouTube player for a video article", () => {
+    render(
+      <ArticleList
+        articles={[
+          makeArticle({
+            type: "video",
+            videoUrl: "https://www.youtube.com/watch?v=yzmTNoiOtiY",
+          }),
+        ]}
+      />,
+    );
+
+    const frame = document.querySelector("iframe");
+    expect(frame).toHaveAttribute(
+      "src",
+      "https://www.youtube-nocookie.com/embed/yzmTNoiOtiY",
+    );
+    expect(frame).toHaveAttribute("title", "Climate sensitivity is a range");
+  });
+
+  it("embeds a short youtu.be link too", () => {
+    render(
+      <ArticleList
+        articles={[
+          makeArticle({
+            type: "video",
+            videoUrl: "https://youtu.be/yzmTNoiOtiY?t=30",
+          }),
+        ]}
+      />,
+    );
+
+    expect(document.querySelector("iframe")).toHaveAttribute(
+      "src",
+      "https://www.youtube-nocookie.com/embed/yzmTNoiOtiY",
+    );
+  });
+
+  it("falls back to a link when the video URL is not YouTube", () => {
+    render(
+      <ArticleList
+        articles={[
+          makeArticle({
+            type: "video",
+            videoUrl: "https://vimeo.com/123456789",
+          }),
+        ]}
+      />,
+    );
+
+    expect(document.querySelector("iframe")).toBeNull();
+    expect(
+      screen.getByRole("link", { name: "Watch the video on YouTube" }),
+    ).toHaveAttribute("href", "https://vimeo.com/123456789");
+  });
+
+  it("renders no player for a text article", () => {
+    render(<ArticleList articles={[makeArticle({ type: "text" })]} />);
+
+    expect(document.querySelector("iframe")).toBeNull();
+    expect(screen.queryByRole("link", { name: /YouTube/ })).toBeNull();
+  });
+
+  it("still renders paragraphs and byline for a video article", () => {
+    render(
+      <ArticleList
+        articles={[
+          makeArticle({
+            type: "video",
+            author: "IPCC",
+            videoUrl: "https://youtu.be/yzmTNoiOtiY",
+          }),
+        ]}
+      />,
+    );
+
+    expect(paragraph("First paragraph.")).toBeInTheDocument();
+    expect(screen.getByText("By IPCC")).toBeInTheDocument();
+  });
+
   it("records an open when a card is expanded", async () => {
     render(<ArticleList articles={[makeArticle({ openCount: 12 })]} />);
 

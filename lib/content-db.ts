@@ -39,7 +39,8 @@ type StoredParagraphDoc = {
 type ArticleDoc = {
   _id: string;
   title: string;
-  type: string;
+  type?: "text" | "video";
+  videoUrl?: string;
   labels: string[];
   argumentId: string;
   paragraphs: StoredParagraphDoc[];
@@ -102,6 +103,9 @@ export async function getContentFromDb(): Promise<DbContent> {
         id: doc._id,
         title: doc.title,
         labels,
+        // Legacy documents predate the media kind; they are text.
+        type: doc.type ?? "text",
+        ...(doc.videoUrl ? { videoUrl: doc.videoUrl } : {}),
         ...(doc.author ? { author: doc.author } : {}),
         ...(doc.date ? { date: doc.date } : {}),
         ...(doc.authorAddress ? { authorAddress: doc.authorAddress } : {}),
@@ -123,6 +127,8 @@ export async function getContentFromDb(): Promise<DbContent> {
           id: article.id,
           title: article.title,
           labels: article.labels,
+          type: article.type ?? "text",
+          ...(article.videoUrl ? { videoUrl: article.videoUrl } : {}),
           ...(article.author ? { author: article.author } : {}),
           ...(article.date ? { date: article.date } : {}),
           ...(article.authorAddress

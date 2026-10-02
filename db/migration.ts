@@ -62,7 +62,8 @@ const VALIDATORS: Record<string, object> = {
       properties: {
         _id: { bsonType: "string" },
         title: { bsonType: "string" },
-        type: { enum: ["text"] },
+        type: { enum: ["text", "video"] },
+        videoUrl: { bsonType: "string" },
         labels: { bsonType: "array", minItems: 1, items: { bsonType: "string" } },
         argumentId: { bsonType: "string" },
         paragraphs: {

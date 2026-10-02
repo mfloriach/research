@@ -128,6 +128,8 @@ const reportingArticleSchema = z
     id: z.string(),
     title: z.string(),
     labels: z.array(z.string()),
+    type: z.enum(["text", "video"]).optional().describe("Media kind; absent means text"),
+    videoUrl: z.string().optional().describe("YouTube URL; only when type is video"),
     author: z.string().optional(),
     date: z.string().optional(),
     authorAddress: z.string().optional(),

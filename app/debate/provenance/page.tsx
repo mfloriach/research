@@ -20,6 +20,19 @@ function truncate(value: string): string {
   return `${value.slice(0, 12)}…${value.slice(-8)}`;
 }
 
+function formatTime(timestamp: number | null): string {
+  if (timestamp === null) {
+    return "—";
+  }
+  return new Date(timestamp).toLocaleString(undefined, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  });
+}
+
 export default function ProvenancePage() {
   return (
     <Suspense>
@@ -190,6 +203,109 @@ function ProvenanceContent() {
           <p role="alert" className="mt-4 text-sm text-error">
             {error}
           </p>
+        ) : null}
+
+        {wallet && !error ? (
+          <div className="mt-6">
+            {loading ? (
+              <p className="text-sm opacity-70">Loading on-chain history…</p>
+            ) : entries.length === 0 ? (
+              <div role="note" className="alert">
+                <span>
+                  No signatures or attestations recorded for this wallet yet.
+                </span>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <table className="table table-sm">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Type</th>
+                      <th>Item</th>
+                      <th>Content hash</th>
+                      <th>IPFS</th>
+                      <th>Transaction</th>
+                      <th>Time</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {entries.map((entry, index) => {
+                      const resolved = resolve(entry.itemId);
+                      return (
+                        <tr key={`${entry.txHash}-${entry.logIndex}`}>
+                          <td className="opacity-60">{index + 1}</td>
+                          <td>
+                            <span
+                              className={`badge badge-sm ${
+                                entry.kind === "signature"
+                                  ? "badge-success"
+                                  : "badge-info"
+                              }`}
+                            >
+                              {entry.kind}
+                            </span>
+                          </td>
+                          <td className="text-xs">
+                            <span className="flex items-center gap-1.5">
+                              <span
+                                className={`badge badge-sm ${kindBadgeClass(resolved.kind)}`}
+                              >
+                                {resolved.kind}
+                              </span>
+                              <span
+                                className="max-w-48 truncate font-medium"
+                                title={resolved.name}
+                              >
+                                {resolved.isArticle ||
+                                resolved.kind !== "Unknown"
+                                  ? resolved.name
+                                  : truncate(resolved.name)}
+                              </span>
+                              <CopyButton
+                                value={entry.itemId}
+                                label="item ID"
+                              />
+                            </span>
+                          </td>
+                          <td className="font-mono text-xs">
+                            {entry.contentHash ? (
+                              <span title={entry.contentHash}>
+                                {truncate(entry.contentHash)}
+                              </span>
+                            ) : (
+                              <span className="opacity-40">—</span>
+                            )}
+                          </td>
+                          <td className="font-mono text-xs">
+                            {entry.ipfsCid ? (
+                              <a
+                                href={ipfsGatewayUrl(entry.ipfsCid)}
+                                target="_blank"
+                                rel="noreferrer"
+                                className="link"
+                                title={entry.ipfsCid}
+                              >
+                                {truncate(entry.ipfsCid)}
+                              </a>
+                            ) : (
+                              <span className="opacity-40">—</span>
+                            )}
+                          </td>
+                          <td className="font-mono text-xs" title={entry.txHash}>
+                            {truncate(entry.txHash)}
+                          </td>
+                          <td className="whitespace-nowrap text-xs">
+                            {formatTime(entry.timestamp)}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </div>
         ) : null}
       </div>
     </main>

@@ -9,6 +9,7 @@ import {
   formatAbsoluteDate,
   formatRelativeDate,
 } from "@/lib/relative-date";
+import { youtubeEmbedUrl, youtubeVideoId } from "@/lib/youtube";
 
 /** Content constraint: no article may exceed this many words. */
 export const ARTICLE_WORD_LIMIT = 500;
@@ -43,6 +44,43 @@ function countWords(paragraphs: readonly ReportingParagraph[]): number {
     .join(" ")
     .split(/\s+/)
     .filter(Boolean).length;
+}
+
+/**
+ * Embedded player for a video article.
+ *
+ * Falls back to a plain link when the stored URL is not a recognisable
+ * YouTube link, so a bad value degrades instead of rendering an empty frame.
+ */
+function ArticleVideo({ article }: { article: Article }) {
+  const url = article.videoUrl ?? "";
+  const videoId = article.type === "video" ? youtubeVideoId(url) : null;
+
+  if (!videoId) {
+    return article.type === "video" && url !== "" ? (
+      <a
+        href={url}
+        target="_blank"
+        rel="noreferrer"
+        className="link link-hover text-sm"
+      >
+        Watch the video on YouTube
+      </a>
+    ) : null;
+  }
+
+  return (
+    <div className="aspect-video w-full overflow-hidden rounded-lg">
+      <iframe
+        className="h-full w-full"
+        src={youtubeEmbedUrl(videoId)}
+        title={article.title}
+        loading="lazy"
+        allow="accelerometer; clipboard-write; encrypted-media; picture-in-picture"
+        allowFullScreen
+      />
+    </div>
+  );
 }
 
 /**
@@ -178,6 +216,7 @@ export function ReportingArticleCard({
         ) : null}
       </summary>
       <div className="collapse-content space-y-3">
+        <ArticleVideo article={article} />
         {article.labels.length > 0 ? (
           <ul aria-label="Article labels" className="flex flex-wrap gap-1.5">
             {article.labels.map((label) => (

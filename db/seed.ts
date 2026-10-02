@@ -52,7 +52,8 @@ export async function seed(): Promise<void> {
       articleDocs.push({
         _id: article.id,
         title: article.title,
-        type: "text",
+        type: article.type ?? "text",
+        ...(article.videoUrl ? { videoUrl: article.videoUrl } : {}),
         labels,
         argumentId: MAIN_ARGUMENT_ID,
         paragraphs: article.paragraphs.map((paragraph, paraOrder) => ({
