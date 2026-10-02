@@ -1,5 +1,9 @@
 @import "tailwindcss";
-@plugin "daisyui";
+/* Light only. daisyUI otherwise defaults to
+   ["light --default", "dark --prefersdark"], which follows the OS setting. */
+@plugin "daisyui" {
+  themes: light --default;
+}
 
 :root {
   --background: #ffffff;
@@ -19,12 +23,5 @@
   *::before,
   *::after {
     transition-duration: 0.01ms !important;
-  }
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
   }
 }

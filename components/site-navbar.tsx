@@ -303,10 +303,10 @@ export function SiteNavbar({
   return (
     <header className="navbar sticky top-0 z-40 bg-base-100 px-4 shadow-sm sm:px-6">
       <div className="navbar-start">
-        <a className="btn btn-ghost px-2 text-lg sm:text-xl">{brand}</a>
+        <a className="btn btn-ghost px-2 text-lg sm:text-xl ml-4">{brand}</a>
       </div>
 
-      <div className="navbar-end gap-2">
+      <div className="navbar-end gap-2 mr-4">
         <Search
           query={query}
           setQuery={setQuery}
