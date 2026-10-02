@@ -1,9 +1,17 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { PageHeading } from "@/components/page-heading";
 import { ReportingAuditSection } from "@/components/reporting-audit-section";
+import { ReportingFilters } from "@/components/reporting-filters";
+import {
+  articleFilterQuery,
+  availableLabels,
+  filterReportingTabs,
+  parseArticleFilter,
+  type ArticleFilter,
+} from "@/lib/content-filter";
 import {
   auditCard as auditCardFallback,
   argument as argumentFallback,
@@ -19,9 +27,22 @@ const fallbackContent: DbContent = {
 };
 
 export default function Home() {
+  return (
+    <main className="flex-1">
+      <div className="mx-8 py-8 sm:py-10">
+        <Suspense fallback={<p className="text-sm opacity-70">Loading dossier…</p>}>
+          <Dossier />
+        </Suspense>
+      </div>
+    </main>
+  );
+}
+
+function Dossier() {
   const [content, setContent] = useState<DbContent>(fallbackContent);
   const { isConnected } = useWallet();
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   useEffect(() => {
     let cancelled = false;
@@ -50,31 +71,64 @@ export default function Home() {
 
   const { argument, reportingCard, auditCard } = content;
 
-  return (
-    <main className="flex-1">
-      <div className="mx-8 py-8 sm:py-10">
-        <div className="flex flex-wrap items-start justify-between gap-4">
-          <PageHeading title={argument.title} labels={argument.labels} />
-          <button
-            type="button"
-            className="btn btn-primary"
-            disabled={!isConnected}
-            title={
-              isConnected
-                ? "Create a new report"
-                : "Connect your wallet to create a report"
-            }
-            onClick={() => router.push("/debate/create")}
-          >
-            Create new report
-          </button>
-        </div>
+  // Read through a memo so a new URLSearchParams instance each render does
+  // not rebuild the filter.
+  const filter = useMemo(
+    () => parseArticleFilter(searchParams),
+    [searchParams],
+  );
 
-        <ReportingAuditSection
-          reportingCard={reportingCard}
-          auditCard={auditCard}
+  const labels = useMemo(
+    () => availableLabels(reportingCard.tabs),
+    [reportingCard.tabs],
+  );
+
+  const { tabs, total } = useMemo(
+    () => filterReportingTabs(reportingCard.tabs, filter),
+    [reportingCard.tabs, filter],
+  );
+
+  const handleFilterChange = useCallback(
+    (next: ArticleFilter) => {
+      // replace, so toggling a filter does not stack history entries.
+      router.replace(`/${articleFilterQuery(next)}`, { scroll: false });
+    },
+    [router],
+  );
+
+  return (
+    <>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <PageHeading title={argument.title} labels={argument.labels} />
+        <button
+          type="button"
+          className="btn btn-primary"
+          disabled={!isConnected}
+          title={
+            isConnected
+              ? "Create a new report"
+              : "Connect your wallet to create a report"
+          }
+          onClick={() => router.push("/debate/create")}
+        >
+          Create new report
+        </button>
+      </div>
+
+      <div className="mt-6">
+        <ReportingFilters
+          filter={filter}
+          labels={labels}
+          onChange={handleFilterChange}
         />
       </div>
-    </main>
+
+      <ReportingAuditSection
+        reportingCard={{ title: reportingCard.title, tabs }}
+        auditCard={auditCard}
+        reportingResetKey={articleFilterQuery(filter)}
+        reportingEmpty={total === 0}
+      />
+    </>
   );
 }

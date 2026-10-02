@@ -34,11 +34,21 @@ export type ReportingAuditSectionProps = {
     title: string;
     tabs: ContentTab<CollapsibleItem>[];
   };
+  /**
+   * Change this to remount the reporting tabs. Its tab group is built from
+   * radio inputs with `defaultChecked`, so swapping the tab list without a
+   * remount leaves a stale selection behind.
+   */
+  reportingResetKey?: string;
+  /** True when a filter narrowed every reporting tab away. */
+  reportingEmpty?: boolean;
 };
 
 export function ReportingAuditSection({
   reportingCard,
   auditCard,
+  reportingResetKey,
+  reportingEmpty = false,
 }: ReportingAuditSectionProps) {
   const [selected, setSelected] = useState<SelectedParagraph | null>(null);
 
@@ -79,23 +89,36 @@ export function ReportingAuditSection({
   return (
     <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8 xl:grid-cols-12">
       <div className="xl:col-span-6">
-        <TabbedCard
-          name="reporting"
-          title={reportingCard.title}
-          tone="paper"
-          defaultTabId={reportingCard.tabs[0]?.id}
-          tabs={reportingCard.tabs.map((tab) => ({
-            id: tab.id,
-            label: tab.label,
-            content: (
-              <ArticleList
-                articles={tab.items}
-                selected={selected}
-                onParagraphClick={handleParagraphClick}
-              />
-            ),
-          }))}
-        />
+        {reportingEmpty ? (
+          <div className="card bg-base-200 shadow-sm">
+            <div className="card-body items-center gap-2 p-5 text-center">
+              <h2 className="text-lg font-semibold">{reportingCard.title}</h2>
+              <p className="text-sm text-base-content/70">
+                No articles match these filters. Clear or widen them to see the
+                reporting again.
+              </p>
+            </div>
+          </div>
+        ) : (
+          <TabbedCard
+            key={reportingResetKey ?? "reporting"}
+            name="reporting"
+            title={reportingCard.title}
+            tone="paper"
+            defaultTabId={reportingCard.tabs[0]?.id}
+            tabs={reportingCard.tabs.map((tab) => ({
+              id: tab.id,
+              label: `${tab.label} (${tab.items.length})`,
+              content: (
+                <ArticleList
+                  articles={tab.items}
+                  selected={selected}
+                  onParagraphClick={handleParagraphClick}
+                />
+              ),
+            }))}
+          />
+        )}
       </div>
 
       <div className="xl:col-span-6">
