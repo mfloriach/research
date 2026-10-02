@@ -1,5 +1,4 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
-import userEvent from "@testing-library/user-event";
 import { useSearchParams } from "next/navigation";
 import { useWallet } from "@/app/hooks/use-wallet";
 import { useProvenance } from "@/app/hooks/use-provenance";
@@ -30,6 +29,9 @@ const content = {
             id: "article-1",
             title: "Article One",
             labels: ["Clima", "Science"],
+            author: "L. Brandt",
+            authorAddress: "0x0000000000000000000000000000000000000009",
+            openCount: 4,
             paragraphs: [
               { id: "p1", text: "a", auditItemIds: ["evidence-1", "source-1"] },
             ],
@@ -145,16 +147,64 @@ describe("ProvenancePage", () => {
 
     render(<ProvenancePage />);
 
-    expect(screen.getByPlaceholderText("0x…")).toHaveValue(
-      "0x0000000000000000000000000000000000000009",
-    );
     expect(useProvenance).toHaveBeenCalledWith(
       "0x0000000000000000000000000000000000000009",
     );
   });
 
+  it("names the wallet in the header from the matching author", async () => {
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: (key: string) =>
+        key === "address" ? "0x0000000000000000000000000000000000000009" : null,
+    });
+
+    render(<ProvenancePage />);
+
+    expect(await screen.findByText("L. Brandt")).toBeInTheDocument();
+    expect(
+      screen.getByTitle("0x0000000000000000000000000000000000000009"),
+    ).toBeInTheDocument();
+  });
+
+  it("shows the raw address when no article matches it", async () => {
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: (key: string) =>
+        key === "address" ? "0x0000000000000000000000000000000000000007" : null,
+    });
+
+    render(<ProvenancePage />);
+
+    await waitFor(() => {
+      expect(screen.getByText("0x0000000000…00000007")).toBeInTheDocument();
+    });
+  });
+
+  it("falls back to the connected wallet when there is no query", async () => {
+    (useWallet as jest.Mock).mockReturnValue({
+      address: "0x0000000000000000000000000000000000000004",
+      isConnected: true,
+    });
+
+    render(<ProvenancePage />);
+
+    expect(useProvenance).toHaveBeenCalledWith(
+      "0x0000000000000000000000000000000000000004",
+    );
+  });
+
+  it("has no wallet input", () => {
+    render(<ProvenancePage />);
+    expect(screen.queryByPlaceholderText("0x…")).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Show provenance" }),
+    ).toBeNull();
+  });
+
   it("resolves on-chain entries to names in the table", async () => {
-    const user = userEvent.setup();
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: (key: string) =>
+        key === "address" ? "0x0000000000000000000000000000000000000009" : null,
+    });
     (useProvenance as jest.Mock).mockReturnValue({
       entries: [
         {
@@ -171,13 +221,8 @@ describe("ProvenancePage", () => {
       loading: false,
       error: null,
     });
-    render(<ProvenancePage />);
 
-    await user.type(
-      screen.getByPlaceholderText("0x…"),
-      "0x0000000000000000000000000000000000000001",
-    );
-    await user.click(screen.getByRole("button", { name: "Show provenance" }));
+    render(<ProvenancePage />);
 
     await waitFor(() => {
       expect(screen.getAllByText("Evidence One").length).toBeGreaterThan(0);

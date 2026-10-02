@@ -6,6 +6,8 @@ export type IndexedArticle = {
   title: string;
   labels: string[];
   auditItemIds: string[];
+  author?: string;
+  authorAddress?: string;
 };
 
 export type IndexedAuditItem = {
@@ -32,12 +34,17 @@ export function buildContentIndex(content: DbContent): ContentIndex {
       if (existing) {
         existing.labels = [...new Set([...existing.labels, tab.label, ...item.labels])];
         existing.auditItemIds = [...new Set([...existing.auditItemIds, ...auditItemIds])];
+        // An article appears under every matching tab; keep the first byline seen.
+        existing.author = existing.author ?? item.author;
+        existing.authorAddress = existing.authorAddress ?? item.authorAddress;
       } else {
         byId.set(item.id, {
           id: item.id,
           title: item.title,
           labels: [...new Set([tab.label, ...item.labels])],
           auditItemIds,
+          ...(item.author ? { author: item.author } : {}),
+          ...(item.authorAddress ? { authorAddress: item.authorAddress } : {}),
         });
       }
     }

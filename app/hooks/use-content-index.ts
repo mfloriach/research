@@ -20,6 +20,8 @@ export type ArticleView = {
   total: number;
   counts: ArticleTypeCount[];
   rows: ArticleTableRow[];
+  author?: string;
+  authorAddress?: string;
 };
 
 export type ContentIndexView = {
@@ -69,6 +71,8 @@ export function useContentIndex(): ContentIndexView {
     total: article.auditItemIds.length,
     counts: index ? summarizeArticle(index, article.id) : [],
     rows: index ? articleTableRows(index, article.id) : [],
+    ...(article.author ? { author: article.author } : {}),
+    ...(article.authorAddress ? { authorAddress: article.authorAddress } : {}),
   }));
 
   return {

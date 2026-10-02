@@ -5,6 +5,10 @@ import type { SyntheticEvent } from "react";
 import { EyeIcon, ShieldCheckIcon } from "@/components/icons";
 import type { Article, ReportingParagraph } from "@/db/content";
 import { config } from "@/lib/config";
+import {
+  formatAbsoluteDate,
+  formatRelativeDate,
+} from "@/lib/relative-date";
 
 /** Content constraint: no article may exceed this many words. */
 export const ARTICLE_WORD_LIMIT = 500;
@@ -39,15 +43,6 @@ function countWords(paragraphs: readonly ReportingParagraph[]): number {
     .join(" ")
     .split(/\s+/)
     .filter(Boolean).length;
-}
-
-/** Formats an ISO `YYYY-MM-DD` date, matching the audit cards. */
-function formatDate(date: string): string {
-  return new Date(`${date}T00:00:00`).toLocaleDateString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
 }
 
 /**
@@ -115,7 +110,7 @@ export function ReportingArticleCard({
         </span>
         {showMeta ? (
           <span className="flex items-center justify-between gap-2 text-xs font-normal text-base-content/60">
-            <span className="flex flex-wrap items-center">
+            <span className="flex flex-wrap items-center gap-x-2">
               {article.author ? (
                 article.authorAddress ? (
                   <Link
@@ -133,11 +128,13 @@ export function ReportingArticleCard({
                   <span>By {article.author}</span>
                 )
               ) : null}
-              {article.author && article.date ? (
-                <span aria-hidden="true"> · </span>
-              ) : null}
               {article.date ? (
-                <time dateTime={article.date}>{formatDate(article.date)}</time>
+                <time
+                  dateTime={article.date}
+                  title={formatAbsoluteDate(article.date)}
+                >
+                  {formatRelativeDate(article.date)}
+                </time>
               ) : null}
             </span>
             <span className="flex shrink-0 items-center gap-1">

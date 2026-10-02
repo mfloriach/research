@@ -144,6 +144,54 @@ describe("provenance-view", () => {
     });
   });
 
+  it("carries the author and author address through the index", () => {
+    const index = buildContentIndex({
+      ...fixture,
+      reportingCard: {
+        title: "Reporting",
+        tabs: [
+          {
+            id: "tab-clima",
+            label: "Clima",
+            items: [
+              {
+                id: "article-1",
+                title: "Article One",
+                labels: ["Clima"],
+                author: "L. Brandt",
+                authorAddress: "0xabc",
+                paragraphs: [
+                  { id: "p1", text: "a", auditItemIds: ["evidence-1"] },
+                ],
+              },
+            ],
+          },
+          {
+            id: "tab-science",
+            label: "Science",
+            items: [
+              {
+                id: "article-1",
+                title: "Article One",
+                labels: ["Clima", "Science"],
+                author: "A. Rossi",
+                authorAddress: "0xdef",
+                paragraphs: [
+                  { id: "p1", text: "a", auditItemIds: ["evidence-1"] },
+                ],
+              },
+            ],
+          },
+        ],
+      },
+    });
+
+    // The article appears under both tabs; the first byline seen wins.
+    expect(index.articles).toHaveLength(1);
+    expect(index.articles[0]?.author).toBe("L. Brandt");
+    expect(index.articles[0]?.authorAddress).toBe("0xabc");
+  });
+
   it("resolves article, audit item, and unknown IDs", () => {
     const index = buildContentIndex(fixture);
 

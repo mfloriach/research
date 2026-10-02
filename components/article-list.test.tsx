@@ -97,7 +97,7 @@ describe("ArticleList", () => {
     expect(useAttestationsMock).toHaveBeenCalledWith(["a-1", "a-2"]);
   });
 
-  it("shows the author and date on the card", () => {
+  it("shows the author and a date relative to now", () => {
     render(
       <ArticleList
         articles={[makeArticle({ author: "L. Brandt", date: "2024-06-18" })]}
@@ -105,10 +105,11 @@ describe("ArticleList", () => {
     );
 
     expect(screen.getByText("By L. Brandt")).toBeInTheDocument();
-    expect(document.querySelector("time")).toHaveAttribute(
-      "datetime",
-      "2024-06-18",
-    );
+    const time = document.querySelector("time");
+    expect(time).toHaveAttribute("datetime", "2024-06-18");
+    // Relative label, not the absolute date.
+    expect(time).toHaveTextContent(/ago$|today|yesterday|tomorrow/);
+    expect(time?.textContent).not.toMatch(/2024/);
   });
 
   it("gives each article its own byline", () => {
