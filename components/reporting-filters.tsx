@@ -33,7 +33,7 @@ export function ReportingFilters({
   return (
     <section
       aria-label="Filter reporting articles"
-      className="flex flex-wrap items-center gap-x-4 gap-y-3"
+      className="flex flex-wrap items-center gap-x-4 gap-y-3 mx-4"
     >
       <label className="flex items-center gap-2 text-sm">
         <span className="text-base-content/70">Format</span>
@@ -41,7 +41,10 @@ export function ReportingFilters({
           className="select select-bordered select-sm"
           value={filter.type}
           onChange={(event) =>
-            onChange({ ...filter, type: event.target.value as ArticleTypeFilter })
+            onChange({
+              ...filter,
+              type: event.target.value as ArticleTypeFilter,
+            })
           }
         >
           {ARTICLE_TYPE_OPTIONS.map((option) => (

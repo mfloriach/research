@@ -58,7 +58,7 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           search={site.search}
           avatar={site.avatar}
         />
-        <div className="mx-8">
+        <div className="mx-12">
           <Breadcrumbs topic={argument.title} />
         </div>
         {children}

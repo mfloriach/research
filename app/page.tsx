@@ -99,8 +99,8 @@ function Dossier() {
 
   return (
     <>
-      <div className="flex flex-wrap items-start justify-between gap-4">
-        <div className="max-w-3xl space-y-3">
+      <div className="flex flex-wrap items-start justify-between gap-4 mx-4">
+        <div className="max-w-3xl">
           <h1 className="font-serif text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
             {argument.title}
           </h1>
