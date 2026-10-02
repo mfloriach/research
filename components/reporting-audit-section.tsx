@@ -100,37 +100,6 @@ export function ReportingAuditSection({
 
       <div className="xl:col-span-6">
         <div className="xl:sticky xl:top-20">
-          {selected ? (
-            <p className="mb-3 flex items-center justify-between gap-3 rounded-lg bg-primary/10 px-3 py-2 text-sm">
-              <span>
-                Linked to paragraph {selected.paragraphIndex + 1} of{" "}
-                <span className="font-medium">{selected.articleTitle}</span>
-              </span>
-              <button
-                type="button"
-                className="btn btn-ghost btn-xs shrink-0"
-                onClick={() => setSelected(null)}
-                aria-label="Clear paragraph selection"
-                title="Show all audit items"
-              >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  className="h-3.5 w-3.5"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    d="M6 18 18 6M6 6l12 12"
-                  />
-                </svg>
-              </button>
-            </p>
-          ) : null}
           <TabbedCard
             key={selected?.paragraphId ?? "all"}
             name="audit"

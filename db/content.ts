@@ -21,6 +21,10 @@ export type Article = {
   /** Reporting labels. An article appears under every matching tab. */
   labels: string[];
   paragraphs: ReportingParagraph[];
+  /** Optional byline shown beside the title; tabs may hold several articles. */
+  author?: string;
+  /** ISO date (`YYYY-MM-DD`) shown beside the title. */
+  date?: string;
 };
 
 /** Stored article document (`articles` collection): display fields plus storage metadata. */
@@ -108,6 +112,8 @@ export const reportingCard = {
           id: "33c84ebe-6f7d-4100-9fa0-0100f30d128f",
           title: "Climate sensitivity is a range, not a number",
           labels: ["Clima", "Science"],
+          author: "L. Brandt",
+          date: "2024-06-18",
           paragraphs: [
             {
               id: "1cb8e607-f3a7-4614-a44c-da704f1b6780",
@@ -167,6 +173,8 @@ export const reportingCard = {
           id: "ac11660e-454a-416a-82e2-37e32e21f0fc",
           title: "What productivity numbers can and cannot tell us",
           labels: ["Economy"],
+          author: "A. Rossi",
+          date: "2024-08-05",
           paragraphs: [
             {
               id: "02985276-a8d5-4c5c-afbc-d615beb85b1c",
@@ -225,6 +233,8 @@ export const reportingCard = {
           id: "b71c4d2e-9f3a-4a1b-8c5d-2e6f7a8b9c0d",
           title: "Border adjustments live or die on calibration",
           labels: ["Policy"],
+          author: "S. Okafor",
+          date: "2024-09-30",
           paragraphs: [
             {
               id: "c82d5e3f-1a4b-4c2d-9e6f-3a7b8c9d0e1f",
