@@ -45,6 +45,8 @@ type ArticleDoc = {
   paragraphs: StoredParagraphDoc[];
   author?: string;
   date?: string;
+  authorAddress?: string;
+  openCount?: number;
   ipfsCid?: string;
   order?: number;
 };
@@ -102,6 +104,8 @@ export async function getContentFromDb(): Promise<DbContent> {
         labels,
         ...(doc.author ? { author: doc.author } : {}),
         ...(doc.date ? { date: doc.date } : {}),
+        ...(doc.authorAddress ? { authorAddress: doc.authorAddress } : {}),
+        openCount: doc.openCount ?? 0,
         order: doc.order ?? 0,
         paragraphs,
       });
@@ -121,6 +125,10 @@ export async function getContentFromDb(): Promise<DbContent> {
           labels: article.labels,
           ...(article.author ? { author: article.author } : {}),
           ...(article.date ? { date: article.date } : {}),
+          ...(article.authorAddress
+            ? { authorAddress: article.authorAddress }
+            : {}),
+          openCount: article.openCount ?? 0,
           paragraphs: article.paragraphs,
         })),
     }))

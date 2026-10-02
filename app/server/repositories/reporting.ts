@@ -1,6 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Int32 } from "mongodb";
 import { getDb } from "@/lib/mongodb";
+import { NotFoundError } from "@/lib/errors";
 import { pinJson } from "@/lib/ipfs";
 import { articleEmbeddingText, embedText } from "@/lib/embeddings";
 import { COLLECTIONS } from "@/db/migration";
@@ -83,6 +84,7 @@ export async function createReport(
       argumentId: string;
       paragraphs: { id: string; text: string; auditItemIds: string[]; order: Int32 }[];
       ipfsCid: string;
+      openCount: Int32;
       order: Int32;
     }>(COLLECTIONS.articles)
     .insertOne({
@@ -93,6 +95,7 @@ export async function createReport(
       argumentId: argument._id,
       paragraphs: paragraphDocs,
       ipfsCid,
+      openCount: new Int32(0),
       order: new Int32(articleOrder),
     });
 
@@ -118,4 +121,26 @@ export async function createReport(
     paragraphIds: paragraphDocs.map((doc) => doc.id),
     ipfsCid,
   };
+}
+
+/**
+ * Record an article open. Mirrors the audit-item open counters so the
+ * reporting card can report views alongside the on-chain attestations.
+ */
+export async function incrementArticleOpenCount(
+  articleId: string,
+): Promise<number> {
+  const db = await getDb();
+
+  const updated = await db
+    .collection<{ _id: string; openCount?: number }>(COLLECTIONS.articles)
+    .findOneAndUpdate(
+      { _id: articleId },
+      { $inc: { openCount: 1 } },
+      { returnDocument: "after" },
+    );
+  if (!updated) {
+    throw new NotFoundError(`No article with id ${articleId}`);
+  }
+  return updated.openCount ?? 1;
 }

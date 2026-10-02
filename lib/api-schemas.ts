@@ -128,6 +128,10 @@ const reportingArticleSchema = z
     id: z.string(),
     title: z.string(),
     labels: z.array(z.string()),
+    author: z.string().optional(),
+    date: z.string().optional(),
+    authorAddress: z.string().optional(),
+    openCount: z.number(),
     paragraphs: z.array(reportingParagraphSchema),
   })
   .meta({ id: "ReportingArticle" });
@@ -231,6 +235,19 @@ export const auditOpenPathParamsSchema = z
     id: z.string().min(1).describe("Audit item ID"),
   })
   .meta({ id: "AuditItemPathParams" });
+
+export const articlePathParamsSchema = z
+  .object({
+    id: z.string().min(1).describe("Article ID"),
+  })
+  .meta({ id: "ArticlePathParams" });
+
+export const articleOpenResponseSchema = z
+  .object({
+    articleId: z.string().describe("Article ID"),
+    openCount: z.number().describe("Open count after increment"),
+  })
+  .meta({ id: "ArticleOpenResponse" });
 
 export const evidenceOpenResponseSchema = z
   .object({

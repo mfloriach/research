@@ -1,9 +1,13 @@
 import { render, screen, waitFor, within } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
+import { useSearchParams } from "next/navigation";
 import { useWallet } from "@/app/hooks/use-wallet";
 import { useProvenance } from "@/app/hooks/use-provenance";
 import ProvenancePage from "./page";
 
+jest.mock("next/navigation", () => ({
+  useSearchParams: jest.fn(),
+}));
 jest.mock("@/app/hooks/use-wallet", () => ({
   useWallet: jest.fn(),
 }));
@@ -67,6 +71,7 @@ const content = {
 
 beforeEach(() => {
   jest.clearAllMocks();
+  (useSearchParams as jest.Mock).mockReturnValue({ get: () => null });
   (useWallet as jest.Mock).mockReturnValue({
     address: "0xabc",
     isConnected: false,
@@ -125,6 +130,27 @@ describe("ProvenancePage", () => {
     expect(
       screen.getByRole("button", { name: "Copy Evidences item ID" }),
     ).toBeInTheDocument();
+  });
+
+  it("prefills the wallet from the ?address= deep link", async () => {
+    (useSearchParams as jest.Mock).mockReturnValue({
+      get: (key: string) =>
+        key === "address" ? "0x0000000000000000000000000000000000000009" : null,
+    });
+    (useProvenance as jest.Mock).mockReturnValue({
+      entries: [],
+      loading: false,
+      error: null,
+    });
+
+    render(<ProvenancePage />);
+
+    expect(screen.getByPlaceholderText("0x…")).toHaveValue(
+      "0x0000000000000000000000000000000000000009",
+    );
+    expect(useProvenance).toHaveBeenCalledWith(
+      "0x0000000000000000000000000000000000000009",
+    );
   });
 
   it("resolves on-chain entries to names in the table", async () => {

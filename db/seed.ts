@@ -61,6 +61,12 @@ export async function seed(): Promise<void> {
           auditItemIds: paragraph.auditItemIds,
           order: new Int32(paraOrder),
         })),
+        ...(article.author ? { author: article.author } : {}),
+        ...(article.date ? { date: article.date } : {}),
+        ...(article.authorAddress
+          ? { authorAddress: article.authorAddress }
+          : {}),
+        openCount: new Int32(article.openCount ?? 0),
         order: new Int32(order),
       });
     }

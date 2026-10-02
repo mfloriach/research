@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import type { SyntheticEvent } from "react";
+import { EyeIcon, ShieldCheckIcon } from "@/components/icons";
 import type { Article, ReportingParagraph } from "@/db/content";
 import { config } from "@/lib/config";
 
@@ -19,6 +22,15 @@ export type ReportingArticleCardProps = {
     paragraph: ReportingParagraph,
     index: number,
   ) => void;
+  /** Open counts after local increments, falling back to the stored count. */
+  openCounts?: Readonly<Record<string, number>>;
+  onOpen?: (articleId: string) => void;
+  /** On-chain attestation count, or null/undefined while unavailable. */
+  attestationCount?: number | null;
+  hasAttested?: boolean;
+  attesting?: boolean;
+  canAttest?: boolean;
+  onAttest?: (articleId: string) => void;
 };
 
 function countWords(paragraphs: readonly ReportingParagraph[]): number {
@@ -42,16 +54,23 @@ function formatDate(date: string): string {
  * One reporting article as a collapsed card.
  *
  * A reporting tab can hold several articles, so each one carries its own
- * byline in the summary rather than the tab showing a single one. Built on
- * `<details>` and closed by default; the title is clamped to two lines while
- * collapsed, with the clamp released via the `group-open:` variant once open.
- * Paragraphs stay clickable inside the content, since selecting one drives the
- * audit card.
+ * byline, view count and attestations in the summary rather than the tab
+ * showing a single set. Built on `<details>` and closed by default; the title
+ * is clamped to two lines while collapsed, with the clamp released via the
+ * `group-open:` variant once open. Paragraphs stay clickable inside the
+ * content, since selecting one drives the audit card.
  */
 export function ReportingArticleCard({
   article,
   selected,
   onParagraphClick,
+  openCounts,
+  onOpen,
+  attestationCount,
+  hasAttested,
+  attesting,
+  canAttest,
+  onAttest,
 }: ReportingArticleCardProps) {
   const words = countWords(article.paragraphs);
 
@@ -61,26 +80,105 @@ export function ReportingArticleCard({
     );
   }
 
+  function handleToggle(event: SyntheticEvent<HTMLDetailsElement>) {
+    if ((event.nativeEvent as ToggleEvent).newState === "open") {
+      onOpen?.(article.id);
+    }
+  }
+
+  function handleAttest(event: SyntheticEvent<HTMLButtonElement>) {
+    // The button lives inside <summary>: don't toggle the card on click.
+    event.preventDefault();
+    event.stopPropagation();
+    onAttest?.(article.id);
+  }
+
+  const attestTitle = hasAttested
+    ? "Attested by this wallet"
+    : canAttest
+      ? "Attest this article on-chain"
+      : "Connect your wallet to attest";
+
+  const openCount = openCounts?.[article.id] ?? article.openCount;
+  const hasByline = Boolean(article.author ?? article.date);
+  const showMeta = hasByline || typeof openCount === "number" || Boolean(onAttest);
+
   return (
     <details
       id={article.id}
       className="group scroll-mt-24 collapse border border-base-300 bg-base-100"
+      onToggle={handleToggle}
     >
       <summary className="collapse-title flex flex-col gap-1 text-sm font-medium leading-6">
         <span className="line-clamp-2 font-serif text-lg font-semibold leading-7 group-open:line-clamp-none">
           {article.title}
         </span>
-        {(article.author ?? article.date) && (
-          <span className="text-xs font-normal text-base-content/60">
-            {article.author && <span>By {article.author}</span>}
-            {article.author && article.date && (
-              <span aria-hidden="true"> · </span>
-            )}
-            {article.date && (
-              <time dateTime={article.date}>{formatDate(article.date)}</time>
-            )}
+        {showMeta ? (
+          <span className="flex items-center justify-between gap-2 text-xs font-normal text-base-content/60">
+            <span className="flex flex-wrap items-center">
+              {article.author ? (
+                article.authorAddress ? (
+                  <Link
+                    href={`/debate/provenance?address=${encodeURIComponent(
+                      article.authorAddress,
+                    )}`}
+                    title="View on-chain provenance for this author"
+                    className="link link-hover"
+                    // Navigating must not also toggle the card.
+                    onClick={(event) => event.stopPropagation()}
+                  >
+                    By {article.author}
+                  </Link>
+                ) : (
+                  <span>By {article.author}</span>
+                )
+              ) : null}
+              {article.author && article.date ? (
+                <span aria-hidden="true"> · </span>
+              ) : null}
+              {article.date ? (
+                <time dateTime={article.date}>{formatDate(article.date)}</time>
+              ) : null}
+            </span>
+            <span className="flex shrink-0 items-center gap-1">
+              {typeof openCount === "number" ? (
+                <span
+                  className="flex items-center gap-1"
+                  title={`${openCount} ${openCount === 1 ? "open" : "opens"}`}
+                >
+                  <EyeIcon />
+                  <span aria-label={`${openCount} opens`}>{openCount}</span>
+                </span>
+              ) : null}
+              {onAttest ? (
+                <button
+                  type="button"
+                  onClick={handleAttest}
+                  disabled={!canAttest || attesting || hasAttested}
+                  title={attestTitle}
+                  aria-label={attestTitle}
+                  className={`btn btn-ghost btn-xs shrink-0 gap-1 px-1.5 font-normal ${
+                    hasAttested ? "text-success" : "text-base-content/60"
+                  }`}
+                >
+                  {attesting ? (
+                    <span
+                      className="loading loading-spinner loading-xs"
+                      aria-hidden="true"
+                    />
+                  ) : (
+                    <ShieldCheckIcon filled={hasAttested} />
+                  )}
+                  {typeof attestationCount === "number" ? (
+                    <span aria-label={`${attestationCount} attestations`}>
+                      {attestationCount}
+                    </span>
+                  ) : null}
+                </button>
+              ) : null}
+            </span>
           </span>
-        )}
+        ) : null}
       </summary>
       <div className="collapse-content space-y-3">
         {article.labels.length > 0 ? (

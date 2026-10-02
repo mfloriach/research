@@ -1,6 +1,7 @@
 "use client";
 
-import { useState } from "react";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { useWallet } from "@/app/hooks/use-wallet";
 import { useProvenance } from "@/app/hooks/use-provenance";
 import { useContentIndex } from "@/app/hooks/use-content-index";
@@ -33,12 +34,35 @@ function formatTime(timestamp: number | null): string {
 }
 
 export default function ProvenancePage() {
+  return (
+    <Suspense>
+      <ProvenanceContent />
+    </Suspense>
+  );
+}
+
+function ProvenanceContent() {
+  // Deep link from an article byline: /debate/provenance?address=0x…
+  const searchParams = useSearchParams();
+  const requested = searchParams.get("address") ?? "";
+
   const { address, isConnected } = useWallet();
-  const [input, setInput] = useState("");
-  const [wallet, setWallet] = useState<string | null>(null);
+  const [input, setInput] = useState(requested);
+  const [wallet, setWallet] = useState<string | null>(
+    requested === "" ? null : requested,
+  );
+  const [seeded, setSeeded] = useState(requested);
   const { entries, loading, error } = useProvenance(wallet);
   const { articles, loading: contentLoading, resolve } = useContentIndex();
   const provenancedIds = new Set(entries.map((entry) => entry.itemId));
+
+  // Re-seed when the query changes without remounting, e.g. following a
+  // second author link while already on this page.
+  if (requested !== seeded) {
+    setSeeded(requested);
+    setInput(requested);
+    setWallet(requested === "" ? null : requested);
+  }
 
   function handleSearch(event: React.FormEvent) {
     event.preventDefault();

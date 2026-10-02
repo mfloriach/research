@@ -25,6 +25,10 @@ export type Article = {
   author?: string;
   /** ISO date (`YYYY-MM-DD`) shown beside the title. */
   date?: string;
+  /** Author wallet address, used to link to its provenance timeline. */
+  authorAddress?: string;
+  /** How many times the article card has been opened. */
+  openCount?: number;
 };
 
 /** Stored article document (`articles` collection): display fields plus storage metadata. */
@@ -114,6 +118,8 @@ export const reportingCard = {
           labels: ["Clima", "Science"],
           author: "L. Brandt",
           date: "2024-06-18",
+          authorAddress: "0x1111111111111111111111111111111111111111",
+          openCount: 12,
           paragraphs: [
             {
               id: "1cb8e607-f3a7-4614-a44c-da704f1b6780",
@@ -175,6 +181,8 @@ export const reportingCard = {
           labels: ["Economy"],
           author: "A. Rossi",
           date: "2024-08-05",
+          authorAddress: "0x2222222222222222222222222222222222222222",
+          openCount: 8,
           paragraphs: [
             {
               id: "02985276-a8d5-4c5c-afbc-d615beb85b1c",
@@ -235,6 +243,8 @@ export const reportingCard = {
           labels: ["Policy"],
           author: "S. Okafor",
           date: "2024-09-30",
+          authorAddress: "0x3333333333333333333333333333333333333333",
+          openCount: 21,
           paragraphs: [
             {
               id: "c82d5e3f-1a4b-4c2d-9e6f-3a7b8c9d0e1f",

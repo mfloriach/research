@@ -6,6 +6,42 @@ info:
     Reporting and argument-audit API: debates, full-text content, full-text search logging, and audit items
     (contraarguments, fallacies, evidences, sources, interpretations).
 paths:
+  /articles/{id}/open:
+    post:
+      operationId: post-articles-{id}-open
+      summary: Record an article open
+      description: Increments the open count for a reporting article.
+      tags:
+        - Articles
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            description: Article ID
+          description: Article ID
+          example: '123'
+      responses:
+        '200':
+          description: Open count incremented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleOpenResponse'
+        '404':
+          description: Article not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Update failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /content:
     get:
       operationId: get-content
@@ -441,6 +477,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 tags:
+  - name: Articles
   - name: Content
   - name: Contraarguments
   - name: Debates
@@ -469,6 +506,27 @@ components:
         - title
         - description
         - labels
+    ArticleOpenResponse:
+      type: object
+      properties:
+        articleId:
+          type: string
+          description: Article ID
+        openCount:
+          type: number
+          description: Open count after increment
+      required:
+        - articleId
+        - openCount
+    ArticlePathParams:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+          description: Article ID
+      required:
+        - id
     auditCreateFormSchema:
       type: object
       properties:
@@ -756,6 +814,14 @@ components:
           type: array
           items:
             type: string
+        author:
+          type: string
+        date:
+          type: string
+        authorAddress:
+          type: string
+        openCount:
+          type: number
         paragraphs:
           type: array
           items:
@@ -764,6 +830,7 @@ components:
         - id
         - title
         - labels
+        - openCount
         - paragraphs
     ReportingParagraph:
       type: object
