@@ -78,7 +78,7 @@ export function ReportingAuditSection({
 
   return (
     <div className="mt-8 grid grid-cols-1 gap-6 lg:grid-cols-2 lg:gap-8 xl:grid-cols-12">
-      <div className="xl:col-span-7">
+      <div className="xl:col-span-6">
         <TabbedCard
           name="reporting"
           title={reportingCard.title}
@@ -98,7 +98,7 @@ export function ReportingAuditSection({
         />
       </div>
 
-      <div className="space-y-3 xl:col-span-5">
+      <div className="xl:col-span-6">
         <div className="xl:sticky xl:top-20">
           {selected ? (
             <p className="mb-3 flex items-center justify-between gap-3 rounded-lg bg-primary/10 px-3 py-2 text-sm">

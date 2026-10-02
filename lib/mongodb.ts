@@ -23,50 +23,6 @@ function safeHost(value: string): string {
 let clientPromise: Promise<MongoClient> | null = null;
 let listenersAttached = false;
 
-function attachMonitoring(client: MongoClient) {
-  if (listenersAttached) {
-    return;
-  }
-  listenersAttached = true;
-
-  client.on("serverHeartbeatFailed", (event) => {
-    mongoLog.warn(
-      { event: "mongodb.heartbeatFailed", failure: event.failure?.message },
-      "MongoDB server heartbeat failed",
-    );
-  });
-  client.on("serverHeartbeatSucceeded", (event) => {
-    mongoLog.debug(
-      { event: "mongodb.heartbeatSucceeded", durationMs: event.duration },
-      "MongoDB heartbeat ok",
-    );
-  });
-  client.on("connectionPoolCreated", (event) => {
-    mongoLog.info(
-      { event: "mongodb.poolCreated", address: event.address },
-      "MongoDB connection pool created",
-    );
-  });
-  client.on("connectionPoolCleared", (event) => {
-    mongoLog.warn(
-      { event: "mongodb.poolCleared" },
-      "MongoDB connection pool cleared",
-    );
-    void event;
-  });
-  client.on("commandFailed", (event) => {
-    mongoLog.error(
-      {
-        event: "mongodb.commandFailed",
-        commandName: event.commandName,
-        durationMs: event.duration,
-        failure: event.failure?.message,
-      },
-      `MongoDB command ${event.commandName} failed`,
-    );
-  });
-}
-
 function getClientPromise(): Promise<MongoClient> {
   if (!clientPromise) {
     mongoLog.info(

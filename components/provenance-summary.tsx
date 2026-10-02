@@ -69,39 +69,27 @@ export function ProvenanceSummary({ articles }: ProvenanceSummaryProps) {
                 {article.total === 1 ? "linked item" : "linked items"}
               </p>
               {article.total > 0 ? (
-                <>
-                  <div
-                    className="flex h-2.5 w-full overflow-hidden rounded-full bg-base-300"
-                    role="img"
-                    aria-label={`Audit mix for ${article.title}`}
-                  >
-                    {article.counts.map((entry) => (
-                      <div
-                        key={entry.tab}
-                        className={kindBarClass(entry.tab)}
-                        style={{ width: `${entry.percent}%` }}
-                        title={`${entry.tab}: ${entry.count} (${Math.round(entry.percent)}%)`}
-                      />
-                    ))}
-                  </div>
-                  <ul className="flex flex-wrap gap-2">
-                    {article.counts.map((entry) => (
-                      <li
-                        key={entry.tab}
-                        className="flex items-center gap-1.5 text-xs"
+                <div className="flex flex-col gap-1.5">
+                  {article.counts.map((entry) => (
+                    <div key={entry.tab} className="flex items-center gap-2">
+                      <span
+                        className={`badge badge-sm w-32 justify-center ${kindBadgeClass(entry.tab)}`}
                       >
-                        <span
-                          className={`badge badge-sm ${kindBadgeClass(entry.tab)}`}
-                        >
-                          {entry.tab}
-                        </span>
-                        <span className="opacity-70">
-                          {entry.count} · {Math.round(entry.percent)}%
-                        </span>
-                      </li>
-                    ))}
-                  </ul>
-                </>
+                        {entry.tab}
+                      </span>
+                      <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-base-300">
+                        <div
+                          className={`h-full rounded-full ${kindBarClass(entry.tab)}`}
+                          style={{ width: `${entry.percent}%` }}
+                          title={`${entry.tab}: ${entry.count} (${Math.round(entry.percent)}%)`}
+                        />
+                      </div>
+                      <span className="w-16 shrink-0 text-right text-xs opacity-70">
+                        {entry.count} · {Math.round(entry.percent)}%
+                      </span>
+                    </div>
+                  ))}
+                </div>
               ) : (
                 <p className="text-xs opacity-60">No linked audit items.</p>
               )}

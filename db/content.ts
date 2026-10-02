@@ -258,7 +258,8 @@ export const auditCard = {
       items: [
         {
           id: "8cc991c0-94b8-40f5-beae-0e1ae0229ee5",
-          title: "Relocation: production moves outside the scheme instead of cutting emissions",
+          title:
+            "Relocation: production moves outside the scheme instead of cutting emissions",
           author: "H. Müller",
           date: "2024-09-12",
           paragraphs: [
@@ -268,7 +269,8 @@ export const auditCard = {
         },
         {
           id: "95b87e22-bdc7-4761-a186-a3a4488caba9",
-          title: "Incidence: the tariff is paid by domestic importers, not by foreign exporters",
+          title:
+            "Incidence: the tariff is paid by domestic importers, not by foreign exporters",
           author: "S. Okafor",
           date: "2025-01-28",
           paragraphs: [
@@ -286,7 +288,8 @@ export const auditCard = {
       items: [
         {
           id: "2746480b-1cfa-4650-954c-43283dea532f",
-          title: "Appeal to consequence: the policy is rejected because accepting it would be costly",
+          title:
+            "Appeal to consequence: the policy is rejected because accepting it would be costly",
           author: "L. Brandt",
           date: "2024-10-03",
           paragraphs: [
@@ -296,7 +299,8 @@ export const auditCard = {
         },
         {
           id: "a5279f38-dca3-4921-aad8-9c6b049ce5c0",
-          title: "False dilemma: presented as either a border tax or no climate policy at all",
+          title:
+            "False dilemma: presented as either a border tax or no climate policy at all",
           author: "A. Rossi",
           date: "2024-11-21",
           paragraphs: [
@@ -306,7 +310,8 @@ export const auditCard = {
         },
         {
           id: "580d58a3-779b-4d98-9970-021478894e6e",
-          title: "Moving the goalposts: cost objections become sovereignty objections once answered",
+          title:
+            "Moving the goalposts: cost objections become sovereignty objections once answered",
           author: "J. Kim",
           date: "2025-02-14",
           paragraphs: [
@@ -322,7 +327,8 @@ export const auditCard = {
       items: [
         {
           id: "17dae7c0-edb0-4f2b-8611-4a72d5dd53d1",
-          title: "EU ETS coverage coincided with an 8% fall in covered emissions over its first decade",
+          title:
+            "EU ETS coverage coincided with an 8% fall in covered emissions over its first decade",
           paragraphs: [
             "The association is well documented; the attribution is not. Over the same period the financial crisis removed output, fuel switching from coal to gas did much of the work, and a surplus of allowances suppressed the carbon price for years.",
             "Read as evidence that coverage changes behaviour, it is suggestive. Read as a clean estimate of the policy's own effect, it overstates.",
@@ -330,7 +336,8 @@ export const auditCard = {
         },
         {
           id: "dfa621c5-cde8-4468-9249-a341e98a5a36",
-          title: "Carbon leakage appears in cement and aluminium, but not in the chemicals sector",
+          title:
+            "Carbon leakage appears in cement and aluminium, but not in the chemicals sector",
           paragraphs: [
             "Sector-level trade data splits the aggregate claim. Bulk, low-value, transport-sensitive products show measurable displacement; higher-value chemical output, where specification and proximity matter more, does not.",
             "This is the strongest case for a border instrument that is calibrated per sector rather than applied uniformly.",
@@ -338,7 +345,8 @@ export const auditCard = {
         },
         {
           id: "2ade1891-0c77-4112-b37e-ee115547d809",
-          title: "Switzerland linked its carbon price to the EU scheme through a bilateral agreement",
+          title:
+            "Switzerland linked its carbon price to the EU scheme through a bilateral agreement",
           paragraphs: [
             "The link is a working precedent for the administrative machinery: mutual recognition of certificates, a joint registry, and a dispute process.",
             "It also shows the political condition. The agreement held because both sides treated it as symmetric rather than as a unilateral standard imposed on one party.",
@@ -352,7 +360,8 @@ export const auditCard = {
       items: [
         {
           id: "0eb94504-0b6b-4070-931c-10e2ad242af2",
-          title: "European Commission — CBAM impact assessment and implementing regulation, 2021–2023",
+          title:
+            "European Commission — CBAM impact assessment and implementing regulation, 2021–2023",
           paragraphs: [
             "Primary institutional source for scope, sectoral coverage and the phase-in schedule. The impact assessment is the reference for projected leakage risk; the regulation is the reference for what is actually in force.",
             "Both are normative documents: they state intent as well as evidence, and the modelling behind them is summarised rather than shown in full.",
@@ -360,7 +369,8 @@ export const auditCard = {
         },
         {
           id: "6625b27f-1e90-4615-a444-a1070fa38233",
-          title: "OECD — Effective Carbon Rates 2023: pricing greenhouse gas emissions",
+          title:
+            "OECD — Effective Carbon Rates 2023: pricing greenhouse gas emissions",
           paragraphs: [
             "Comparable carbon prices across member and major partner economies, combining taxes and tradeable permit prices.",
             "Useful precisely because it is not built around the policy under debate, which makes it a good cross-check on claims about relative pricing.",
@@ -368,7 +378,8 @@ export const auditCard = {
         },
         {
           id: "cbc09843-2888-481e-819f-ff5b9b7f159a",
-          title: "IMF — Fiscal policies for Paris-compatible mitigation, Staff Climate Notes",
+          title:
+            "IMF — Fiscal policies for Paris-compatible mitigation, Staff Climate Notes",
           paragraphs: [
             "Sets out the instrument mix and the revenue-recycling options, and is explicit that the distributional outcome is a choice rather than a property of the levy.",
             "The discount to apply: an international institution writing to finance ministries, so its emphasis is administrability and revenue.",
@@ -384,7 +395,8 @@ export const auditCard = {
       items: [
         {
           id: "a7d6e08d-8071-4a2d-b8c5-d4a88d1a9c6c",
-          title: "Read as a pricing instrument rather than a trade sanction, it changes incentives at the border",
+          title:
+            "Read as a pricing instrument rather than a trade sanction, it changes incentives at the border",
           author: "E. Duarte",
           date: "2025-03-05",
           paragraphs: [
@@ -394,7 +406,8 @@ export const auditCard = {
         },
         {
           id: "37adaa72-5215-4edb-a297-08bfa9b46623",
-          title: "Read as a coalition-building device: it makes domestic carbon pricing politically survivable",
+          title:
+            "Read as a coalition-building device: it makes domestic carbon pricing politically survivable",
           author: "T. Nguyen",
           date: "2025-04-17",
           paragraphs: [
