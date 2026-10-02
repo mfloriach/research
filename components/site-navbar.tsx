@@ -20,7 +20,6 @@ const MENU_LABEL = "Account menu";
 const MENU_ITEMS: ReadonlyArray<{ id: string; label: string; href: string }> = [
   { id: "profile", label: "Profile", href: "#profile" },
   { id: "settings", label: "Settings", href: "#settings" },
-  { id: "sign-out", label: "Sign out", href: "#sign-out" },
 ];
 
 type EthereumProvider = AnvilEthereumProvider;
@@ -80,7 +79,9 @@ export function SiteNavbar({
   const [connecting, setConnecting] = useState(false);
   const [disconnecting, setDisconnecting] = useState(false);
   const [connectError, setConnectError] = useState<string | null>(null);
-  const [searchStatus, setSearchStatus] = useState<"idle" | "loading" | "done" | "error">("idle");
+  const [searchStatus, setSearchStatus] = useState<
+    "idle" | "loading" | "done" | "error"
+  >("idle");
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<SearchResults>(null);
   const titlesCache = useRef<Map<string, string> | null>(null);
@@ -119,7 +120,9 @@ export function SiteNavbar({
     setSearchStatus("loading");
     setSearchError(null);
     try {
-      const response = await fetch(`/api/search?q=${encodeURIComponent(query)}`);
+      const response = await fetch(
+        `/api/search?q=${encodeURIComponent(query)}`,
+      );
       if (!response.ok) {
         throw new Error(`status ${response.status}`);
       }

@@ -2,7 +2,6 @@
 
 import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { PageHeading } from "@/components/page-heading";
 import { ReportingAuditSection } from "@/components/reporting-audit-section";
 import { ReportingFilters } from "@/components/reporting-filters";
 import {
@@ -30,7 +29,9 @@ export default function Home() {
   return (
     <main className="flex-1">
       <div className="mx-8 py-8 sm:py-10">
-        <Suspense fallback={<p className="text-sm opacity-70">Loading dossier…</p>}>
+        <Suspense
+          fallback={<p className="text-sm opacity-70">Loading dossier…</p>}
+        >
           <Dossier />
         </Suspense>
       </div>
@@ -99,7 +100,11 @@ function Dossier() {
   return (
     <>
       <div className="flex flex-wrap items-start justify-between gap-4">
-        <PageHeading title={argument.title} labels={argument.labels} />
+        <div className="max-w-3xl space-y-3">
+          <h1 className="font-serif text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+            {argument.title}
+          </h1>
+        </div>
         <button
           type="button"
           className="btn btn-primary"

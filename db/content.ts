@@ -89,6 +89,28 @@ export const site = {
     src: "https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp",
     alt: "Signed-in user avatar",
   },
+  breadcrumbs: {
+    /** Label introducing the dossier topic as the first crumb. */
+    topicLabel: "Topic",
+  },
+};
+
+/**
+ * Human labels for route segments, used by the breadcrumbs.
+ *
+ * Route segments are plural (`/debate/contraarguments/create`) while the
+ * canonical audit labels are singular ("Contraargument"). Segments missing
+ * here are humanised from the slug instead.
+ */
+export const ROUTE_LABELS: Readonly<Record<string, string>> = {
+  debate: "Debate",
+  provenance: "Provenance",
+  contraarguments: "Contraargument",
+  evidences: "Evidences",
+  fallacies: "Fallacies",
+  interpretations: "Interpretation",
+  sources: "Sources",
+  create: "Create",
 };
 
 /**
