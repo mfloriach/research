@@ -1,4 +1,4 @@
-import { act, fireEvent, render, screen } from "@testing-library/react";
+import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { useAttestations } from "@/app/hooks/use-attestation";
 import { useWallet } from "@/app/hooks/use-wallet";
 import type { Article } from "@/db/content";
@@ -299,6 +299,101 @@ describe("ArticleList", () => {
     expect(
       screen.getByRole("button", { name: "Attested by this wallet" }),
     ).toBeDisabled();
+  });
+
+    it("expands the card to a 90% dialog via its icon", () => {
+    render(<ArticleList articles={[makeArticle()]} />);
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Expand to full screen" }),
+    );
+
+    const dialog = screen.getByRole("dialog");
+    expect(dialog).toBeInTheDocument();
+    expect(dialog).toHaveAttribute("aria-modal", "true");
+    expect(dialog).toHaveAttribute("aria-label", "Climate sensitivity is a range");
+  });
+
+  it("counts the expand as an open view", async () => {
+    render(<ArticleList articles={[makeArticle({ openCount: 12 })]} />);
+
+    await act(async () => {
+      fireEvent.click(
+        screen.getByRole("button", { name: "Expand to full screen" }),
+      );
+    });
+
+    expect(mockFetch).toHaveBeenCalledWith(
+      "/api/articles/article-1/open",
+      { method: "POST" },
+    );
+    await waitFor(() =>
+      expect(screen.getByLabelText("13 opens")).toHaveTextContent("13"),
+    );
+  });
+
+  it("returns to the list via the close button", () => {
+    render(<ArticleList articles={[makeArticle()]} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Expand to full screen" }),
+    );
+
+    fireEvent.click(screen.getByRole("button", { name: "Return to list" }));
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("returns to the list when clicking the backdrop", () => {
+    render(<ArticleList articles={[makeArticle()]} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Expand to full screen" }),
+    );
+
+    fireEvent.click(document.querySelector(".fixed.inset-0") as HTMLElement);
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("returns to the list on Escape", () => {
+    render(<ArticleList articles={[makeArticle()]} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Expand to full screen" }),
+    );
+
+    fireEvent.keyDown(window, { key: "Escape" });
+
+    expect(screen.queryByRole("dialog")).toBeNull();
+  });
+
+  it("keeps paragraph clicks working inside the dialog", () => {
+    const onParagraphClick = jest.fn();
+    render(
+      <ArticleList articles={[makeArticle()]} onParagraphClick={onParagraphClick} />,
+    );
+    fireEvent.click(
+      screen.getByRole("button", { name: "Expand to full screen" }),
+    );
+
+    const dialog = screen.getByRole("dialog");
+    const button = screen.getAllByRole("button", { name: "First paragraph." }).find((b) => dialog.contains(b));
+    fireEvent.click(button as HTMLElement);
+
+    expect(onParagraphClick).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "article-1" }),
+      expect.objectContaining({ id: "p-1" }),
+      0,
+    );
+  });
+
+  it("keeps the expand button from expanding twice", () => {
+    render(<ArticleList articles={[makeArticle()]} />);
+    fireEvent.click(
+      screen.getByRole("button", { name: "Expand to full screen" }),
+    );
+    // Dialog is open; the expand button is still aria-pressed true
+    expect(
+      screen.getByRole("button", { name: "Expand to full screen" }),
+    ).toHaveAttribute("aria-pressed", "true");
   });
 
   it("reports the clicked paragraph with its index", () => {

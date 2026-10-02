@@ -1,8 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import type { SyntheticEvent } from "react";
-import { EyeIcon, ShieldCheckIcon } from "@/components/icons";
+import { useEffect, useState, type SyntheticEvent } from "react";
+import { createPortal } from "react-dom";
+import { CollapseIcon, ExpandIcon, EyeIcon, ShieldCheckIcon } from "@/components/icons";
 import type { Article, ReportingParagraph } from "@/db/content";
 import { config } from "@/lib/config";
 import {
@@ -113,6 +114,34 @@ export function ReportingArticleCard({
     );
   }
 
+  const [expanded, setExpanded] = useState(false);
+
+  function handleExpand(event: SyntheticEvent<HTMLButtonElement>) {
+    // The button lives inside <summary>: don't toggle the card on click.
+    event.preventDefault();
+    event.stopPropagation();
+    setExpanded(true);
+    // Expanding a card counts as an open view.
+    onOpen?.(article.id);
+  }
+
+  function handleCollapse() {
+    setExpanded(false);
+  }
+
+  useEffect(() => {
+    if (!expanded) {
+      return;
+    }
+    function onKeyDown(event: KeyboardEvent) {
+      if (event.key === "Escape") {
+        setExpanded(false);
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [expanded]);
+
   function handleToggle(event: SyntheticEvent<HTMLDetailsElement>) {
     if ((event.nativeEvent as ToggleEvent).newState === "open") {
       onOpen?.(article.id);
@@ -135,6 +164,50 @@ export function ReportingArticleCard({
   const openCount = openCounts?.[article.id] ?? article.openCount;
   const hasByline = Boolean(article.author ?? article.date);
   const showMeta = hasByline || typeof openCount === "number" || Boolean(onAttest);
+
+  const video = <ArticleVideo article={article} />;
+  const labels = article.labels.length > 0 ? (
+    <ul aria-label="Article labels" className="flex flex-wrap gap-1.5">
+      {article.labels.map((label) => (
+        <li key={label}>
+          <span className="badge badge-outline badge-sm">{label}</span>
+        </li>
+      ))}
+    </ul>
+  ) : null;
+
+  const body = (
+    <>
+      {video}
+      {labels}
+      {article.paragraphs.map((paragraph, index) => {
+        const isSelected =
+          selected?.articleId === article.id &&
+          selected?.paragraphId === paragraph.id;
+        const clickable = typeof onParagraphClick === "function";
+        return (
+          <button
+            key={paragraph.id}
+            type="button"
+            disabled={!clickable}
+            onClick={() => onParagraphClick?.(article, paragraph, index)}
+            aria-pressed={isSelected}
+            title={clickable ? "Click to audit this paragraph" : undefined}
+            className={[
+              "block w-full rounded-md text-left leading-7 transition-colors",
+              "text-base-content/80",
+              clickable
+                ? "cursor-pointer px-2 py-1 hover:bg-base-300/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
+                : "cursor-default",
+              isSelected ? "bg-primary/10 outline outline-1 outline-primary" : "",
+            ].join(" ")}
+          >
+            {paragraph.text}
+          </button>
+        );
+      })}
+    </>
+  );
 
   return (
     <details
@@ -211,48 +284,56 @@ export function ReportingArticleCard({
                   ) : null}
                 </button>
               ) : null}
+              <button
+                type="button"
+                onClick={handleExpand}
+                title="Expand to full screen"
+                aria-label="Expand to full screen"
+                aria-pressed={expanded}
+                className="btn btn-ghost btn-xs shrink-0 px-1.5 font-normal text-base-content/60"
+              >
+                <ExpandIcon />
+              </button>
             </span>
           </span>
         ) : null}
       </summary>
-      <div className="collapse-content space-y-3">
-        <ArticleVideo article={article} />
-        {article.labels.length > 0 ? (
-          <ul aria-label="Article labels" className="flex flex-wrap gap-1.5">
-            {article.labels.map((label) => (
-              <li key={label}>
-                <span className="badge badge-outline badge-sm">{label}</span>
-              </li>
-            ))}
-          </ul>
-        ) : null}
-        {article.paragraphs.map((paragraph, index) => {
-          const isSelected =
-            selected?.articleId === article.id &&
-            selected?.paragraphId === paragraph.id;
-          const clickable = typeof onParagraphClick === "function";
-          return (
-            <button
-              key={paragraph.id}
-              type="button"
-              disabled={!clickable}
-              onClick={() => onParagraphClick?.(article, paragraph, index)}
-              aria-pressed={isSelected}
-              title={clickable ? "Click to audit this paragraph" : undefined}
-              className={[
-                "block w-full rounded-md text-left leading-7 transition-colors",
-                "text-base-content/80",
-                clickable
-                  ? "cursor-pointer px-2 py-1 hover:bg-base-300/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
-                  : "cursor-default",
-                isSelected ? "bg-primary/10 outline outline-1 outline-primary" : "",
-              ].join(" ")}
-            >
-              {paragraph.text}
-            </button>
-          );
-        })}
-      </div>
+      <div className="collapse-content space-y-3">{body}</div>
+      {expanded ? createPortal(
+        // Portalled out of the card so the fixed overlay is not clipped or
+        // stacked beneath the sticky audit column / tab overflow containers.
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4"
+          onClick={handleCollapse}
+        >
+          <div
+            role="dialog"
+            aria-modal="true"
+            aria-label={article.title}
+            className="card h-[90vh] w-[90vw] max-w-7xl overflow-y-auto bg-base-100 shadow-xl"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <div className="card-body gap-4 p-6">
+              <div className="flex items-start justify-between gap-4">
+                <h3 className="font-serif text-xl font-semibold leading-tight">
+                  {article.title}
+                </h3>
+                <button
+                  type="button"
+                  onClick={handleCollapse}
+                  title="Return to list"
+                  aria-label="Return to list"
+                  className="btn btn-ghost btn-sm shrink-0 px-2"
+                >
+                  <CollapseIcon />
+                </button>
+              </div>
+              <div className="space-y-3">{body}</div>
+            </div>
+          </div>
+        </div>,
+        document.body,
+      ) : null}
     </details>
   );
 }
