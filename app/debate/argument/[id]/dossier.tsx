@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ReportingAuditSection } from "@/components/reporting-audit-section";
 import { ReportingFilters } from "@/components/reporting-filters";
@@ -25,21 +25,7 @@ const fallbackContent: DbContent = {
   auditCard: auditCardFallback,
 };
 
-export default function Home() {
-  return (
-    <main className="flex-1">
-      <div className="mx-8 py-8 sm:py-10">
-        <Suspense
-          fallback={<p className="text-sm opacity-70">Loading dossier…</p>}
-        >
-          <Dossier />
-        </Suspense>
-      </div>
-    </main>
-  );
-}
-
-function Dossier() {
+export function Dossier({ id }: { id: string }) {
   const [content, setContent] = useState<DbContent>(fallbackContent);
   const { isConnected } = useWallet();
   const router = useRouter();
@@ -47,7 +33,7 @@ function Dossier() {
 
   useEffect(() => {
     let cancelled = false;
-    fetch("/api/content")
+    fetch(`/api/content?id=${encodeURIComponent(id)}`)
       .then((response) => {
         if (!response.ok) {
           throw new Error(`status ${response.status}`);
@@ -68,7 +54,7 @@ function Dossier() {
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [id]);
 
   const { argument, reportingCard, auditCard } = content;
 
@@ -92,9 +78,9 @@ function Dossier() {
   const handleFilterChange = useCallback(
     (next: ArticleFilter) => {
       // replace, so toggling a filter does not stack history entries.
-      router.replace(`/${articleFilterQuery(next)}`, { scroll: false });
+      router.replace(`/debate/argument/${id}${articleFilterQuery(next)}`, { scroll: false });
     },
-    [router],
+    [router, id],
   );
 
   return (

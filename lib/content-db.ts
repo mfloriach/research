@@ -3,12 +3,8 @@
  * defined in `db/content.ts`.
  */
 import { getDb } from "@/lib/mongodb";
-import type {
-  Article,
-  CollapsibleItem,
-  ContentTab,
-  AUDIT_TABS,
-} from "@/db/types";
+import type { Article, CollapsibleItem, ContentTab } from "@/db/types";
+import { AUDIT_TABS } from "@/db/types";
 import { COLLECTIONS } from "@/db/migration";
 
 type ArgumentContent = {
@@ -76,22 +72,29 @@ type ReplyDoc = {
 const byOrder = (a: { order?: number }, b: { order?: number }) =>
   (a.order ?? 0) - (b.order ?? 0);
 
-export async function getContentFromDb(): Promise<DbContent> {
+export async function getContentFromDb(
+  argumentId?: string,
+): Promise<DbContent> {
   const db = await getDb();
 
   const [argumentDoc] = await db
     .collection<ArgumentDoc>(COLLECTIONS.arguments)
-    .find({})
+    .find(argumentId ? { _id: argumentId } : {})
     .limit(1)
     .toArray();
   if (!argumentDoc) {
     throw new Error(
-      "Content collections are empty. Run `npm run db:seed` first.",
+      argumentId
+        ? `No argument found with id "${argumentId}".`
+        : "Content collections are empty. Run `npm run db:seed` first.",
     );
   }
 
   const [articleDocs, replies] = await Promise.all([
-    db.collection<ArticleDoc>(COLLECTIONS.articles).find({}).toArray(),
+    db
+      .collection<ArticleDoc>(COLLECTIONS.articles)
+      .find({ argumentId: argumentDoc._id })
+      .toArray(),
     db.collection<ReplyDoc>(COLLECTIONS.replies).find({}).toArray(),
   ]);
 

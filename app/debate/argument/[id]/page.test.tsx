@@ -3,7 +3,9 @@ import userEvent from "@testing-library/user-event";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useWallet } from "@/app/hooks/use-wallet";
 import type { Article } from "@/db/nuclear";
-import Home from "./page";
+import { Dossier } from "./dossier";
+
+const pageId = "arg-1";
 
 jest.mock("next/navigation", () => ({
   useRouter: jest.fn(),
@@ -113,21 +115,21 @@ describe("Home reporting filters", () => {
   });
 
   it("lists every label reachable from the content", async () => {
-    render(<Home />);
+    render(<Dossier id={pageId} />);
     expect(await screen.findByText("The IPCC video")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Science" })).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Policy" })).toBeInTheDocument();
   });
 
   it("omits labels no content uses", async () => {
-    render(<Home />);
+    render(<Dossier id={pageId} />);
     await screen.findByText("The IPCC video");
     // "Trade" is in ARGUMENT_LABELS but no article carries it.
     expect(screen.queryByRole("button", { name: "Trade" })).toBeNull();
   });
 
   it("shows tab labels with article counts", async () => {
-    render(<Home />);
+    render(<Dossier id={pageId} />);
     await screen.findByText("The IPCC video");
     expect(
       screen.getByRole("radio", { name: "Clima (2)" }),
@@ -139,7 +141,7 @@ describe("Home reporting filters", () => {
 
   it("filters to videos and drops emptied tabs", async () => {
     setParams("type=video");
-    render(<Home />);
+    render(<Dossier id={pageId} />);
 
     await screen.findByText("The IPCC video");
     expect(screen.queryByText("Climate sensitivity is a range")).toBeNull();
@@ -148,7 +150,7 @@ describe("Home reporting filters", () => {
 
   it("filters across tabs by label", async () => {
     setParams("labels=Science");
-    render(<Home />);
+    render(<Dossier id={pageId} />);
 
     await screen.findByText("The IPCC video");
     expect(
@@ -158,7 +160,7 @@ describe("Home reporting filters", () => {
   });
 
   it("keeps editorial order by default", async () => {
-    render(<Home />);
+    render(<Dossier id={pageId} />);
     await screen.findByText("The IPCC video");
     expect(cardTitles()).toEqual([
       "Climate sensitivity is a range",
@@ -169,7 +171,7 @@ describe("Home reporting filters", () => {
 
   it("sorts within a tab by date", async () => {
     setParams("sort=oldest");
-    render(<Home />);
+    render(<Dossier id={pageId} />);
     await screen.findByText("The IPCC video");
     // The 2021 video moves ahead of the 2024 article; tabs keep their order.
     expect(cardTitles()).toEqual([
@@ -181,7 +183,7 @@ describe("Home reporting filters", () => {
 
   it("shows an empty state when nothing matches", async () => {
     setParams("labels=Trade");
-    render(<Home />);
+    render(<Dossier id={pageId} />);
 
     expect(
       await screen.findByText(/No articles match these filters/),
@@ -191,7 +193,7 @@ describe("Home reporting filters", () => {
 
   it("ignores unrecognised filter params instead of hiding everything", async () => {
     setParams("type=bogus&sort=random&labels=Clima,Policy");
-    render(<Home />);
+    render(<Dossier id={pageId} />);
 
     expect(await screen.findByText("The IPCC video")).toBeInTheDocument();
     expect(
@@ -205,12 +207,12 @@ describe("Home reporting filters", () => {
 
   it("writes the filter to the URL without stacking history", async () => {
     const user = userEvent.setup();
-    render(<Home />);
+    render(<Dossier id={pageId} />);
     await screen.findByText("The IPCC video");
 
     await user.click(screen.getByRole("button", { name: "Science" }));
 
-    expect(replace).toHaveBeenCalledWith("/?labels=Science", {
+    expect(replace).toHaveBeenCalledWith("/debate/argument/arg-1?labels=Science", {
       scroll: false,
     });
   });
@@ -218,11 +220,11 @@ describe("Home reporting filters", () => {
   it("clears the URL query when filters are cleared", async () => {
     const user = userEvent.setup();
     setParams("type=video");
-    render(<Home />);
+    render(<Dossier id={pageId} />);
     await screen.findByText("The IPCC video");
 
     await user.click(screen.getByRole("button", { name: "Clear filters" }));
 
-    expect(replace).toHaveBeenCalledWith("/", { scroll: false });
+    expect(replace).toHaveBeenCalledWith("/debate/argument/arg-1", { scroll: false });
   });
 });
