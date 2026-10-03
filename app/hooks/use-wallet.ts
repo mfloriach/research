@@ -55,14 +55,17 @@ export function useWallet(): WalletState {
         setAddress(next ?? null);
       }
     };
+
     const handleChainChanged = (...args: unknown[]) => {
       const [nextChainId] = args as [string?];
       if (!cancelled) {
         setChainId(typeof nextChainId === "string" ? nextChainId : null);
       }
     };
+
     provider.on?.("accountsChanged", handleAccountsChanged);
     provider.on?.("chainChanged", handleChainChanged);
+
     return () => {
       cancelled = true;
       provider.removeListener?.("accountsChanged", handleAccountsChanged);
@@ -70,6 +73,12 @@ export function useWallet(): WalletState {
     };
   }, []);
 
-  const isOnAnvil = chainId === null || chainId.toLowerCase() === ANVIL_CHAIN_ID_HEX;
-  return { address, chainId, isConnected: address !== null && address !== "" && isOnAnvil };
+  const isOnAnvil =
+    chainId === null || chainId.toLowerCase() === ANVIL_CHAIN_ID_HEX;
+
+  return {
+    address,
+    chainId,
+    isConnected: address !== null && address !== "" && isOnAnvil,
+  };
 }

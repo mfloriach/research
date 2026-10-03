@@ -10,28 +10,8 @@ import {
   ProvenanceSummary,
   kindBadgeClass,
 } from "@/components/provenance-summary";
-import { ipfsGatewayUrl } from "@/lib/ipfs-gateway";
-import { truncateText } from "@/lib/provenance-view";
-
-function truncate(value: string): string {
-  if (value.length <= 20) {
-    return value;
-  }
-  return `${value.slice(0, 12)}…${value.slice(-8)}`;
-}
-
-function formatTime(timestamp: number | null): string {
-  if (timestamp === null) {
-    return "—";
-  }
-  return new Date(timestamp).toLocaleString(undefined, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  });
-}
+import { ipfsGatewayUrl } from "@/lib/ipfs";
+import { truncateText, formatTime } from "@/lib/utils";
 
 export default function ProvenancePage() {
   return (
@@ -82,14 +62,14 @@ function ProvenanceContent() {
           {wallet ? (
             <>
               <span className="font-semibold">
-                {walletName ?? truncate(wallet)}
+                {walletName ?? truncateText(wallet)}
               </span>
               {walletName ? (
                 <span
                   className="font-mono text-xs text-base-content/60"
                   title={wallet}
                 >
-                  {truncate(wallet)}
+                  {truncateText(wallet)}
                 </span>
               ) : null}
             </>
@@ -260,7 +240,7 @@ function ProvenanceContent() {
                                 {resolved.isArticle ||
                                 resolved.kind !== "Unknown"
                                   ? resolved.name
-                                  : truncate(resolved.name)}
+                                  : truncateText(resolved.name)}
                               </span>
                               <CopyButton
                                 value={entry.itemId}
@@ -271,7 +251,7 @@ function ProvenanceContent() {
                           <td className="font-mono text-xs">
                             {entry.contentHash ? (
                               <span title={entry.contentHash}>
-                                {truncate(entry.contentHash)}
+                                {truncateText(entry.contentHash)}
                               </span>
                             ) : (
                               <span className="opacity-40">—</span>
@@ -286,14 +266,17 @@ function ProvenanceContent() {
                                 className="link"
                                 title={entry.ipfsCid}
                               >
-                                {truncate(entry.ipfsCid)}
+                                {truncateText(entry.ipfsCid)}
                               </a>
                             ) : (
                               <span className="opacity-40">—</span>
                             )}
                           </td>
-                          <td className="font-mono text-xs" title={entry.txHash}>
-                            {truncate(entry.txHash)}
+                          <td
+                            className="font-mono text-xs"
+                            title={entry.txHash}
+                          >
+                            {truncateText(entry.txHash)}
                           </td>
                           <td className="whitespace-nowrap text-xs">
                             {formatTime(entry.timestamp)}

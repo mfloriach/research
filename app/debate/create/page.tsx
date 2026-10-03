@@ -13,12 +13,10 @@ import {
   type ReportCreateFormInput,
   type ReportCreateFormValues,
 } from "@/lib/form-schemas";
-import {
-  useAuditSign,
-  type SignedAudit,
-} from "@/app/hooks/use-audit-sign";
+import { useAuditSign, type SignedAudit } from "@/app/hooks/use-audit-sign";
 import { SignaturePanel } from "@/components/signature-panel";
 import { Field } from "@/components/form-field";
+import { saveArticle } from "@/lib/api";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
 
@@ -64,27 +62,11 @@ export default function CreateDebatePage() {
       if (!signResult.ok) {
         throw new Error(`${signResult.error} Nothing was saved.`);
       }
-      const response = await fetch("/api/debates", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = (await response.json().catch(() => null)) as {
-        error?: string;
-        articleId?: string;
-        ipfsCid?: string;
-      } | null;
-      if (!response.ok) {
-        throw new Error(data?.error ?? `Request failed with status ${response.status}`);
-      }
-      if (!data?.articleId || typeof data.articleId !== "string") {
-        throw new Error("Stored, but the response missed the article ID.");
-      }
-      if (!data?.ipfsCid || typeof data.ipfsCid !== "string") {
-        throw new Error("Stored, but the response missed the IPFS CID.");
-      }
+
+      const data = await saveArticle(body);
+
       const recorded = await recordSignature({
-        itemId: data.articleId,
+        itemId: data.itemId,
         contentHash: signResult.signed.contentHash,
         signature: signResult.signed.signature,
         ipfsCid: data.ipfsCid,
@@ -92,7 +74,11 @@ export default function CreateDebatePage() {
       setRecordWarning(recorded.ok ? null : recorded.error);
       setSigned(signResult.signed);
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Could not store report");
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Could not store report",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -102,7 +88,9 @@ export default function CreateDebatePage() {
     return (
       <main className="flex-1">
         <div className="mx-8 max-w-5xl py-8 sm:py-10">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Create new report</h1>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            Create new report
+          </h1>
           <SignaturePanel
             kindLabel="Report"
             signer={signed.signer}
@@ -119,9 +107,12 @@ export default function CreateDebatePage() {
   return (
     <main className="flex-1">
       <div className="mx-8 max-w-5xl py-8 sm:py-10">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Create new report</h1>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          Create new report
+        </h1>
         <p className="mt-2 text-sm text-base-content/70">
-          Write the description in markdown on the left, preview it on the right.
+          Write the description in markdown on the left, preview it on the
+          right.
         </p>
 
         {!isConnected ? (
@@ -142,7 +133,10 @@ export default function CreateDebatePage() {
             />
           </Field>
 
-          <Field label="Labels (comma-separated)" error={errors.labels?.message}>
+          <Field
+            label="Labels (comma-separated)"
+            error={errors.labels?.message}
+          >
             <input
               type="text"
               className="input input-bordered w-full"
@@ -153,7 +147,10 @@ export default function CreateDebatePage() {
             />
           </Field>
 
-          <Field label="Description (markdown)" error={errors.description?.message}>
+          <Field
+            label="Description (markdown)"
+            error={errors.description?.message}
+          >
             <div data-color-mode="light">
               <Controller
                 name="description"
@@ -182,7 +179,11 @@ export default function CreateDebatePage() {
               type="submit"
               className="btn btn-primary"
               disabled={!canSubmit}
-              title={!isConnected ? "Connect your wallet to create a report" : "Save report"}
+              title={
+                !isConnected
+                  ? "Connect your wallet to create a report"
+                  : "Save report"
+              }
             >
               {submitting
                 ? signPhase === "signing"

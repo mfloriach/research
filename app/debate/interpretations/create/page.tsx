@@ -2,31 +2,22 @@
 
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import "@uiw/react-md-editor/markdown-editor.css";
-import type { DbContent } from "@/lib/content-db";
 import {
   auditCreateFormSchema,
   type AuditCreateFormInput,
   type AuditCreateFormValues,
 } from "@/lib/form-schemas";
 import { useWallet } from "@/app/hooks/use-wallet";
-import {
-  useAuditSign,
-  type SignedAudit,
-} from "@/app/hooks/use-audit-sign";
+import { useAuditSign, type SignedAudit } from "@/app/hooks/use-audit-sign";
 import { SignaturePanel } from "@/components/signature-panel";
 import { Field } from "@/components/form-field";
+import { saveInterpretation } from "@/lib/api";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
-
-type LinkedParagraph = {
-  id: string;
-  articleTitle: string;
-  text: string;
-};
 
 export default function CreateInterpretationPage() {
   return (
@@ -41,6 +32,11 @@ function CreateInterpretationForm() {
   const searchParams = useSearchParams();
   const paragraphId = searchParams.get("paragraphId");
   const { isConnected } = useWallet();
+  const [error, setError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
+  const [signed, setSigned] = useState<SignedAudit | null>(null);
+  const [recordWarning, setRecordWarning] = useState<string | null>(null);
+  const { phase: signPhase, signPayload, recordSignature } = useAuditSign();
 
   const {
     register,
@@ -52,49 +48,6 @@ function CreateInterpretationForm() {
     mode: "onChange",
     defaultValues: { title: "", content: "", author: "", date: "" },
   });
-  const [linked, setLinked] = useState<LinkedParagraph | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [submitting, setSubmitting] = useState(false);
-  const [signed, setSigned] = useState<SignedAudit | null>(null);
-  const [recordWarning, setRecordWarning] = useState<string | null>(null);
-  const { phase: signPhase, signPayload, recordSignature } = useAuditSign();
-
-  useEffect(() => {
-    if (!paragraphId) {
-      return;
-    }
-    let cancelled = false;
-    fetch("/api/content")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`status ${response.status}`);
-        }
-        return response.json() as Promise<DbContent>;
-      })
-      .then((data) => {
-        if (cancelled) {
-          return;
-        }
-        for (const tab of data.reportingCard.tabs) {
-          for (const article of tab.items) {
-            const paragraph = article.paragraphs.find((entry) => entry.id === paragraphId);
-            if (paragraph) {
-              setLinked({ id: paragraph.id, articleTitle: article.title, text: paragraph.text });
-              return;
-            }
-          }
-        }
-        setLinked(null);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLinked(null);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [paragraphId]);
 
   const canSubmit =
     isConnected &&
@@ -107,6 +60,7 @@ function CreateInterpretationForm() {
     if (!canSubmit) {
       return;
     }
+
     setSubmitting(true);
     setError(null);
     try {
@@ -117,40 +71,28 @@ function CreateInterpretationForm() {
         ...(values.date.length > 0 ? { date: values.date } : {}),
         paragraphIds: paragraphId ? [paragraphId] : [],
       };
+
       const signResult = await signPayload({ kind: "interpretation", body });
       if (!signResult.ok) {
         throw new Error(`${signResult.error} Nothing was saved.`);
       }
-      const response = await fetch("/api/audits/interpretations", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = (await response.json().catch(() => null)) as {
-        error?: string;
-        itemId?: string;
-        ipfsCid?: string;
-      } | null;
-      if (!response.ok) {
-        throw new Error(data?.error ?? `Request failed with status ${response.status}`);
-      }
-      if (!data?.itemId || typeof data.itemId !== "string") {
-        throw new Error("Stored, but the response missed the item ID.");
-      }
-      if (!data?.ipfsCid || typeof data.ipfsCid !== "string") {
-        throw new Error("Stored, but the response missed the IPFS CID.");
-      }
+
+      const data = await saveInterpretation(body);
+
       const recorded = await recordSignature({
         itemId: data.itemId,
         contentHash: signResult.signed.contentHash,
         signature: signResult.signed.signature,
         ipfsCid: data.ipfsCid,
       });
+
       setRecordWarning(recorded.ok ? null : recorded.error);
       setSigned(signResult.signed);
     } catch (submitError) {
       setError(
-        submitError instanceof Error ? submitError.message : "Could not store interpretation",
+        submitError instanceof Error
+          ? submitError.message
+          : "Could not store interpretation",
       );
     } finally {
       setSubmitting(false);
@@ -192,22 +134,6 @@ function CreateInterpretationForm() {
             <span>Connect your wallet to create an interpretation.</span>
           </div>
         ) : null}
-
-        {linked ? (
-          <div className="mt-6 rounded-box border border-base-300 bg-base-200/50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide opacity-60">
-              Linked paragraph · {linked.articleTitle}
-            </p>
-            <p className="mt-1 line-clamp-3 text-sm opacity-80">{linked.text}</p>
-          </div>
-        ) : (
-          <div role="note" className="alert mt-6">
-            <span>
-              No paragraph selected — this interpretation won&apos;t be linked. Go back and click
-              a reporting paragraph first to link it.
-            </span>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit(onValid)} className="mt-6 space-y-6">
           <Field label="Title" error={errors.title?.message}>
@@ -271,7 +197,11 @@ function CreateInterpretationForm() {
               type="submit"
               className="btn btn-primary"
               disabled={!canSubmit}
-              title={!isConnected ? "Connect your wallet to create" : "Save interpretation"}
+              title={
+                !isConnected
+                  ? "Connect your wallet to create"
+                  : "Save interpretation"
+              }
             >
               {submitting
                 ? signPhase === "signing"

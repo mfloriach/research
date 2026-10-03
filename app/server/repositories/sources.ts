@@ -11,8 +11,8 @@ export type CreateSourceInput = {
   title: string;
   content: string;
   paragraphs: string[];
-  author?: string;
-  date?: string;
+  author: string;
+  date: string;
   paragraphIds: string[];
 };
 
@@ -26,25 +26,10 @@ export async function createSource(
 ): Promise<CreatedSource> {
   const db = await getDb();
 
-  if (input.paragraphIds.length > 0) {
-    const docs = await db
-      .collection<{ paragraphs: { id: string }[] }>(COLLECTIONS.articles)
-      .find(
-        { "paragraphs.id": { $in: input.paragraphIds } },
-        { projection: { paragraphs: 1 } },
-      )
-      .toArray();
-    const found = new Set(
-      docs.flatMap((doc) => doc.paragraphs.map((p) => p.id)),
-    );
-    if (!input.paragraphIds.every((id) => found.has(id))) {
-      throw new NotFoundError("One or more related paragraphs do not exist");
-    }
-  }
-
   const itemOrder = await db
     .collection<{ _id: string }>(COLLECTIONS.replies)
     .countDocuments({ tab: TAB });
+
   const itemId = randomUUID();
 
   const ipfsCid = await pinJson({
@@ -57,31 +42,31 @@ export async function createSource(
     paragraphIds: input.paragraphIds,
   });
 
-  await db
-    .collection<{
-      _id: string;
-      tab: string;
-      title: string;
-      type: string;
-      paragraphs: string[];
-      author?: string;
-      date?: string;
-      ipfsCid: string;
-      order: Int32;
-    }>(COLLECTIONS.replies)
-    .insertOne({
-      _id: itemId,
-      tab: TAB,
-      title: input.title,
-      type: "text",
-      paragraphs: input.paragraphs,
-      ...(input.author ? { author: input.author } : {}),
-      ...(input.date ? { date: input.date } : {}),
-      ipfsCid,
-      order: new Int32(itemOrder),
-    });
+  await db.client.startSession().withTransaction(async () => {
+    await db
+      .collection<{
+        _id: string;
+        tab: string;
+        title: string;
+        type: string;
+        paragraphs: string[];
+        author?: string;
+        date?: string;
+        ipfsCid: string;
+        order: Int32;
+      }>(COLLECTIONS.replies)
+      .insertOne({
+        _id: itemId,
+        tab: TAB,
+        title: input.title,
+        type: "text",
+        paragraphs: input.paragraphs,
+        ...(input.author ? { author: input.author } : {}),
+        ...(input.date ? { date: input.date } : {}),
+        ipfsCid,
+        order: new Int32(itemOrder),
+      });
 
-  if (input.paragraphIds.length > 0) {
     await db
       .collection(COLLECTIONS.articles)
       .updateMany(
@@ -89,25 +74,27 @@ export async function createSource(
         { $addToSet: { "paragraphs.$[p].auditItemIds": itemId } },
         { arrayFilters: [{ "p.id": { $in: input.paragraphIds } }] },
       );
-  }
+  });
 
   return { itemId, ipfsCid };
 }
 
 export async function incrementSourceOpenCount(
-  itemId: string,
+  sourceId: string,
 ): Promise<number> {
   const db = await getDb();
 
   const updated = await db
     .collection<{ _id: string; openCount?: number }>(COLLECTIONS.replies)
     .findOneAndUpdate(
-      { _id: itemId },
+      { _id: sourceId },
       { $inc: { openCount: 1 } },
       { returnDocument: "after" },
     );
+
   if (!updated) {
-    throw new NotFoundError(`No source with id ${itemId}`);
+    throw new NotFoundError(`No source with id ${sourceId}`);
   }
+
   return updated.openCount ?? 1;
 }

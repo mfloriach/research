@@ -1,7 +1,6 @@
 import { create, type KuboRPCClient } from "kubo-rpc-client";
 import { IpfsUnavailableError } from "@/lib/errors";
 import { getServerConfig } from "@/lib/config";
-export { ipfsGatewayUrl } from "@/lib/ipfs-gateway";
 
 /**
  * Server-only IPFS access via the local Kubo node (see docker-compose.yml).
@@ -9,6 +8,13 @@ export { ipfsGatewayUrl } from "@/lib/ipfs-gateway";
  */
 
 const { ipfsRpcUrl } = getServerConfig();
+
+/** Client-safe IPFS gateway helpers (no Kubo dependency). */
+import { config } from "@/lib/config";
+
+export function ipfsGatewayUrl(cid: string): string {
+  return `${config.ipfsGatewayUrl}/ipfs/${cid}`;
+}
 
 let client: KuboRPCClient | null = null;
 

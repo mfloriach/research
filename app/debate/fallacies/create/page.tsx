@@ -2,31 +2,22 @@
 
 import dynamic from "next/dynamic";
 import { useRouter, useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useState } from "react";
+import { Suspense, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import "@uiw/react-md-editor/markdown-editor.css";
-import type { DbContent } from "@/lib/content-db";
 import {
   auditCreateFormSchema,
   type AuditCreateFormInput,
   type AuditCreateFormValues,
 } from "@/lib/form-schemas";
 import { useWallet } from "@/app/hooks/use-wallet";
-import {
-  useAuditSign,
-  type SignedAudit,
-} from "@/app/hooks/use-audit-sign";
+import { useAuditSign, type SignedAudit } from "@/app/hooks/use-audit-sign";
 import { SignaturePanel } from "@/components/signature-panel";
 import { Field } from "@/components/form-field";
+import { saveFallacy } from "@/lib/api";
 
 const MDEditor = dynamic(() => import("@uiw/react-md-editor"), { ssr: false });
-
-type LinkedParagraph = {
-  id: string;
-  articleTitle: string;
-  text: string;
-};
 
 export default function CreateFallacyPage() {
   return (
@@ -52,49 +43,11 @@ function CreateFallacyForm() {
     mode: "onChange",
     defaultValues: { title: "", content: "", author: "", date: "" },
   });
-  const [linked, setLinked] = useState<LinkedParagraph | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const [signed, setSigned] = useState<SignedAudit | null>(null);
   const [recordWarning, setRecordWarning] = useState<string | null>(null);
   const { phase: signPhase, signPayload, recordSignature } = useAuditSign();
-
-  useEffect(() => {
-    if (!paragraphId) {
-      return;
-    }
-    let cancelled = false;
-    fetch("/api/content")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`status ${response.status}`);
-        }
-        return response.json() as Promise<DbContent>;
-      })
-      .then((data) => {
-        if (cancelled) {
-          return;
-        }
-        for (const tab of data.reportingCard.tabs) {
-          for (const article of tab.items) {
-            const paragraph = article.paragraphs.find((entry) => entry.id === paragraphId);
-            if (paragraph) {
-              setLinked({ id: paragraph.id, articleTitle: article.title, text: paragraph.text });
-              return;
-            }
-          }
-        }
-        setLinked(null);
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLinked(null);
-        }
-      });
-    return () => {
-      cancelled = true;
-    };
-  }, [paragraphId]);
 
   const canSubmit =
     isConnected &&
@@ -121,25 +74,7 @@ function CreateFallacyForm() {
       if (!signResult.ok) {
         throw new Error(`${signResult.error} Nothing was saved.`);
       }
-      const response = await fetch("/api/audits/fallacies", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = (await response.json().catch(() => null)) as {
-        error?: string;
-        itemId?: string;
-        ipfsCid?: string;
-      } | null;
-      if (!response.ok) {
-        throw new Error(data?.error ?? `Request failed with status ${response.status}`);
-      }
-      if (!data?.itemId || typeof data.itemId !== "string") {
-        throw new Error("Stored, but the response missed the item ID.");
-      }
-      if (!data?.ipfsCid || typeof data.ipfsCid !== "string") {
-        throw new Error("Stored, but the response missed the IPFS CID.");
-      }
+      const data = await saveFallacy(body);
       const recorded = await recordSignature({
         itemId: data.itemId,
         contentHash: signResult.signed.contentHash,
@@ -149,7 +84,11 @@ function CreateFallacyForm() {
       setRecordWarning(recorded.ok ? null : recorded.error);
       setSigned(signResult.signed);
     } catch (submitError) {
-      setError(submitError instanceof Error ? submitError.message : "Could not store fallacy");
+      setError(
+        submitError instanceof Error
+          ? submitError.message
+          : "Could not store fallacy",
+      );
     } finally {
       setSubmitting(false);
     }
@@ -159,7 +98,9 @@ function CreateFallacyForm() {
     return (
       <main className="flex-1">
         <div className="mx-8 max-w-5xl py-8 sm:py-10">
-          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Create new fallacy</h1>
+          <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+            Create new fallacy
+          </h1>
           <SignaturePanel
             kindLabel="Fallacy"
             signer={signed.signer}
@@ -176,7 +117,9 @@ function CreateFallacyForm() {
   return (
     <main className="flex-1">
       <div className="mx-8 max-w-5xl py-8 sm:py-10">
-        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">Create new fallacy</h1>
+        <h1 className="text-3xl font-bold tracking-tight sm:text-4xl">
+          Create new fallacy
+        </h1>
         <p className="mt-2 text-sm text-base-content/70">
           Write the content in markdown on the left, preview it on the right.
         </p>
@@ -186,22 +129,6 @@ function CreateFallacyForm() {
             <span>Connect your wallet to create a fallacy.</span>
           </div>
         ) : null}
-
-        {linked ? (
-          <div className="mt-6 rounded-box border border-base-300 bg-base-200/50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide opacity-60">
-              Linked paragraph · {linked.articleTitle}
-            </p>
-            <p className="mt-1 line-clamp-3 text-sm opacity-80">{linked.text}</p>
-          </div>
-        ) : (
-          <div role="note" className="alert mt-6">
-            <span>
-              No paragraph selected — this fallacy won&apos;t be linked. Go back and click a
-              reporting paragraph first to link it.
-            </span>
-          </div>
-        )}
 
         <form onSubmit={handleSubmit(onValid)} className="mt-6 space-y-6">
           <Field label="Title" error={errors.title?.message}>
@@ -265,7 +192,9 @@ function CreateFallacyForm() {
               type="submit"
               className="btn btn-primary"
               disabled={!canSubmit}
-              title={!isConnected ? "Connect your wallet to create" : "Save fallacy"}
+              title={
+                !isConnected ? "Connect your wallet to create" : "Save fallacy"
+              }
             >
               {submitting
                 ? signPhase === "signing"

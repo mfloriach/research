@@ -7,10 +7,10 @@ export class OpenAiProvider implements LlmProvider {
   private readonly client: OpenAI;
   private readonly model: string;
 
-  constructor(apiKey?: string, model?: string) {
+  constructor() {
     const server = getServerConfig();
-    this.client = new OpenAI({ apiKey: apiKey ?? server.openaiApiKey });
-    this.model = model ?? server.openaiModel;
+    this.client = new OpenAI({ apiKey: server.openaiApiKey });
+    this.model = server.openaiModel;
   }
 
   async generateAnswer(input: LlmAnswerInput): Promise<LlmAnswer> {

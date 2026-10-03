@@ -8,6 +8,7 @@ import {
 import { useAttestations } from "@/app/hooks/use-attestation";
 import { useWallet } from "@/app/hooks/use-wallet";
 import type { Article, ReportingParagraph } from "@/db/content";
+import { setCountArticleOpen } from "@/lib/api";
 
 export type { ParagraphSelection };
 
@@ -63,17 +64,10 @@ export function ArticleList({
         ...prev,
         [articleId]: (prev[articleId] ?? storedCounts[articleId] ?? 0) + 1,
       }));
+
       try {
-        const response = await fetch(`/api/articles/${articleId}/open`, {
-          method: "POST",
-        });
-        if (!response.ok) {
-          throw new Error(`status ${response.status}`);
-        }
-        const { openCount } = (await response.json()) as { openCount?: number };
-        if (typeof openCount === "number") {
-          setOpenCounts((prev) => ({ ...prev, [articleId]: openCount }));
-        }
+        const openCount = await setCountArticleOpen(articleId);
+        setOpenCounts((prev) => ({ ...prev, [articleId]: openCount }));
       } catch {
         setOpenCounts((prev) => ({
           ...prev,

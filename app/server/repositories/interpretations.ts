@@ -26,22 +26,6 @@ export async function createInterpretation(
 ): Promise<CreatedInterpretation> {
   const db = await getDb();
 
-  if (input.paragraphIds.length > 0) {
-    const docs = await db
-      .collection<{ paragraphs: { id: string }[] }>(COLLECTIONS.articles)
-      .find(
-        { "paragraphs.id": { $in: input.paragraphIds } },
-        { projection: { paragraphs: 1 } },
-      )
-      .toArray();
-    const found = new Set(
-      docs.flatMap((doc) => doc.paragraphs.map((p) => p.id)),
-    );
-    if (!input.paragraphIds.every((id) => found.has(id))) {
-      throw new NotFoundError("One or more related paragraphs do not exist");
-    }
-  }
-
   const itemOrder = await db
     .collection<{ _id: string }>(COLLECTIONS.replies)
     .countDocuments({ tab: TAB });
@@ -57,31 +41,31 @@ export async function createInterpretation(
     paragraphIds: input.paragraphIds,
   });
 
-  await db
-    .collection<{
-      _id: string;
-      tab: string;
-      title: string;
-      type: string;
-      paragraphs: string[];
-      author?: string;
-      date?: string;
-      ipfsCid: string;
-      order: Int32;
-    }>(COLLECTIONS.replies)
-    .insertOne({
-      _id: itemId,
-      tab: TAB,
-      title: input.title,
-      type: "text",
-      paragraphs: input.paragraphs,
-      ...(input.author ? { author: input.author } : {}),
-      ...(input.date ? { date: input.date } : {}),
-      ipfsCid,
-      order: new Int32(itemOrder),
-    });
+  await db.client.startSession().withTransaction(async () => {
+    await db
+      .collection<{
+        _id: string;
+        tab: string;
+        title: string;
+        type: string;
+        paragraphs: string[];
+        author?: string;
+        date?: string;
+        ipfsCid: string;
+        order: Int32;
+      }>(COLLECTIONS.replies)
+      .insertOne({
+        _id: itemId,
+        tab: TAB,
+        title: input.title,
+        type: "text",
+        paragraphs: input.paragraphs,
+        ...(input.author ? { author: input.author } : {}),
+        ...(input.date ? { date: input.date } : {}),
+        ipfsCid,
+        order: new Int32(itemOrder),
+      });
 
-  if (input.paragraphIds.length > 0) {
     await db
       .collection(COLLECTIONS.articles)
       .updateMany(
@@ -89,7 +73,7 @@ export async function createInterpretation(
         { $addToSet: { "paragraphs.$[p].auditItemIds": itemId } },
         { arrayFilters: [{ "p.id": { $in: input.paragraphIds } }] },
       );
-  }
+  });
 
   return { itemId, ipfsCid };
 }

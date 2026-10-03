@@ -1,12 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import {
-  isAddress,
-  type Address,
-  type Hash,
-  type Hex,
-} from "viem";
+import { isAddress, type Address, type Hash, type Hex } from "viem";
 import {
   getAttestationContractAddress,
   getPublicClient,
@@ -176,9 +171,7 @@ export function useProvenance(wallet: string | null): UseProvenanceResult {
         if (cancelled) {
           return;
         }
-        setFetchError(
-          "Could not load provenance. Make sure Anvil is running.",
-        );
+        setFetchError("Could not load provenance. Make sure Anvil is running.");
       },
     );
     return () => {
@@ -191,8 +184,10 @@ export function useProvenance(wallet: string | null): UseProvenanceResult {
     : normalized !== "" && !valid
       ? "Invalid wallet address."
       : fetchError;
+
   const loading =
     Boolean(contract) && valid && result?.key !== normalized.toLowerCase();
+
   const entries =
     valid && result?.key === normalized.toLowerCase() ? result.entries : [];
 

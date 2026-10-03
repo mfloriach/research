@@ -10,10 +10,7 @@ import {
   type EIP1193Provider,
   type Hex,
 } from "viem";
-import {
-  ensureAnvilChain,
-  type AnvilEthereumProvider,
-} from "@/lib/anvil";
+import { ensureAnvilChain, type AnvilEthereumProvider } from "@/lib/anvil";
 import { useWallet } from "@/app/hooks/use-wallet";
 import {
   attestationAbi,
@@ -69,6 +66,7 @@ export function canonicalJson(value: unknown): string {
   if (Array.isArray(value)) {
     return `[${value.map((entry) => canonicalJson(entry)).join(",")}]`;
   }
+
   if (value !== null && typeof value === "object") {
     const entries = Object.entries(value as Record<string, unknown>)
       .filter(([, entry]) => entry !== undefined)
@@ -77,6 +75,7 @@ export function canonicalJson(value: unknown): string {
       .map(([key, entry]) => `${JSON.stringify(key)}:${canonicalJson(entry)}`)
       .join(",")}}`;
   }
+
   return JSON.stringify(value) ?? "null";
 }
 
@@ -85,7 +84,9 @@ export async function sha256Hex(input: string): Promise<Hex> {
     "SHA-256",
     new TextEncoder().encode(input),
   );
+
   const bytes = Array.from(new Uint8Array(digest));
+
   return `0x${bytes.map((byte) => byte.toString(16).padStart(2, "0")).join("")}`;
 }
 
@@ -97,15 +98,18 @@ export async function buildSignMessage(input: {
   const labels = Array.isArray(input.body.labels)
     ? (input.body.labels as unknown[]).map(String).join(", ")
     : undefined;
+
   const title = String(
     input.body.title ?? labels ?? input.body.label ?? input.kind,
   );
+
   const message = [
     SIGN_MESSAGE_HEADER,
     `kind: ${input.kind}`,
     `title: ${title}`,
     `contentHash: ${contentHash}`,
   ].join("\n");
+
   return { message, contentHash };
 }
 
@@ -162,7 +166,12 @@ export function useAuditSign(): UseAuditSignResult {
         const signature = await walletClient.signMessage({ message });
         return {
           ok: true,
-          signed: { signer: address as Address, signature, message, contentHash },
+          signed: {
+            signer: address as Address,
+            signature,
+            message,
+            contentHash,
+          },
         };
       } catch (error) {
         if (

@@ -32,8 +32,12 @@ export function buildContentIndex(content: DbContent): ContentIndex {
       ];
       const existing = byId.get(item.id);
       if (existing) {
-        existing.labels = [...new Set([...existing.labels, tab.label, ...item.labels])];
-        existing.auditItemIds = [...new Set([...existing.auditItemIds, ...auditItemIds])];
+        existing.labels = [
+          ...new Set([...existing.labels, tab.label, ...item.labels]),
+        ];
+        existing.auditItemIds = [
+          ...new Set([...existing.auditItemIds, ...auditItemIds]),
+        ];
         // An article appears under every matching tab; keep the first byline seen.
         existing.author = existing.author ?? item.author;
         existing.authorAddress = existing.authorAddress ?? item.authorAddress;
@@ -131,14 +135,9 @@ export type ArticleTableRow = {
   date?: string;
 };
 
-export function truncateText(value: string, maxLength = 20): string {
-  if (value.length <= maxLength) {
-    return value;
-  }
-  return `${value.slice(0, maxLength)}…`;
-}
-
-function hasDate(row: ArticleTableRow): row is ArticleTableRow & { date: string } {
+function hasDate(
+  row: ArticleTableRow,
+): row is ArticleTableRow & { date: string } {
   return row.date !== undefined;
 }
 
@@ -170,7 +169,9 @@ export function articleTableRows(
       ...(item.date ? { date: item.date } : {}),
     });
   }
-  const dated = rows.filter(hasDate).sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
+  const dated = rows
+    .filter(hasDate)
+    .sort((a, b) => (a.date < b.date ? -1 : a.date > b.date ? 1 : 0));
   const undated = rows.filter((row) => !hasDate(row));
   return [...dated, ...undated];
 }
