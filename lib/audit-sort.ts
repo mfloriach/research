@@ -1,6 +1,10 @@
-import type { CollapsibleItem } from "@/db/content";
+import type { CollapsibleItem } from "@/db/nuclear";
 
-export type AuditSortMode = "newest" | "oldest" | "most-attested" | "most-viewed";
+export type AuditSortMode =
+  | "newest"
+  | "oldest"
+  | "most-attested"
+  | "most-viewed";
 
 export const AUDIT_SORT_OPTIONS: ReadonlyArray<{
   value: AuditSortMode;
@@ -47,7 +51,9 @@ export function sortAuditItems(
         case "oldest":
           return compareDateAsc(a.item, b.item) || a.index - b.index;
         case "most-attested":
-          return attestationsOf(b.item) - attestationsOf(a.item) || a.index - b.index;
+          return (
+            attestationsOf(b.item) - attestationsOf(a.item) || a.index - b.index
+          );
         case "most-viewed":
           return viewsOf(b.item) - viewsOf(a.item) || a.index - b.index;
       }

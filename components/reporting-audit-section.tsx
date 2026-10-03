@@ -14,7 +14,7 @@ import type {
   CollapsibleItem,
   ContentTab,
   ReportingParagraph,
-} from "@/db/content";
+} from "@/db/nuclear";
 
 export type SelectedParagraph = {
   articleId: string;

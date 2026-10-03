@@ -3,8 +3,12 @@
  * defined in `db/content.ts`.
  */
 import { getDb } from "@/lib/mongodb";
-import type { Article, CollapsibleItem, ContentTab } from "@/db/content";
-import { AUDIT_TABS } from "@/db/content";
+import type {
+  Article,
+  CollapsibleItem,
+  ContentTab,
+  AUDIT_TABS,
+} from "@/db/types";
 import { COLLECTIONS } from "@/db/migration";
 
 type ArgumentContent = {
@@ -29,7 +33,12 @@ export type DbContent = {
   auditCard: AuditCardContent;
 };
 
-type ArgumentDoc = { _id: string; title: string; description: string; labels?: string[] };
+type ArgumentDoc = {
+  _id: string;
+  title: string;
+  description: string;
+  labels?: string[];
+};
 type StoredParagraphDoc = {
   id: string;
   text: string;
@@ -121,22 +130,20 @@ export async function getContentFromDb(): Promise<DbContent> {
       id: label,
       label,
       order: Math.min(...entries.map((entry) => entry.order)),
-      items: entries
-        .sort(byOrder)
-        .map((article) => ({
-          id: article.id,
-          title: article.title,
-          labels: article.labels,
-          type: article.type ?? "text",
-          ...(article.videoUrl ? { videoUrl: article.videoUrl } : {}),
-          ...(article.author ? { author: article.author } : {}),
-          ...(article.date ? { date: article.date } : {}),
-          ...(article.authorAddress
-            ? { authorAddress: article.authorAddress }
-            : {}),
-          openCount: article.openCount ?? 0,
-          paragraphs: article.paragraphs,
-        })),
+      items: entries.sort(byOrder).map((article) => ({
+        id: article.id,
+        title: article.title,
+        labels: article.labels,
+        type: article.type ?? "text",
+        ...(article.videoUrl ? { videoUrl: article.videoUrl } : {}),
+        ...(article.author ? { author: article.author } : {}),
+        ...(article.date ? { date: article.date } : {}),
+        ...(article.authorAddress
+          ? { authorAddress: article.authorAddress }
+          : {}),
+        openCount: article.openCount ?? 0,
+        paragraphs: article.paragraphs,
+      })),
     }))
     .sort(byOrder);
 

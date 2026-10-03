@@ -2,7 +2,7 @@ import { render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useWallet } from "@/app/hooks/use-wallet";
-import type { Article } from "@/db/content";
+import type { Article } from "@/db/nuclear";
 import Home from "./page";
 
 jest.mock("next/navigation", () => ({
@@ -46,7 +46,11 @@ function article(overrides: Partial<Article> = {}): Article {
 }
 
 const content = {
-  argument: { title: "Carbon border taxes", description: "d", labels: ["Clima"] },
+  argument: {
+    title: "Carbon border taxes",
+    description: "d",
+    labels: ["Clima"],
+  },
   reportingCard: {
     title: "Reporting",
     tabs: [
@@ -98,7 +102,10 @@ describe("Home reporting filters", () => {
     jest.clearAllMocks();
     useRouterMock.mockReturnValue({ replace, push: jest.fn() });
     useSearchParamsMock.mockReturnValue(new URLSearchParams());
-    (useWallet as jest.Mock).mockReturnValue({ address: null, isConnected: false });
+    (useWallet as jest.Mock).mockReturnValue({
+      address: null,
+      isConnected: false,
+    });
     global.fetch = jest.fn().mockResolvedValue({
       ok: true,
       json: async () => content,
@@ -122,8 +129,12 @@ describe("Home reporting filters", () => {
   it("shows tab labels with article counts", async () => {
     render(<Home />);
     await screen.findByText("The IPCC video");
-    expect(screen.getByRole("radio", { name: "Clima (2)" })).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Policy (1)" })).toBeInTheDocument();
+    expect(
+      screen.getByRole("radio", { name: "Clima (2)" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("radio", { name: "Policy (1)" }),
+    ).toBeInTheDocument();
   });
 
   it("filters to videos and drops emptied tabs", async () => {
@@ -131,9 +142,7 @@ describe("Home reporting filters", () => {
     render(<Home />);
 
     await screen.findByText("The IPCC video");
-    expect(
-      screen.queryByText("Climate sensitivity is a range"),
-    ).toBeNull();
+    expect(screen.queryByText("Climate sensitivity is a range")).toBeNull();
     expect(screen.queryByRole("radio", { name: "Policy (1)" })).toBeNull();
   });
 
@@ -185,10 +194,13 @@ describe("Home reporting filters", () => {
     render(<Home />);
 
     expect(await screen.findByText("The IPCC video")).toBeInTheDocument();
-    expect(screen.getByRole("radio", { name: "Clima (2)" })).toBeInTheDocument();
     expect(
-      screen.getByRole("button", { name: "Clima" }),
-    ).toHaveAttribute("aria-pressed", "true");
+      screen.getByRole("radio", { name: "Clima (2)" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Clima" })).toHaveAttribute(
+      "aria-pressed",
+      "true",
+    );
   });
 
   it("writes the filter to the URL without stacking history", async () => {

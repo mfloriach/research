@@ -11,7 +11,7 @@ config();
 import { Int32 } from "mongodb";
 import { getDb, closeDb } from "../lib/mongodb";
 import { COLLECTIONS, migrate } from "./migration";
-import { ARGUMENT_LABELS, argument, reportingCard, auditCard } from "./content";
+import { ARGUMENT_LABELS, argument, reportingCard, auditCard } from "./nuclear";
 import { articleEmbeddingText, embedText } from "../lib/embeddings";
 
 const MAIN_ARGUMENT_ID = "main-argument";
@@ -26,7 +26,11 @@ export async function seed(): Promise<void> {
   await migrate();
   const db = await getDb();
 
-  await Promise.all(Object.values(COLLECTIONS).map((name) => db.collection(name).deleteMany({})));
+  await Promise.all(
+    Object.values(COLLECTIONS).map((name) =>
+      db.collection(name).deleteMany({}),
+    ),
+  );
 
   const arguments_ = db.collection<SeedDoc>(COLLECTIONS.arguments);
   const articles = db.collection<SeedDoc>(COLLECTIONS.articles);
@@ -75,9 +79,11 @@ export async function seed(): Promise<void> {
   if (articleDocs.length > 0) {
     await articles.insertMany(articleDocs);
     console.log(`[seed] embedding ${articleDocs.length} articles…`);
-    const embeddings = db.collection<{ _id: string; articleId: string; embedding: number[] }>(
-      COLLECTIONS.articleEmbeddings,
-    );
+    const embeddings = db.collection<{
+      _id: string;
+      articleId: string;
+      embedding: number[];
+    }>(COLLECTIONS.articleEmbeddings);
     for (const doc of articleDocs) {
       const paragraphs = ((doc.paragraphs ?? []) as { text?: string }[]).map(
         (paragraph) => paragraph.text ?? "",
@@ -121,11 +127,14 @@ export async function seed(): Promise<void> {
   const knownReplyIds = new Set(replyDocs.map((doc) => doc._id));
   const dangling = articleDocs.flatMap((doc) =>
     ((doc.paragraphs ?? []) as { auditItemIds?: string[] }[]).flatMap(
-      (paragraph) => (paragraph.auditItemIds ?? []).filter((id) => !knownReplyIds.has(id)),
+      (paragraph) =>
+        (paragraph.auditItemIds ?? []).filter((id) => !knownReplyIds.has(id)),
     ),
   );
   if (dangling.length > 0) {
-    console.warn(`[seed] warning: ${dangling.length} dangling auditItemIds:`, [...new Set(dangling)]);
+    console.warn(`[seed] warning: ${dangling.length} dangling auditItemIds:`, [
+      ...new Set(dangling),
+    ]);
   }
 
   console.log(

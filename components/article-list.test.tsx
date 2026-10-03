@@ -1,7 +1,13 @@
-import { act, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import {
+  act,
+  fireEvent,
+  render,
+  screen,
+  waitFor,
+} from "@testing-library/react";
 import { useAttestations } from "@/app/hooks/use-attestation";
 import { useWallet } from "@/app/hooks/use-wallet";
-import type { Article } from "@/db/content";
+import type { Article } from "@/db/nuclear";
 import { ArticleList } from "./article-list";
 
 jest.mock("@/app/hooks/use-wallet", () => ({
@@ -138,9 +144,7 @@ describe("ArticleList", () => {
       />,
     );
 
-    expect(
-      screen.getByRole("link", { name: "By L. Brandt" }),
-    ).toHaveAttribute(
+    expect(screen.getByRole("link", { name: "By L. Brandt" })).toHaveAttribute(
       "href",
       "/debate/provenance?address=0x1111111111111111111111111111111111111111",
     );
@@ -257,10 +261,9 @@ describe("ArticleList", () => {
       expand(document.querySelector("details") as Element);
     });
 
-    expect(mockFetch).toHaveBeenCalledWith(
-      "/api/articles/article-1/open",
-      { method: "POST" },
-    );
+    expect(mockFetch).toHaveBeenCalledWith("/api/articles/article-1/open", {
+      method: "POST",
+    });
   });
 
   it("rolls the optimistic view count back when the open fails", async () => {
@@ -284,7 +287,9 @@ describe("ArticleList", () => {
   });
 
   it("offers an attest action once the wallet is connected", () => {
-    mockAttestations({ "article-1": { count: 0, hasAttested: false, pending: false } });
+    mockAttestations({
+      "article-1": { count: 0, hasAttested: false, pending: false },
+    });
     render(<ArticleList articles={[makeArticle()]} />);
 
     expect(
@@ -293,7 +298,9 @@ describe("ArticleList", () => {
   });
 
   it("disables attesting once the wallet has attested", () => {
-    mockAttestations({ "article-1": { count: 1, hasAttested: true, pending: false } });
+    mockAttestations({
+      "article-1": { count: 1, hasAttested: true, pending: false },
+    });
     render(<ArticleList articles={[makeArticle()]} />);
 
     expect(
@@ -301,7 +308,7 @@ describe("ArticleList", () => {
     ).toBeDisabled();
   });
 
-    it("expands the card to a 90% dialog via its icon", () => {
+  it("expands the card to a 90% dialog via its icon", () => {
     render(<ArticleList articles={[makeArticle()]} />);
 
     fireEvent.click(
@@ -311,7 +318,10 @@ describe("ArticleList", () => {
     const dialog = screen.getByRole("dialog");
     expect(dialog).toBeInTheDocument();
     expect(dialog).toHaveAttribute("aria-modal", "true");
-    expect(dialog).toHaveAttribute("aria-label", "Climate sensitivity is a range");
+    expect(dialog).toHaveAttribute(
+      "aria-label",
+      "Climate sensitivity is a range",
+    );
   });
 
   it("counts the expand as an open view", async () => {
@@ -323,10 +333,9 @@ describe("ArticleList", () => {
       );
     });
 
-    expect(mockFetch).toHaveBeenCalledWith(
-      "/api/articles/article-1/open",
-      { method: "POST" },
-    );
+    expect(mockFetch).toHaveBeenCalledWith("/api/articles/article-1/open", {
+      method: "POST",
+    });
     await waitFor(() =>
       expect(screen.getByLabelText("13 opens")).toHaveTextContent("13"),
     );
@@ -368,14 +377,19 @@ describe("ArticleList", () => {
   it("keeps paragraph clicks working inside the dialog", () => {
     const onParagraphClick = jest.fn();
     render(
-      <ArticleList articles={[makeArticle()]} onParagraphClick={onParagraphClick} />,
+      <ArticleList
+        articles={[makeArticle()]}
+        onParagraphClick={onParagraphClick}
+      />,
     );
     fireEvent.click(
       screen.getByRole("button", { name: "Expand to full screen" }),
     );
 
     const dialog = screen.getByRole("dialog");
-    const button = screen.getAllByRole("button", { name: "First paragraph." }).find((b) => dialog.contains(b));
+    const button = screen
+      .getAllByRole("button", { name: "First paragraph." })
+      .find((b) => dialog.contains(b));
     fireEvent.click(button as HTMLElement);
 
     expect(onParagraphClick).toHaveBeenCalledWith(
@@ -399,7 +413,10 @@ describe("ArticleList", () => {
   it("reports the clicked paragraph with its index", () => {
     const onParagraphClick = jest.fn();
     render(
-      <ArticleList articles={[makeArticle()]} onParagraphClick={onParagraphClick} />,
+      <ArticleList
+        articles={[makeArticle()]}
+        onParagraphClick={onParagraphClick}
+      />,
     );
 
     fireEvent.click(paragraph("Second paragraph."));

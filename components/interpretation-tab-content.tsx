@@ -10,7 +10,7 @@ import {
   type AuditSortMode,
 } from "@/lib/audit-sort";
 import { useWallet } from "@/app/hooks/use-wallet";
-import type { CollapsibleItem, ContentTab } from "@/db/content";
+import type { CollapsibleItem, ContentTab } from "@/db/nuclear";
 
 export type InterpretationTabContentProps = {
   tab: ContentTab<CollapsibleItem>;

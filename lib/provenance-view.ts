@@ -1,4 +1,4 @@
-import { AUDIT_TABS } from "@/db/content";
+import { AUDIT_TABS } from "@/db/nuclear";
 import type { DbContent } from "@/lib/content-db";
 
 export type IndexedArticle = {

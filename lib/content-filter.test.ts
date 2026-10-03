@@ -1,4 +1,4 @@
-import type { Article, ContentTab } from "@/db/content";
+import type { Article, ContentTab } from "@/db/nuclear";
 import {
   DEFAULT_ARTICLE_FILTER,
   articleFilterQuery,
@@ -56,7 +56,10 @@ describe("filterReportingTabs type", () => {
   it("drops tabs left with no matches", () => {
     const result = filterReportingTabs(tabs, filter({ type: "video" }));
     expect(result.total).toBe(1);
-    const mixed = [tab("Clima", [article({ type: "text" })]), tab("Policy", [article({ type: "video" })])];
+    const mixed = [
+      tab("Clima", [article({ type: "text" })]),
+      tab("Policy", [article({ type: "video" })]),
+    ];
     const only = filterReportingTabs(mixed, filter({ type: "video" }));
     expect(only.tabs.map((t) => t.label)).toEqual(["Policy"]);
   });
@@ -72,9 +75,15 @@ describe("filterReportingTabs labels", () => {
   ];
 
   it("matches any selected label (OR)", () => {
-    const result = filterReportingTabs(tabs, filter({ labels: ["Clima", "Economy"] }));
+    const result = filterReportingTabs(
+      tabs,
+      filter({ labels: ["Clima", "Economy"] }),
+    );
     expect(result.total).toBe(2);
-    expect(result.tabs.map((t) => t.label).sort()).toEqual(["Clima", "Economy"]);
+    expect(result.tabs.map((t) => t.label).sort()).toEqual([
+      "Clima",
+      "Economy",
+    ]);
   });
 
   it("matches a label that has no tab of its own", () => {
@@ -96,7 +105,10 @@ describe("filterReportingTabs labels", () => {
         article({ id: "v", type: "video", labels: ["Clima"] }),
       ]),
     ];
-    const result = filterReportingTabs(withVideo, filter({ type: "video", labels: ["Clima"] }));
+    const result = filterReportingTabs(
+      withVideo,
+      filter({ type: "video", labels: ["Clima"] }),
+    );
     expect(result.tabs[0]?.items.map((a) => a.id)).toEqual(["v"]);
   });
 });
@@ -112,29 +124,35 @@ describe("filterReportingTabs sort", () => {
   ];
 
   it("keeps editorial order by default", () => {
-    expect(filterReportingTabs(tabs, filter()).tabs[0]?.items.map((a) => a.id)).toEqual([
-      "mid",
-      "none",
-      "new",
-      "old",
-    ]);
+    expect(
+      filterReportingTabs(tabs, filter()).tabs[0]?.items.map((a) => a.id),
+    ).toEqual(["mid", "none", "new", "old"]);
   });
 
   it("sorts newest first with undated last", () => {
     expect(
-      filterReportingTabs(tabs, filter({ sort: "newest" })).tabs[0]?.items.map((a) => a.id),
+      filterReportingTabs(tabs, filter({ sort: "newest" })).tabs[0]?.items.map(
+        (a) => a.id,
+      ),
     ).toEqual(["new", "mid", "old", "none"]);
   });
 
   it("sorts oldest first with undated last", () => {
     expect(
-      filterReportingTabs(tabs, filter({ sort: "oldest" })).tabs[0]?.items.map((a) => a.id),
+      filterReportingTabs(tabs, filter({ sort: "oldest" })).tabs[0]?.items.map(
+        (a) => a.id,
+      ),
     ).toEqual(["old", "mid", "new", "none"]);
   });
 
   it("does not mutate the source tabs", () => {
     filterReportingTabs(tabs, filter({ sort: "newest" }));
-    expect(tabs[0]?.items.map((a) => a.id)).toEqual(["mid", "none", "new", "old"]);
+    expect(tabs[0]?.items.map((a) => a.id)).toEqual([
+      "mid",
+      "none",
+      "new",
+      "old",
+    ]);
   });
 });
 
@@ -154,7 +172,9 @@ describe("availableLabels", () => {
 
 describe("parseArticleFilter", () => {
   it("reads all three facets", () => {
-    const params = new URLSearchParams("type=video&labels=Clima,Science&sort=newest");
+    const params = new URLSearchParams(
+      "type=video&labels=Clima,Science&sort=newest",
+    );
     expect(parseArticleFilter(params)).toEqual({
       type: "video",
       labels: ["Clima", "Science"],
@@ -163,7 +183,9 @@ describe("parseArticleFilter", () => {
   });
 
   it("defaults when nothing is set", () => {
-    expect(parseArticleFilter(new URLSearchParams())).toEqual(DEFAULT_ARTICLE_FILTER);
+    expect(parseArticleFilter(new URLSearchParams())).toEqual(
+      DEFAULT_ARTICLE_FILTER,
+    );
   });
 
   it("falls back on unrecognised values", () => {
@@ -172,10 +194,10 @@ describe("parseArticleFilter", () => {
   });
 
   it("trims and drops empty labels", () => {
-    expect(parseArticleFilter(new URLSearchParams("labels= Clima , ,Policy ")).labels).toEqual([
-      "Clima",
-      "Policy",
-    ]);
+    expect(
+      parseArticleFilter(new URLSearchParams("labels= Clima , ,Policy "))
+        .labels,
+    ).toEqual(["Clima", "Policy"]);
   });
 });
 
@@ -192,8 +214,14 @@ describe("articleFilterQuery", () => {
   });
 
   it("round-trips", () => {
-    const original = filter({ type: "video", labels: ["Clima", "Science"], sort: "oldest" });
-    const params = new URLSearchParams(articleFilterQuery(original).replace(/^\?/, ""));
+    const original = filter({
+      type: "video",
+      labels: ["Clima", "Science"],
+      sort: "oldest",
+    });
+    const params = new URLSearchParams(
+      articleFilterQuery(original).replace(/^\?/, ""),
+    );
     expect(parseArticleFilter(params)).toEqual(original);
   });
 

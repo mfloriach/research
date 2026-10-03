@@ -5,7 +5,7 @@
  * query string, deriving the label facets from the content that actually
  * exists, and narrowing each tab to the articles that match.
  */
-import type { Article, ContentTab } from "@/db/content";
+import type { Article, ContentTab } from "@/db/nuclear";
 
 export type ArticleTypeFilter = "all" | "text" | "video";
 export type ArticleSortMode = "default" | "newest" | "oldest";
@@ -132,7 +132,8 @@ export function filterReportingTabs(
     .map((tab) => ({
       ...tab,
       items: tab.items.filter(
-        (item) => matchesType(item, filter.type) && matchesLabels(item, filter.labels),
+        (item) =>
+          matchesType(item, filter.type) && matchesLabels(item, filter.labels),
       ),
     }))
     .filter((tab) => tab.items.length > 0);

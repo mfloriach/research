@@ -5,7 +5,7 @@
  * static "Topic" label leads, then the dossier topic, then one crumb per
  * real path segment.
  */
-import { ROUTE_LABELS, site } from "@/db/content";
+import { ROUTE_LABELS, site } from "@/db/nuclear";
 
 export type Crumb = {
   label: string;

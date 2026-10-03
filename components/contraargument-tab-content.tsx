@@ -10,7 +10,7 @@ import {
   type AuditSortMode,
 } from "@/lib/audit-sort";
 import { useWallet } from "@/app/hooks/use-wallet";
-import type { CollapsibleItem, ContentTab } from "@/db/content";
+import type { CollapsibleItem, ContentTab } from "@/db/nuclear";
 
 export type ContraargumentTabContentProps = {
   tab: ContentTab<CollapsibleItem>;
@@ -63,10 +63,16 @@ export function ContraargumentTabContent({
       }
       const data = (await response.json()) as { openCount?: number };
       if (typeof data.openCount === "number") {
-        setOpenCounts((prev) => ({ ...prev, [itemId]: data.openCount as number }));
+        setOpenCounts((prev) => ({
+          ...prev,
+          [itemId]: data.openCount as number,
+        }));
       }
     } catch {
-      setOpenCounts((prev) => ({ ...prev, [itemId]: Math.max((prev[itemId] ?? 1) - 1, 0) }));
+      setOpenCounts((prev) => ({
+        ...prev,
+        [itemId]: Math.max((prev[itemId] ?? 1) - 1, 0),
+      }));
     }
   }
 
@@ -89,7 +95,11 @@ export function ContraargumentTabContent({
           type="button"
           className="btn btn-sm btn-outline"
           disabled={!isConnected}
-          title={isConnected ? "Create a new contraargument" : "Connect your wallet to create"}
+          title={
+            isConnected
+              ? "Create a new contraargument"
+              : "Connect your wallet to create"
+          }
           onClick={() => router.push(createHref)}
         >
           Create contraargument

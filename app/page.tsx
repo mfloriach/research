@@ -15,7 +15,7 @@ import {
   auditCard as auditCardFallback,
   argument as argumentFallback,
   reportingCard as reportingCardFallback,
-} from "@/db/content";
+} from "@/db/nuclear";
 import type { DbContent } from "@/lib/content-db";
 import { useWallet } from "@/app/hooks/use-wallet";
 

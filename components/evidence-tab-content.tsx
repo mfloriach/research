@@ -10,14 +10,17 @@ import {
   type AuditSortMode,
 } from "@/lib/audit-sort";
 import { useWallet } from "@/app/hooks/use-wallet";
-import type { CollapsibleItem, ContentTab } from "@/db/content";
+import type { CollapsibleItem, ContentTab } from "@/db/nuclear";
 
 export type EvidenceTabContentProps = {
   tab: ContentTab<CollapsibleItem>;
   selectedParagraphId: string | null;
 };
 
-export function EvidenceTabContent({ tab, selectedParagraphId }: EvidenceTabContentProps) {
+export function EvidenceTabContent({
+  tab,
+  selectedParagraphId,
+}: EvidenceTabContentProps) {
   const { isConnected } = useWallet();
   const router = useRouter();
   const createHref = selectedParagraphId
@@ -51,19 +54,24 @@ export function EvidenceTabContent({ tab, selectedParagraphId }: EvidenceTabCont
   async function handleOpen(itemId: string) {
     setOpenCounts((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? 0) + 1 }));
     try {
-      const response = await fetch(
-        `/api/audits/evidences/${itemId}/open`,
-        { method: "POST" },
-      );
+      const response = await fetch(`/api/audits/evidences/${itemId}/open`, {
+        method: "POST",
+      });
       if (!response.ok) {
         throw new Error(`status ${response.status}`);
       }
       const data = (await response.json()) as { openCount?: number };
       if (typeof data.openCount === "number") {
-        setOpenCounts((prev) => ({ ...prev, [itemId]: data.openCount as number }));
+        setOpenCounts((prev) => ({
+          ...prev,
+          [itemId]: data.openCount as number,
+        }));
       }
     } catch {
-      setOpenCounts((prev) => ({ ...prev, [itemId]: Math.max((prev[itemId] ?? 1) - 1, 0) }));
+      setOpenCounts((prev) => ({
+        ...prev,
+        [itemId]: Math.max((prev[itemId] ?? 1) - 1, 0),
+      }));
     }
   }
 
@@ -86,7 +94,11 @@ export function EvidenceTabContent({ tab, selectedParagraphId }: EvidenceTabCont
           type="button"
           className="btn btn-sm btn-outline"
           disabled={!isConnected}
-          title={isConnected ? "Create a new evidence" : "Connect your wallet to create"}
+          title={
+            isConnected
+              ? "Create a new evidence"
+              : "Connect your wallet to create"
+          }
           onClick={() => router.push(createHref)}
         >
           Create evidence

@@ -1,11 +1,11 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
 import { cache } from "react";
-import { argument as argumentFallback } from "@/db/content";
+import { argument as argumentFallback } from "@/db/nuclear";
 import { getContentFromDb } from "@/lib/content-db";
 import { Breadcrumbs } from "@/components/breadcrumbs";
 import { SiteNavbar } from "@/components/site-navbar";
-import { site } from "@/db/content";
+import { site } from "@/db/nuclear";
 import "./globals.css";
 
 const geistSans = Geist({

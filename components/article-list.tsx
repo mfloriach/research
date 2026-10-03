@@ -7,7 +7,7 @@ import {
 } from "@/components/reporting-article-card";
 import { useAttestations } from "@/app/hooks/use-attestation";
 import { useWallet } from "@/app/hooks/use-wallet";
-import type { Article, ReportingParagraph } from "@/db/content";
+import type { Article, ReportingParagraph } from "@/db/nuclear";
 import { setCountArticleOpen } from "@/lib/api";
 
 export type { ParagraphSelection };

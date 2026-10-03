@@ -22,7 +22,7 @@ config();
 
 import { getDb, closeDb } from "../lib/mongodb";
 import { EMBEDDING_DIMENSIONS } from "../lib/embeddings";
-import { ARGUMENT_LABELS } from "./content";
+import { ARGUMENT_LABELS } from "./nuclear";
 
 export const COLLECTIONS = {
   arguments: "arguments",
@@ -58,13 +58,25 @@ const VALIDATORS: Record<string, object> = {
   [COLLECTIONS.articles]: {
     $jsonSchema: {
       bsonType: "object",
-      required: ["_id", "title", "type", "labels", "argumentId", "paragraphs", "order"],
+      required: [
+        "_id",
+        "title",
+        "type",
+        "labels",
+        "argumentId",
+        "paragraphs",
+        "order",
+      ],
       properties: {
         _id: { bsonType: "string" },
         title: { bsonType: "string" },
         type: { enum: ["text", "video"] },
         videoUrl: { bsonType: "string" },
-        labels: { bsonType: "array", minItems: 1, items: { bsonType: "string" } },
+        labels: {
+          bsonType: "array",
+          minItems: 1,
+          items: { bsonType: "string" },
+        },
         argumentId: { bsonType: "string" },
         paragraphs: {
           bsonType: "array",
@@ -74,7 +86,10 @@ const VALIDATORS: Record<string, object> = {
             properties: {
               id: { bsonType: "string" },
               text: { bsonType: "string" },
-              auditItemIds: { bsonType: "array", items: { bsonType: "string" } },
+              auditItemIds: {
+                bsonType: "array",
+                items: { bsonType: "string" },
+              },
               order: { bsonType: "int" },
             },
           },
@@ -121,7 +136,9 @@ const VALIDATORS: Record<string, object> = {
 
 export const VECTOR_INDEX_NAME = "vector_index";
 
-async function ensureVectorIndex(db: Awaited<ReturnType<typeof getDb>>): Promise<void> {
+async function ensureVectorIndex(
+  db: Awaited<ReturnType<typeof getDb>>,
+): Promise<void> {
   const collection = db.collection(COLLECTIONS.articleEmbeddings);
   const existing = await collection.listSearchIndexes().toArray();
   if (existing.some((index) => index.name === VECTOR_INDEX_NAME)) {
@@ -149,7 +166,9 @@ async function ensureVectorIndex(db: Awaited<ReturnType<typeof getDb>>): Promise
 export async function migrate(): Promise<void> {
   const db = await getDb();
   await waitForPrimary(db);
-  const existing = new Set((await db.listCollections().toArray()).map((c) => c.name));
+  const existing = new Set(
+    (await db.listCollections().toArray()).map((c) => c.name),
+  );
 
   for (const name of Object.values(COLLECTIONS)) {
     if (!existing.has(name)) {
@@ -168,28 +187,38 @@ export async function migrate(): Promise<void> {
     }
   }
 
-  await db.collection(COLLECTIONS.articles).createIndex({ labels: 1, order: 1 });
+  await db
+    .collection(COLLECTIONS.articles)
+    .createIndex({ labels: 1, order: 1 });
   await db.collection(COLLECTIONS.articles).createIndex({ argumentId: 1 });
   await db.collection(COLLECTIONS.replies).createIndex({ tab: 1, order: 1 });
   console.log("[migration] indexes ensured");
 
   const backfilledArticles = (
-    await db.collection(COLLECTIONS.articles).updateMany(
-      { label: { $exists: true } },
-      [{ $set: { labels: ["$label"] } }, { $unset: "label" }],
-    )
+    await db
+      .collection(COLLECTIONS.articles)
+      .updateMany({ label: { $exists: true } }, [
+        { $set: { labels: ["$label"] } },
+        { $unset: "label" },
+      ])
   ).modifiedCount;
   if (backfilledArticles > 0) {
-    console.log(`[migration] backfilled labels for ${backfilledArticles} articles`);
+    console.log(
+      `[migration] backfilled labels for ${backfilledArticles} articles`,
+    );
   }
   const backfilledArguments = (
-    await db.collection(COLLECTIONS.arguments).updateMany(
-      { labels: { $exists: false } },
-      { $set: { labels: [...ARGUMENT_LABELS] } },
-    )
+    await db
+      .collection(COLLECTIONS.arguments)
+      .updateMany(
+        { labels: { $exists: false } },
+        { $set: { labels: [...ARGUMENT_LABELS] } },
+      )
   ).modifiedCount;
   if (backfilledArguments > 0) {
-    console.log(`[migration] backfilled labels for ${backfilledArguments} arguments`);
+    console.log(
+      `[migration] backfilled labels for ${backfilledArguments} arguments`,
+    );
   }
 
   await ensureVectorIndex(db);

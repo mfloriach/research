@@ -1,6 +1,6 @@
 import { CollapseCard } from "@/components/collapse-card";
 import type { AttestationItemState } from "@/app/hooks/use-attestation";
-import type { CollapsibleItem } from "@/db/content";
+import type { CollapsibleItem } from "@/db/nuclear";
 
 export type CollapseListProps = {
   items: readonly CollapsibleItem[];
