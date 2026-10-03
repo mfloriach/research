@@ -6,6 +6,9 @@ on:
       - main
     paths:
       - "docs/**"
+      - "app/api/**"
+      - "lib/api-schemas.ts"
+      - "openapi-gen.config.ts"
       - ".github/workflows/deploy-docs.yml"
 
   workflow_dispatch:
@@ -39,7 +42,7 @@ jobs:
           cache-dependency-path: docs/package-lock.json
 
       - name: Install dependencies
-        run: npm install
+        run: npm ci
 
       - name: Build Docusaurus
         run: npm run build

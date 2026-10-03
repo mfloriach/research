@@ -6,6 +6,42 @@ info:
     Reporting and argument-audit API: debates, full-text content, full-text search logging, and audit items
     (contraarguments, fallacies, evidences, sources, interpretations).
 paths:
+  /articles/{id}/open:
+    post:
+      operationId: post-articles-{id}-open
+      summary: Record an article open
+      description: Increments the open count for a reporting article.
+      tags:
+        - Articles
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            minLength: 1
+            description: Article ID
+          description: Article ID
+          example: '123'
+      responses:
+        '200':
+          description: Open count incremented
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArticleOpenResponse'
+        '404':
+          description: Article not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Update failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /content:
     get:
       operationId: get-content
@@ -339,8 +375,8 @@ paths:
   /search:
     get:
       operationId: get-search
-      summary: Vector search over articles
-      description: Embeds the `q` query with a local sentence model and runs
+      summary: Vector search over articles with an LLM answer
+      description: Runs Atlas Vector Search over article embeddings, logs the
       tags:
         - Search
       parameters:
@@ -354,7 +390,7 @@ paths:
           example: example
       responses:
         '200':
-          description: Search result
+          description: Search result with LLM answer
           content:
             application/json:
               schema:
@@ -441,6 +477,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 tags:
+  - name: Articles
   - name: Content
   - name: Contraarguments
   - name: Debates
@@ -461,9 +498,35 @@ components:
           type: string
         description:
           type: string
+        labels:
+          type: array
+          items:
+            type: string
       required:
         - title
         - description
+        - labels
+    ArticleOpenResponse:
+      type: object
+      properties:
+        articleId:
+          type: string
+          description: Article ID
+        openCount:
+          type: number
+          description: Open count after increment
+      required:
+        - articleId
+        - openCount
+    ArticlePathParams:
+      type: object
+      properties:
+        id:
+          type: string
+          minLength: 1
+          description: Article ID
+      required:
+        - id
     auditCreateFormSchema:
       type: object
       properties:
@@ -640,10 +703,13 @@ components:
           minLength: 3
           maxLength: 200
           description: Report title, 3-200 characters
-        label:
-          type: string
-          maxLength: 60
-          description: Article label. Groups the article in the reporting view.
+        labels:
+          type: array
+          items:
+            type: string
+            minLength: 1
+            maxLength: 60
+          description: Article labels. The article appears under every matching reporting tab.
         description:
           type: string
           minLength: 1
@@ -658,9 +724,11 @@ components:
         articleId:
           type: string
           description: Created reporting article ID
-        tab:
-          type: string
-          description: Article label the report was stored under
+        tabs:
+          type: array
+          items:
+            type: string
+          description: Reporting tabs the article was stored under
         paragraphIds:
           type: array
           items:
@@ -671,7 +739,7 @@ components:
           description: IPFS CID of the pinned report envelope
       required:
         - articleId
-        - tab
+        - tabs
         - paragraphIds
         - ipfsCid
     ErrorResponse:
@@ -725,9 +793,8 @@ components:
           type: string
           minLength: 3
           maxLength: 200
-        label:
+        labels:
           type: string
-          maxLength: 60
           default: ''
         description:
           type: string
@@ -743,6 +810,27 @@ components:
           type: string
         title:
           type: string
+        labels:
+          type: array
+          items:
+            type: string
+        type:
+          type: string
+          enum:
+            - text
+            - video
+          description: Media kind; absent means text
+        videoUrl:
+          type: string
+          description: YouTube URL; only when type is video
+        author:
+          type: string
+        date:
+          type: string
+        authorAddress:
+          type: string
+        openCount:
+          type: number
         paragraphs:
           type: array
           items:
@@ -750,6 +838,8 @@ components:
       required:
         - id
         - title
+        - labels
+        - openCount
         - paragraphs
     ReportingParagraph:
       type: object
@@ -781,6 +871,26 @@ components:
         - id
         - label
         - items
+    ResultBodySchema:
+      type: object
+      properties:
+        itemId:
+          type: string
+          minLength: 1
+        ipfsCid:
+          type: string
+          minLength: 1
+      required:
+        - itemId
+        - ipfsCid
+    ResultOpenCountSchema:
+      type: object
+      properties:
+        openCount:
+          type: number
+          minimum: 1
+      required:
+        - openCount
     SearchQuery:
       type: object
       properties:
@@ -814,11 +924,19 @@ components:
               - articleId
               - score
           description: Top vector matches in rank order
+        answer:
+          type: string
+          description: LLM answer for the query
+        model:
+          type: string
+          description: LLM model that produced the answer
       required:
         - query
         - match
         - score
         - matches
+        - answer
+        - model
     SourceOpenResponse:
       type: object
       properties:

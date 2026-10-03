@@ -12,7 +12,7 @@ export default defineConfig({
   routerType: "app",
   schemaDir: ["./app/api", "./lib"],
   schemaType: ["zod", "typescript"],
-  outputDir: "./docs/static",
+  outputDir: "./docs/static/openapi",
   outputFile: "openapi.yaml",
   includeOpenApiRoutes: false,
   ignoreRoutes: [],

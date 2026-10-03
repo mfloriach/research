@@ -15,15 +15,14 @@ const config: Config = {
   },
 
   // Set the production url of your site here
-  url: "https://your-docusaurus-site.example.com",
+  url: "https://mfloriach.github.io",
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: "/",
+  baseUrl: "/research/",
 
   // GitHub pages deployment config.
-  // If you aren't using GitHub pages, you don't need these.
-  organizationName: "facebook", // Usually your GitHub org/user name.
-  projectName: "docusaurus", // Usually your repo name.
+  organizationName: "mfloriach",
+  projectName: "research",
 
   onBrokenLinks: "throw",
 
@@ -154,7 +153,7 @@ const config: Config = {
         route: "/api",
         configuration: {
           spec: {
-            url: "/openapi/openapi.yaml", // 📌 Ruta relativa o URL pública
+            url: "/research/openapi/openapi.yaml",
           },
         },
       },
