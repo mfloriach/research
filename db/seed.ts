@@ -1,5 +1,5 @@
 /**
- * Seed MongoDB with the content from `db/content.ts`.
+ * Seed MongoDB with the content from `db/nuclear.ts` and `db/rickandmorty1_1.ts`.
  *
  * Run with: npm run db:seed  (runs the migration first; wipes all content)
  */
@@ -8,13 +8,13 @@ import { config } from "dotenv";
 config({ path: ".env.local" });
 config();
 
-import { Int32 } from "mongodb";
+import { randomUUID } from "node:crypto";
+import { Int32, Db } from "mongodb";
 import { getDb, closeDb } from "../lib/mongodb";
 import { COLLECTIONS, migrate } from "./migration";
-import { ARGUMENT_LABELS, argument, reportingCard, auditCard } from "./nuclear";
+import * as nuclear from "./nuclear";
+import * as rickandmorty from "./rickandmorty1_1";
 import { articleEmbeddingText, embedText } from "../lib/embeddings";
-
-const MAIN_ARGUMENT_ID = "main-argument";
 
 type SeedDoc = {
   _id: string;
@@ -22,30 +22,57 @@ type SeedDoc = {
   [key: string]: unknown;
 };
 
-export async function seed(): Promise<void> {
-  await migrate();
-  const db = await getDb();
+type ContentModule = {
+  ARGUMENT_LABELS: readonly string[];
+  argument: { title: string; description: string };
+  reportingCard: {
+    tabs: {
+      label: string;
+      items: {
+        id: string;
+        title: string;
+        type?: string;
+        videoUrl?: string;
+        labels: string[];
+        paragraphs: { id: string; text: string; auditItemIds?: string[] }[];
+        author?: string;
+        date?: string;
+        authorAddress?: string;
+        openCount?: number;
+      }[];
+    }[];
+  };
+  auditCard: {
+    tabs: {
+      label: string;
+      items: {
+        id: string;
+        title: string;
+        paragraphs: unknown;
+        author?: string;
+        date?: string;
+      }[];
+    }[];
+  };
+};
 
-  await Promise.all(
-    Object.values(COLLECTIONS).map((name) =>
-      db.collection(name).deleteMany({}),
-    ),
-  );
+async function seedContent(db: Db, content: ContentModule): Promise<void> {
+  const mainArgumentId = randomUUID();
 
   const arguments_ = db.collection<SeedDoc>(COLLECTIONS.arguments);
   const articles = db.collection<SeedDoc>(COLLECTIONS.articles);
   const replies = db.collection<SeedDoc>(COLLECTIONS.replies);
 
   await arguments_.insertOne({
-    _id: MAIN_ARGUMENT_ID,
-    title: argument.title,
-    description: argument.description,
-    labels: [...ARGUMENT_LABELS],
+    _id: mainArgumentId,
+    title: content.argument.title,
+    description: content.argument.description,
+    labels: [...content.ARGUMENT_LABELS],
   });
 
   const articleDocs: SeedDoc[] = [];
   const labelOrder = new Map<string, number>();
-  for (const tab of reportingCard.tabs) {
+  for (const tab of content.reportingCard.tabs) {
     for (const article of tab.items) {
       const labels = [...new Set([tab.label, ...article.labels])];
       const firstLabel = labels[0] as string;
@@ -59,7 +86,7 @@ export async function seed(): Promise<void> {
         type: article.type ?? "text",
         ...(article.videoUrl ? { videoUrl: article.videoUrl } : {}),
         labels,
-        argumentId: MAIN_ARGUMENT_ID,
+        argumentId: mainArgumentId,
         paragraphs: article.paragraphs.map((paragraph, paraOrder) => ({
           id: paragraph.id,
           text: paragraph.text,
@@ -92,7 +119,7 @@ export async function seed(): Promise<void> {
         articleEmbeddingText(String(doc.title), paragraphs),
       );
       await embeddings.insertOne({
-        _id: `emb-${String(doc._id)}`,
+        _id: `emb-${mainArgumentId}-${String(doc._id)}`,
         articleId: String(doc._id),
         embedding,
       });
@@ -101,7 +128,7 @@ export async function seed(): Promise<void> {
 
   const replyDocs: SeedDoc[] = [];
   const tabOrder = new Map<string, number>();
-  for (const tab of auditCard.tabs) {
+  for (const tab of content.auditCard.tabs) {
     for (const item of tab.items) {
       const order = tabOrder.get(tab.label) ?? 0;
       tabOrder.set(tab.label, order + 1);
@@ -141,6 +168,20 @@ export async function seed(): Promise<void> {
     `[seed] inserted 1 argument, ${articleDocs.length} articles, ` +
       `${replyDocs.length} replies`,
   );
+}
+
+export async function seed(): Promise<void> {
+  await migrate();
+  const db = await getDb();
+
+  await Promise.all(
+    Object.values(COLLECTIONS).map((name) =>
+      db.collection(name).deleteMany({}),
+    ),
+  );
+
+  await seedContent(db, nuclear as unknown as ContentModule);
+  await seedContent(db, rickandmorty as unknown as ContentModule);
 }
 
 const isMain = process.argv[1]?.endsWith("seed.ts") ?? false;
