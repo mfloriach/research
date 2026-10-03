@@ -2,46 +2,163 @@
 sidebar_position: 1
 ---
 
-# Tutorial Intro
+import { site } from "../../db/content";
 
-Let's discover **Docusaurus in less than 5 minutes**.
+# Introduction
 
-## Getting Started
+## What is {site.brand}?
 
-Get started by **creating a new site**.
+{site.brand} is a structured argument-analysis workspace. It reads media
+reporting side by side with a structured audit of the underlying claim, so a
+single thesis — currently a worked example on carbon border taxes — can be
+examined piece by piece instead of as one blurred block of prose.
 
-Or **try Docusaurus immediately** with **[docusaurus.new](https://docusaurus.new)**.
+A short description of the idea is in the site subtitle: climate and economy
+reporting, read against a structured audit of the carbon border tax argument.
+Everything a reader sees is built from two content models:
 
-### What you'll need
+- **Reporting articles.** The left column lists the dossier's reporting as
+  articles, each split into paragraphs. An article is either text, or a YouTube
+  video, or both — a video embed keeps the same paragraph structure so its
+  claims can be audited the same way. Articles carry a title, labels, an
+  optional byline (author, ISO date, author wallet address), and a view count.
+- **Audit items.** The right column lists audit items, each classified into
+  one of five tabs: Contraargument, Fallacies, Evidences, Sources, and
+  Interpretation. Every item is a peer entry in the same registry, not a
+  comment attached to a document.
 
-- [Node.js](https://nodejs.org/en/download/) version 20.0 or above:
-  - When installing Node.js, you are recommended to check all checkboxes related to dependencies.
+The two columns are linked by IDs. A reporting paragraph declares which audit
+items it invokes through an `auditItemIds` array. Clicking a paragraph keeps
+the audit column on that subset of items, and clicking an item makes the
+paragraph that references it stand out. That bidirectional link is the core of
+the product: a reader never has to guess which evidence supports which claim,
+or which claim a piece of evidence was raised for.
 
-## Generate a new site
+## Core capabilities
 
-Generate a new Docusaurus site using the **classic template**.
+### Paragraph-level audit linking
 
-The classic template will automatically be added to your project after you run the command:
+The link between a claim and its supporting material is made explicit at the
+paragraph, not the article level. Each `ReportingParagraph` references a set
+of audit-item IDs, so the audit column always reflects the exact footprint of
+the text in front of the reader. Selecting a paragraph resizes the audit
+panel's tab list to only the items relevant to that paragraph, and the audit
+items are resolved by title from the content index so that IDs never appear in
+the interface.
 
-```bash
-npm init docusaurus@latest my-website classic
-```
+### Five audit categories
 
-You can type this command into Command Prompt, Powershell, Terminal, or any other integrated terminal of your code editor.
+Every audit item lives in one of five fixed categories, defined in
+`AUDIT_TABS`. Each answers a different question about a claim:
 
-The command also installs all necessary dependencies you need to run Docusaurus.
+| Category        | What it captures                                            |
+| --------------- | ----------------------------------------------------------- |
+| Contraargument  | A direct rebuttal of the thesis.                            |
+| Fallacies       | A logical problem with how the argument is built.           |
+| Evidences       | A fact, figure, or result that supports or undercuts the claim. |
+| Sources         | The publication the claim traces back to.                  |
+| Interpretation  | A reasoned reading of what the material means.              |
 
-## Start your site
+Because the categories are fixed, audits stay comparable across topics, and
+the UI can give each a stable tab, badge colour, and sort axis.
 
-Run the development server:
+### On-chain attestations
 
-```bash
-cd my-website
-npm run start
-```
+Audit items can be attested by wallets through an EVM smart contract,
+`AttestationRegistry`. The contract enforces one attestation per wallet per
+item — a repeat call reverts with `AlreadyAttested` — and maintains a running
+count per item. Reading is cheap and free: `attestationCount` returns the total
+and `hasAttested` reports whether the connected wallet has vouched for that
+item. Writes go through the wallet, so an attestation can never be forged and
+can always be traced back to the signer. The count is shown on every audit
+card as a shield badge.
 
-The `cd` command changes the directory you're working with. In order to work with your newly created Docusaurus site, you'll need to navigate the terminal there.
+### Wallet signatures and provenance
 
-The `npm run start` command builds your website locally and serves it through a development server, ready for you to view at http://localhost:3000/.
+Creating a report or an audit item also signs it. The wallet signs the exact
+payload, and the contract records the content hash, the signature, and the
+item's IPFS CID through `recordSignature`, one record per wallet per item.
+Putting the CID on-chain anchors the canonical JSON payload pinned to IPFS so
+its location cannot be swapped after the fact. The `/debate/provenance` page
+reconstructs a wallet's full history from the `Attested` and `ItemProvenance`
+events, in block order, and article bylines link there so a reader can jump
+from an author's name to every attestation and signature they have recorded.
 
-Open `docs/intro.md` (this page) and edit some lines: the site **reloads automatically** and displays your changes.
+### Vector search with an LLM answer
+
+`/api/search` powers the dossier search. It embeds the query with a local
+sentence model (MiniLM, 384 dimensions, CPU-only, downloaded once and cached)
+and runs a vector-similarity search over article embeddings stored in
+MongoDB's Atlas Vector Search. The top similarity score decides whether a
+match exists, and an LLM provider writes a short answer that cites the
+matching articles. So a question like "does leakage actually occur?" returns
+both an explanation and the supporting articles it was grounded in.
+
+### Media-friendly reporting
+
+A reporting article is not limited to text. It can be a YouTube video (parsed
+from `watch`, `youtu.be`, `embed`, or `shorts` URLs), text, or both. The video
+embeds in the card body alongside the same paragraph list, so a recorded
+argument can still be audited claim by claim. Text articles render their
+paragraphs as directly clickable blocks for the audit hand-off; video articles
+reserve their paragraphs for the same linking.
+
+### Filtering by format, label, and date
+
+The reporting panel can be narrowed without losing context. Choose **Format**
+to see text, video, or everything; toggle **Labels** to restrict to one or
+more topics (labels combine with OR); or change the **Date** axis from
+editorial order to newest or oldest, with articles missing a date always
+sorting last. The active filter is encoded in the query string, so a filtered
+view can be shared as a link, and when a filter set eliminates every tab the
+panel says so explicitly rather than going blank.
+
+## Use cases
+
+**Policy teams under a tight deadline.** A team drafting a position on carbon
+pricing can open one thesis and immediately see every upstream source and the
+counterarguments that survive or fail, instead of trusting a chain of
+summaries in a shared document.
+
+**Reviewers and editors.** An editor can check whether a statistic's
+attribution survives scrutiny by following the `Sources` entries and the
+attestation counts, and can flag fallacies in a draft before publication.
+Because attestations are on-chain, an editor can tell at a glance which claims
+have already been reviewed by a connected account and which have not.
+
+**Researchers and students.** A researcher evaluating the carbon-border-tax
+literature can use provenance to see *who* vouched for *which* claim, and can
+compare the reported evidence against the interpretations that cite it, keeping
+the distinction between a result and its reading explicit.
+
+**Fact-checkers.** The five categories map onto a checklist: does the claim
+hold up to its contraarguments, are the fallacies real, is the evidence
+self-contained, does the source actually support the wording used, and is the
+interpretation fair? It is a useful scaffold for any dispute about a claim.
+
+**Transparent publishing.** Newsletters or policy shops that publish produces
+can pin their full payload to IPFS, have authors sign it, and expose the
+provenance trail to readers — a way to say not just *what* was claimed, but
+*that the claim has been reported and endorsed by identifiable accounts.*
+
+## Is {site.brand} for me?
+
+{site.brand} is for you if you need to reason about a claim and its support at
+the level of individual paragraphs, want every assertion traceable to a typed
+audit item, and care that attestations and authorship are attributable rather
+than anonymous. It is a good fit for policy analysis, fact-checking workflows,
+editorial review, and teaching the distinction between evidence and
+interpretation.
+
+It is not a good fit for everyone. You likely do not want this tool if:
+
+- You need a free-form discussion or comment thread. Everything is a typed
+  audit item, so freeform back-and-forth is not the right shape.
+- You need real-time collaborative editing. Content is assembled per article
+  and per item, not co-edited live.
+- Your claim is genuinely multimodal or does not decompose into discrete
+  paragraphs. It rewards text and video that can be segmented into claims.
+- You are not comfortable with a wallet. Every meaningful action — creating a
+  report, creating an audit item, attesting, or signing — is performed by a
+  connected wallet; without one, read-only consumption is all the product
+  offers.

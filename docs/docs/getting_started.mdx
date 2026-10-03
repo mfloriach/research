@@ -1,0 +1,207 @@
+---
+sidebar_position: 2
+---
+
+import { site } from "../../db/content";
+
+# Getting Started
+
+This guide walks you through installing, running, and using {site.brand}.
+Everything assumes a developer machine; the app is local-first and talks to a
+local MongoDB, local IPFS node, and a local Anvil EVM node.
+
+## 1. Prerequisites
+
+Install these before you clone anything:
+
+| Tool | Version | Why |
+| ---- | ------- | --- |
+| Node.js | >= 20 | Runs the Next.js app and Docusaurus docs. |
+| npm | >= 10 | Package management and scripts. |
+| Docker | current | Runs MongoDB, IPFS, and Anvil via Compose. |
+| Foundry | recent | Builds and tests the audit contracts. |
+
+You also need a wallet to use the write features — MetaMask is fine, or you
+can rely on the Anvil dev accounts in development.
+
+## 2. Clone and install
+
+```bash
+git clone https://github.com/mfloriach/research.git app
+cd app
+npm install
+```
+
+## 3. Start the local services
+
+Docker Compose starts the three dependencies:
+
+```bash
+docker compose up -d
+```
+
+- MongoDB Atlas Local on `:27017`
+- IPFS (Kubo) RPC on `:5001`, gateway on `:8080`
+- Anvil EVM node on `:8545`
+
+Sanity-check them:
+
+```bash
+curl http://127.0.0.1:8545 -d '{"jsonrpc":"2.0","method":"eth_chainId","id":1}' | jq
+curl http://127.0.0.1:5001/api/v0/version
+```
+
+## 4. Configure the environment
+
+```bash
+cp .env.example .env.local
+```
+
+`.env.local` needs at minimum `MONGODB_URI`, `MONGODB_DB`,
+`NEXT_PUBLIC_ANVIL_RPC_URL`, and `NEXT_PUBLIC_ATTESTATION_CONTRACT_ADDRESS`.
+The app validates every variable in `lib/config.ts` and throws on import when
+one is missing or malformed, so it fails fast instead of misbehaving at runtime.
+
+## 5. Database: migrate and seed
+
+```bash
+npm run db:migrate   # create collections + indexes
+npm run db:seed      # load the sample dossier
+# or both at once:
+npm run db:setup
+```
+
+Seeding loads the argument, reporting articles, and audit items into MongoDB,
+inlines the vector embeddings for search, and pins a canonical JSON envelope
+for each seeded item to IPFS.
+
+## 6. Deploy the contracts and frontend env
+
+```bash
+npm run contracts:deploy:anvil
+```
+
+This deploys `AttestationRegistry` to the default Anvil key and prints the
+contract address. Put it in `.env.local`:
+
+```bash
+NEXT_PUBLIC_ATTESTATION_CONTRACT_ADDRESS=0x5FbDB2315678afecb367f032d93F642f64180aa3
+```
+
+Without it the attest buttons render but stay disabled.
+
+## 7. Run the app
+
+```bash
+npm run dev
+```
+
+Open `http://localhost:3000`. You should see the Dossier landing: a filter
+strip, the reporting column with text and a video article, and the audit
+column with its five categories.
+
+![Dossier landing](./img/getting-started-dossier.png)
+
+## 8. Create your first report
+
+Reporting articles are created from the **Create new report** button (top
+right). It opens a form for a title, labels, and a description.
+
+1. Give the report a title and labels (comma-separated; a new label routes the
+   article to a new tab).
+2. Write the description in markdown.
+3. Submit. The app pins the JSON envelope to IPFS, stores the article in
+   MongoDB, generates its vector embedding, and returns the CID.
+
+![Create a report](./img/getting-started-create-report.png)
+
+## 9. Create an audit item
+
+Audit items live under `/debate/{kind}/create`. The form asks for a title, an
+optional author, an optional date, and the content in markdown. Submitting
+signs the item with the connected wallet, pins it to IPFS, records the
+signature and CID on-chain, and joins it to a paragraph via `auditItemIds`.
+
+![Create an audit item](./img/getting-started-create-audit.png)
+
+## 10. Attest and explore provenance
+
+On any audit card, click the shield icon to attest. The count increments on
+reads and persists on-chain. Use **View on-chain provenance** from an article
+byline to open `/debate/provenance`, filtered to that author by default; the
+page merges their signatures and attestations into a single creation-ordered
+timeline.
+
+![Provenance timeline](./img/getting-started-provenance.png)
+
+## How the pieces fit
+
+```text
+Reporting paragraph
+        │ links by auditItemIds
+        ▼
+   Audit item ──► IPFS envelope (CID) ──► recordSignature on-chain
+        │ ▲
+        │ │ attest()
+        ▼ │ AttestationRegistry
+   attestationCount / hasAttested
+        │
+        ▼
+  provenance timeline (Attested + ItemProvenance events)
+```
+
+## A few graph views
+
+### Attestation lifecycle
+
+### Lifecycle of one attestation
+
+```text
+Wallet (UI)  -- attest(itemId) -->  App  -- attest(itemId) --> AttestationRegistry
+                                                                      |
+                                             Attested(itemId, attester)
+                                                                      |
+App  -- attestationCount(itemId) -->  contract  -->  count + 1  -->  UI shield badge
+```
+
+### Reading the dossier
+
+```text
+Home (/)
+ └─ Reporting tab ── paragraph click ──► selects audit items
+      └─ article card ── expand icon ──► full-screen dialog
+Debate
+ ├─ /debate/create            (new report)
+ ├─ /debate/provenance        (per-wallet timeline)
+ ├─ /debate/{kind}/create     (new audit item)
+OpenAPI
+ └─ /api                         (scalar UI of /research/openapi/openapi.yaml)
+```
+
+## Controls quick reference
+
+| Action | Where |
+| ------ | ----- |
+| Filter by format / label / date | reporting card controls at the top |
+| Open an article full-screen | expand icon in the card byline |
+| See the audit category counts | Dossier summary on `/debate/provenance` |
+| Copy an item ID | icon next to any title in `/debate/provenance` |
+| Regenerate API docs | `npm run openapi:generate` |
+
+## Troubleshooting
+
+- **The app boots the static fallback and never shows Mongo data.** Confirm
+  `MONGODB_URI` is set and `docker compose exec` Mongo is reachable, then
+  `npm run db:setup`.
+- **Search returns no matches.** Seed data embeddings live in Mongo; rerun
+  `npm run db:seed` if `/api/search` returns `{"match": false}`.
+- **Attest buttons are disabled.** Set `NEXT_PUBLIC_ATTESTATION_CONTRACT_ADDRESS`
+  and deploy via `npm run contracts:deploy:anvil`.
+- **IPFS fails.** Start the IPFS container; the API returns
+  `500 "IPFS unavailable"` when Kubo is down.
+
+## Next steps
+
+- Read the [Introduction](./intro.mdx) for the content model.
+- Open the [API Reference](/api) to drive the API directly.
+- `npm run contracts:test` to verify the contract suite.

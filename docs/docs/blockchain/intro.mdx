@@ -1,0 +1,76 @@
+---
+sidebar_position: 1
+---
+
+import { site } from "../../../db/content";
+
+# Blockchain Storage Model
+
+{site.brand} stores two kinds of proof on-chain: **signatures** (proof that a
+wallet authored an artefact) and **attestations** (proof that wallets endorse
+it). Everything else — the report text, the audit items — lives off-chain in
+MongoDB and is additionally pinned to IPFS so its location is stable and
+verifiable.
+
+## The layers
+
+```text
+┌──────────────┐     ┌──────────────┐     ┌──────────────────┐
+│  Local app   │────►│  MongoDB     │     │  IPFS (Kubo)     │
+│  (Next.js)   │     │  view model  │     │  canonical JSON  │
+└──────────────┘     └──────────────┘     └──────────────────┘
+       │                                            │
+       │ recordSignature / attest                   │ CID of the JSON envelope
+       ▼                                            ▼
+┌─────────────────────────────────────────────────────────────┐
+│                AttestationRegistry.sol (EVM)                │
+└─────────────────────────────────────────────────────────────┘
+```
+
+## Provenance
+
+The `/debate/provenance` page turns the two event streams into a single
+timeline for a wallet:
+
+1. Query logs on the contract address where `attester` is the given account,
+   covering both `Attested` and `ItemProvenance`.
+2. Pack the results by block number / log index so creation order is preserved
+   even when blocks are missing a timestamp.
+3. Resolve the packed `bytes16` item IDs back to UUIDs and look them up in the
+   content index, so the table shows names instead of opaque IDs.
+4. Optionally render the IPFS link, transaction, and formatted timestamp.
+
+```text
+Wallet  ──►  contract event logs  ──►  { Attested[], ItemProvenance[] }  ──►  resolve names  ──►  table
+```
+
+## Key properties
+
+| Property                         | Where it lives                       |
+| -------------------------------- | ------------------------------------ |
+| Report / audit-item content      | MongoDB + `ipfsCid`                  |
+| Which wallet wrote an item       | `ItemProvenance` event               |
+| That the content was not altered | `contentHash` in `recordSignature`   |
+| That a wallet endorses an item   | `Attested` event + `attestationCount`|
+| Per-wallet full history          | Contract event log, creation order   |
+
+## Go deeper
+
+- [AttestationRegistry](./contract) — the contract, its ledgers, and the signature ledger.
+- [IPFS](./ipfs) — how content is pinned and verified.
+- [Attestation](./attestation) — how wallets endorse items.
+
+## Running it locally
+
+See the Getting Started page for the full walkthrough. The short version:
+
+```bash
+docker compose up -d                 # MongoDB, IPFS, Anvil
+npm run contracts:deploy:anvil      # deploy AttestationRegistry
+NEXT_PUBLIC_ATTESTATION_CONTRACT_ADDRESS=0x... npm run dev
+```
+
+Reaching the Anvil deployment used in CI, the address is
+`0x5FbDB2315678afecb367f032d93F642f64180aa3`. Without that environment variable
+the attest and signature controls render but stay disabled, so the UI cannot
+appear to work while writes are silently no-op.

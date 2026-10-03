@@ -11,32 +11,35 @@ type FeatureItem = {
 
 const FeatureList: FeatureItem[] = [
   {
-    title: 'Easy to Use',
+    title: 'Structured audits',
     Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
     description: (
       <>
-        Docusaurus was designed from the ground up to be easily installed and
-        used to get your website up and running quickly.
+        Every reporting article is read against its Contraarguments, Fallacies,
+        Evidences, Sources, and Interpretations — a typed audit of each claim,
+        not a pile of comments.
       </>
     ),
   },
   {
-    title: 'Focus on What Matters',
+    title: 'On-chain attestations',
     Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
       <>
-        Docusaurus lets you focus on your docs, and we&apos;ll do the chores. Go
-        ahead and move your docs into the <code>docs</code> directory.
+        Audit items and reports are pinned to IPFS, signed by a wallet, and
+        attested on-chain. Attestation counts and per-wallet provenance are
+        readable from the contract events.
       </>
     ),
   },
   {
-    title: 'Powered by React',
+    title: 'Search, filter, provenance',
     Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
     description: (
       <>
-        Extend or customize your website layout by reusing React. Docusaurus can
-        be extended while reusing the same header and footer.
+        Full-text and vector search embeddings in MongoDB, format/label/date
+        filters on the reporting column, and a per-wallet provenance timeline
+        on <code>/debate/provenance</code>.
       </>
     ),
   },
