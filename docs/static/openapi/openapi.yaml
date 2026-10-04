@@ -42,6 +42,114 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
+  /auth/logout:
+    post:
+      operationId: post-auth-logout
+      summary: End the current session
+      description: Clears the `httpOnly` auth cookie holding the JWT.
+      tags:
+        - Auth
+      parameters: []
+      responses:
+        '200':
+          description: Session cleared
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiweLogoutResponse'
+  /auth/me:
+    get:
+      operationId: get-auth-me
+      summary: Read the current session
+      description: Verifies the JWT in the `httpOnly` auth cookie and returns
+      tags:
+        - Auth
+      parameters: []
+      responses:
+        '200':
+          description: Current session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiweSession'
+        '401':
+          description: No valid session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/nonce:
+    post:
+      operationId: post-auth-nonce
+      summary: Issue a SIWE login nonce
+      description: Creates a one-time nonce bound to the wallet address and
+      tags:
+        - Auth
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SiweNonceInput'
+        required: true
+      responses:
+        '200':
+          description: Nonce and message to sign
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiweNonceResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Issuing failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/verify:
+    post:
+      operationId: post-auth-verify
+      summary: Verify a SIWE signature and create a session
+      description: Consumes the one-time nonce, verifies the EIP-191 wallet
+      tags:
+        - Auth
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SiweVerifyInput'
+        required: true
+      responses:
+        '200':
+          description: Authenticated session
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SiweVerifyResponse'
+        '400':
+          description: Invalid input
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Verification failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Verification failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /content:
     get:
       operationId: get-content
@@ -484,6 +592,7 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
 tags:
   - name: Articles
+  - name: Auth
   - name: Content
   - name: Contraarguments
   - name: Debates
@@ -497,6 +606,10 @@ servers:
     description: API server
 components:
   schemas:
+    addressSchema:
+      type: string
+      pattern: ^0x[0-9a-fA-F]{40}$
+      description: 0x-prefixed Ethereum address
     Argument:
       type: object
       properties:
@@ -943,6 +1056,92 @@ components:
         - matches
         - answer
         - model
+    SiweLogoutResponse:
+      type: object
+      properties:
+        ok:
+          type: boolean
+          description: True once the session cookie was cleared
+      required:
+        - ok
+    SiweNonceInput:
+      type: object
+      properties:
+        address:
+          allOf:
+            - $ref: '#/components/schemas/addressSchema'
+          description: Wallet address requesting a nonce
+        chainId:
+          type: integer
+          default: 31337
+          description: EIP-155 chain id the signature will be bound to
+      required:
+        - address
+        - chainId
+    SiweNonceResponse:
+      type: object
+      properties:
+        nonce:
+          type: string
+          description: One-time login nonce
+        message:
+          type: string
+          description: EIP-4361 message to sign with the wallet
+        expiresAt:
+          type: string
+          description: ISO timestamp when the nonce expires
+      required:
+        - nonce
+        - message
+        - expiresAt
+    SiweSession:
+      type: object
+      properties:
+        address:
+          allOf:
+            - $ref: '#/components/schemas/addressSchema'
+          description: Authenticated wallet address
+        chainId:
+          type: integer
+          description: Chain id the session is bound to
+        expiresAt:
+          type: string
+          description: ISO timestamp when the JWT expires
+      required:
+        - address
+        - chainId
+        - expiresAt
+    SiweVerifyInput:
+      type: object
+      properties:
+        message:
+          type: string
+          minLength: 1
+          description: EIP-4361 message previously issued by /api/auth/nonce
+        signature:
+          type: string
+          pattern: ^0x[0-9a-fA-F]+$
+          description: EIP-191 personal_sign signature of the message
+      required:
+        - message
+        - signature
+    SiweVerifyResponse:
+      type: object
+      properties:
+        address:
+          allOf:
+            - $ref: '#/components/schemas/addressSchema'
+          description: Authenticated wallet address
+        chainId:
+          type: integer
+          description: Chain id the session is bound to
+        expiresAt:
+          type: string
+          description: ISO timestamp when the JWT expires
+      required:
+        - address
+        - chainId
+        - expiresAt
     SourceOpenResponse:
       type: object
       properties:

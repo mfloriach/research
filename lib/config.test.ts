@@ -10,6 +10,7 @@ const validServerEnv = {
   openaiApiKey: "test-key",
   openaiModel: "gpt-4o-mini",
   llmProvider: "openai",
+  jwtSecret: "test-jwt-secret-at-least-32-chars-long",
   otelEnabled: "true",
   otelExporterOtlpEndpoint: "",
   appVersion: "0.1.0",
@@ -43,6 +44,15 @@ describe("config", () => {
     expect(() =>
       serverSchema.parse({ ...validServerEnv, openaiApiKey: undefined }),
     ).toThrow("OPENAI_API_KEY");
+  });
+
+  it("rejects a missing or short JWT_SECRET", () => {
+    expect(() =>
+      serverSchema.parse({ ...validServerEnv, jwtSecret: undefined }),
+    ).toThrow("JWT_SECRET");
+    expect(() =>
+      serverSchema.parse({ ...validServerEnv, jwtSecret: "too-short" }),
+    ).toThrow("JWT_SECRET");
   });
 
   it("rejects malformed URLs and providers", () => {

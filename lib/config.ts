@@ -86,6 +86,12 @@ export const serverSchema = z.object({
     .min(1, "OPENAI_API_KEY is not set. Copy .env.example to .env.local."),
   openaiModel: z.string().default("gpt-4o-mini"),
   llmProvider: llmProviderSchema.default("openai"),
+  jwtSecret: z
+    .string({ error: "JWT_SECRET is required" })
+    .min(
+      32,
+      "JWT_SECRET must be at least 32 characters. Generate one with `openssl rand -base64 48`.",
+    ),
   otelEnabled: z
     .enum(["true", "false"])
     .default("true")
@@ -116,6 +122,7 @@ function readServerEnv(): ServerConfig {
     openaiApiKey: process.env.OPENAI_API_KEY,
     openaiModel: process.env.OPENAI_MODEL,
     llmProvider: process.env.LLM_PROVIDER,
+    jwtSecret: process.env.JWT_SECRET,
     otelEnabled: process.env.OTEL_ENABLED,
     otelExporterOtlpEndpoint: process.env.OTEL_EXPORTER_OTLP_ENDPOINT,
     appVersion: process.env.npm_package_version,

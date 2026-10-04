@@ -5,3 +5,4 @@ import "@testing-library/jest-dom";
 process.env.MONGODB_URI ??=
   "mongodb://localhost:27017/epistimology-test";
 process.env.OPENAI_API_KEY ??= "test-openai-key";
+process.env.JWT_SECRET ??= "test-jwt-secret-at-least-32-chars-long";

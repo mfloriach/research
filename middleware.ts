@@ -1,7 +1,10 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { jwtVerify } from "jose";
 import { getRequestLogger } from "@/lib/logger";
 import { AppError, HttpResponse } from "@/lib/errors";
+import { getServerConfig } from "@/lib/config";
+import { AUTH_COOKIE_NAME } from "@/lib/siwe";
 
 export function getRequestId(request: Request): string {
   return request.headers.get("x-request-id") ?? crypto.randomUUID();
@@ -17,7 +20,30 @@ export function getClientIp(request: Request): string {
   return request.headers.get("x-real-ip") ?? "unknown";
 }
 
-export function middleware(request: NextRequest) {
+/**
+ * Resolve the SIWE session address without ever failing the request.
+ * Auth is informational here: protected routes enforce it themselves.
+ * Any misconfiguration or invalid token resolves to `null`.
+ */
+async function resolveSessionAddress(
+  request: NextRequest,
+): Promise<string | null> {
+  try {
+    const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+    if (!token) {
+      return null;
+    }
+    const secret = new TextEncoder().encode(getServerConfig().jwtSecret);
+    const { payload } = await jwtVerify(token, secret, {
+      issuer: "epistimology",
+    });
+    return typeof payload.address === "string" ? payload.address : null;
+  } catch {
+    return null;
+  }
+}
+
+export async function middleware(request: NextRequest) {
   const start = performance.now();
   const requestId = getRequestId(request);
   const method = request.method;
@@ -33,7 +59,14 @@ export function middleware(request: NextRequest) {
   });
 
   try {
-    const response = NextResponse.next();
+    const sessionAddress = await resolveSessionAddress(request);
+    const requestHeaders = new Headers(request.headers);
+    if (sessionAddress) {
+      requestHeaders.set("x-auth-address", sessionAddress);
+    }
+    const response = NextResponse.next({
+      request: { headers: requestHeaders },
+    });
 
     const durationMs = Math.round(performance.now() - start);
     const status = response.status;

@@ -138,6 +138,25 @@ A fresh Anvil deployment from the default key deterministically yields
 `0x5FbDB2315678afecb367f032d93F642f64180aa3`. Without this variable the attest
 buttons render disabled.
 
+## Wallet authentication (SIWE + JWT)
+
+Connecting the wallet in the navbar also runs Sign-In with Ethereum: the
+wallet signs an EIP-4361 message (`personal_sign`) and the server verifies it
+with `viem`, then mints a JWT into an `httpOnly` session cookie
+(`epistimology_auth`, 7 days). No `better-auth` is used. Endpoints
+(`app/api/auth/nonce`, `/verify`, `/me`, `/logout`) are thin controllers;
+nonces live in the `auth_nonces` collection
+(`app/server/repositories/auth-nonces.ts`, single-use with TTL) and
+signing/verification in `app/server/services/auth-service.ts`. The
+middleware attaches the session address as `x-auth-address` (never blocks),
+and `app/hooks/use-siwe-auth.ts` holds all client auth logic.
+
+Required environment variable (`lib/config.ts`, also needed for tests):
+
+| Variable     | Purpose                                            |
+| ------------ | -------------------------------------------------- |
+| `JWT_SECRET` | HMAC secret for SIWE session JWTs (min 32 chars). Generate with `openssl rand -base64 48`. |
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

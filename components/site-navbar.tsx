@@ -3,12 +3,14 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import {
+  ANVIL_CHAIN_ID_DEC,
   ANVIL_CHAIN_ID_HEX,
   ensureAnvilChain,
   getAnvilAccountsViaRpc,
   isAnvilReachable,
   type AnvilEthereumProvider,
 } from "@/lib/anvil";
+import { useSiweAuth } from "@/app/hooks/use-siwe-auth";
 import { Search, type SearchResults } from "./search";
 import { config } from "@/lib/config";
 
@@ -16,11 +18,6 @@ import { config } from "@/lib/config";
  * Account dropdown entries. Hardcoded: there is no menu_items collection.
  */
 const MENU_LABEL = "Account menu";
-
-const MENU_ITEMS: ReadonlyArray<{ id: string; label: string; href: string }> = [
-  { id: "profile", label: "Profile", href: "#profile" },
-  { id: "settings", label: "Settings", href: "#settings" },
-];
 
 type EthereumProvider = AnvilEthereumProvider;
 
@@ -62,6 +59,11 @@ export type SiteNavbarProps = {
  * injected EIP-1193 provider to Anvil (`http://127.0.0.1:8545`, chain 31337)
  * and requests accounts. When no injected wallet exists, it falls back to
  * Anvil's unlocked accounts over direct JSON-RPC (local dev only).
+ *
+ * Connecting with an injected wallet also runs Sign-In with Ethereum:
+ * the wallet signs an EIP-4361 message (`personal_sign`) and the server
+ * mints a JWT session cookie (`POST /api/auth/verify`). Disconnecting
+ * clears that session (`POST /api/auth/logout`).
  */
 export function SiteNavbar({
   brand,
@@ -85,6 +87,13 @@ export function SiteNavbar({
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<SearchResults>(null);
   const titlesCache = useRef<Map<string, string> | null>(null);
+  const {
+    status: authStatus,
+    error: authError,
+    signIn: signInWithWallet,
+    signOut: signOutSession,
+  } = useSiweAuth();
+  const authPending = authStatus === "signing" || authStatus === "verifying";
 
   async function fetchArticleTitles(): Promise<Map<string, string>> {
     if (titlesCache.current) {
@@ -209,7 +218,9 @@ export function SiteNavbar({
     onConnect?.(next);
   }
 
-  async function connectViaInjected(provider: EthereumProvider) {
+  async function connectViaInjected(
+    provider: EthereumProvider,
+  ): Promise<string> {
     await ensureAnvilChain(provider);
     const accounts = (await provider.request({
       method: "eth_requestAccounts",
@@ -228,6 +239,15 @@ export function SiteNavbar({
       }
     }
     setConnectedAddress(first);
+    // SIWE: prove ownership of the connected address and mint a JWT
+    // session cookie (server-side, `httpOnly`). A failed signature keeps
+    // the wallet connected; the dropdown offers a retry.
+    await signInWithWallet({
+      address: first,
+      chainId: ANVIL_CHAIN_ID_DEC,
+      provider,
+    });
+    return first;
   }
 
   async function connectViaAnvilRpc() {
@@ -285,6 +305,7 @@ export function SiteNavbar({
           })
           .catch(() => null);
       }
+      await signOutSession();
     } finally {
       setConnectedAddress(null);
       setConnectError(null);
@@ -298,6 +319,18 @@ export function SiteNavbar({
       return value;
     }
     return `${value.slice(0, 6)}…${value.slice(-4)}`;
+  }
+
+  async function handleSignInRetry() {
+    const provider = window.ethereum;
+    if (!provider || !address) {
+      return;
+    }
+    await signInWithWallet({
+      address,
+      chainId: ANVIL_CHAIN_ID_DEC,
+      provider,
+    });
   }
 
   return (
@@ -351,11 +384,25 @@ export function SiteNavbar({
                   </span>
                 </li>
               ) : null}
-              {MENU_ITEMS.map((item) => (
-                <li key={item.id}>
-                  <a href={item.href}>{item.label}</a>
+              {authStatus !== "authenticated" ? (
+                <li>
+                  <div className="flex flex-col items-start gap-1">
+                    <button
+                      type="button"
+                      onClick={handleSignInRetry}
+                      disabled={authPending}
+                      className="link link-primary text-xs"
+                    >
+                      {authPending ? "Signing in…" : "Sign in with wallet"}
+                    </button>
+                    {authError ? (
+                      <span role="alert" className="text-xs text-error">
+                        {authError}
+                      </span>
+                    ) : null}
+                  </div>
                 </li>
-              ))}
+              ) : null}
               <div className="divider my-1" aria-hidden="true" />
               <li>
                 <button

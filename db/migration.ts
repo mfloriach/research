@@ -29,6 +29,7 @@ export const COLLECTIONS = {
   articles: "articles",
   replies: "replies",
   articleEmbeddings: "article_embeddings",
+  authNonces: "auth_nonces",
 } as const;
 
 const REMOVED_COLLECTIONS = [
@@ -132,6 +133,19 @@ const VALIDATORS: Record<string, object> = {
       },
     },
   },
+  [COLLECTIONS.authNonces]: {
+    $jsonSchema: {
+      bsonType: "object",
+      required: ["_id", "address", "chainId", "expiresAt", "createdAt"],
+      properties: {
+        _id: { bsonType: "string" },
+        address: { bsonType: "string" },
+        chainId: { bsonType: "number" },
+        expiresAt: { bsonType: "date" },
+        createdAt: { bsonType: "date" },
+      },
+    },
+  },
 };
 
 export const VECTOR_INDEX_NAME = "vector_index";
@@ -192,6 +206,9 @@ export async function migrate(): Promise<void> {
     .createIndex({ labels: 1, order: 1 });
   await db.collection(COLLECTIONS.articles).createIndex({ argumentId: 1 });
   await db.collection(COLLECTIONS.replies).createIndex({ tab: 1, order: 1 });
+  await db
+    .collection(COLLECTIONS.authNonces)
+    .createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
   console.log("[migration] indexes ensured");
 
   const backfilledArticles = (

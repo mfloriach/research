@@ -22,6 +22,13 @@ export class BadRequestError extends HttpResponse {
   }
 }
 
+export class UnauthorizedError extends HttpResponse {
+  constructor(message = "Unauthorized") {
+    super(401, message);
+    this.name = "Unauthorized";
+  }
+}
+
 export class AppError extends Error {
   constructor(
     public statusCode: number,
