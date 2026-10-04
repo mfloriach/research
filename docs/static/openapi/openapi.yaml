@@ -6,6 +6,50 @@ info:
     Reporting and argument-audit API: debates, full-text content, full-text search logging, and audit items
     (contraarguments, fallacies, evidences, sources, interpretations).
 paths:
+  /arguments:
+    get:
+      operationId: get-arguments
+      summary: List hot-topic arguments
+      description: Lists arguments (title, description, labels, creation date)
+      tags:
+        - Arguments
+      parameters:
+        - in: query
+          name: labels
+          required: false
+          schema:
+            type: string
+            description: Comma-separated labels; an argument matches on any of them
+          description: Comma-separated labels; an argument matches on any of them
+          example: example
+        - in: query
+          name: sort
+          required: false
+          schema:
+            allOf:
+              - $ref: '#/components/schemas/hotTopicsSortSchema'
+            description: Order by creation date
+          description: Order by creation date
+          example: example
+      responses:
+        '200':
+          description: Matching arguments
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ArgumentsResponse'
+        '400':
+          description: Invalid query
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Listing failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /articles/{id}/open:
     post:
       operationId: post-articles-{id}-open
@@ -591,6 +635,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ErrorResponse'
 tags:
+  - name: Arguments
   - name: Articles
   - name: Auth
   - name: Content
@@ -625,6 +670,56 @@ components:
         - title
         - description
         - labels
+    ArgumentQuery:
+      type: object
+      properties:
+        labels:
+          type: string
+          description: Comma-separated labels; an argument matches on any of them
+        sort:
+          allOf:
+            - $ref: '#/components/schemas/hotTopicsSortSchema'
+          description: Order by creation date
+    ArgumentsResponse:
+      type: object
+      properties:
+        arguments:
+          type: array
+          items:
+            $ref: '#/components/schemas/ArgumentSummary'
+          description: Matching arguments
+        total:
+          type: number
+          description: Number of matching arguments
+      required:
+        - arguments
+        - total
+    ArgumentSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          description: Argument ID (routes to /debate/argument/[id])
+        title:
+          type: string
+          description: Argument title
+        description:
+          type: string
+          description: Argument description
+        labels:
+          type: array
+          items:
+            type: string
+          description: Argument labels
+        createdAt:
+          type: string
+          description: ISO timestamp when the argument was created
+      required:
+        - id
+        - title
+        - description
+        - labels
+        - createdAt
     ArticleOpenResponse:
       type: object
       properties:
@@ -893,6 +988,12 @@ components:
       required:
         - fallacyId
         - openCount
+    hotTopicsSortSchema:
+      type: string
+      enum:
+        - newest
+        - oldest
+      description: Argument order by creation date
     InterpretationOpenResponse:
       type: object
       properties:

@@ -285,3 +285,38 @@ export const sourceOpenResponseSchema = z
     openCount: z.number().describe("Open count after increment"),
   })
   .meta({ id: "SourceOpenResponse" });
+
+export const hotTopicsSortSchema = z
+  .enum(["newest", "oldest"])
+  .describe("Argument order by creation date");
+
+export type HotTopicsSort = z.infer<typeof hotTopicsSortSchema>;
+
+export const argumentQuerySchema = z
+  .object({
+    labels: z
+      .string()
+      .optional()
+      .describe("Comma-separated labels; an argument matches on any of them"),
+    sort: hotTopicsSortSchema.optional().describe("Order by creation date"),
+  })
+  .meta({ id: "ArgumentQuery" });
+
+export const argumentSummarySchema = z
+  .object({
+    id: z.string().describe("Argument ID (routes to /debate/argument/[id])"),
+    title: z.string().describe("Argument title"),
+    description: z.string().describe("Argument description"),
+    labels: z.array(z.string()).describe("Argument labels"),
+    createdAt: z.string().describe("ISO timestamp when the argument was created"),
+  })
+  .meta({ id: "ArgumentSummary" });
+
+export type ArgumentSummary = z.infer<typeof argumentSummarySchema>;
+
+export const argumentsResponseSchema = z
+  .object({
+    arguments: z.array(argumentSummarySchema).describe("Matching arguments"),
+    total: z.number().describe("Number of matching arguments"),
+  })
+  .meta({ id: "ArgumentsResponse" });

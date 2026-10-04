@@ -68,6 +68,7 @@ async function seedContent(db: Db, content: ContentModule): Promise<void> {
     title: content.argument.title,
     description: content.argument.description,
     labels: [...content.ARGUMENT_LABELS],
+    createdAt: new Date(),
   });
 
   const articleDocs: SeedDoc[] = [];

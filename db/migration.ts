@@ -53,6 +53,7 @@ const VALIDATORS: Record<string, object> = {
         title: { bsonType: "string" },
         description: { bsonType: "string" },
         labels: { bsonType: "array", items: { bsonType: "string" } },
+        createdAt: { bsonType: "date" },
       },
     },
   },
@@ -206,6 +207,7 @@ export async function migrate(): Promise<void> {
     .createIndex({ labels: 1, order: 1 });
   await db.collection(COLLECTIONS.articles).createIndex({ argumentId: 1 });
   await db.collection(COLLECTIONS.replies).createIndex({ tab: 1, order: 1 });
+  await db.collection(COLLECTIONS.arguments).createIndex({ createdAt: -1 });
   await db
     .collection(COLLECTIONS.authNonces)
     .createIndex({ expiresAt: 1 }, { expireAfterSeconds: 0 });
@@ -235,6 +237,18 @@ export async function migrate(): Promise<void> {
   if (backfilledArguments > 0) {
     console.log(
       `[migration] backfilled labels for ${backfilledArguments} arguments`,
+    );
+  }
+  const backfilledArgumentDates = (
+    await db
+      .collection(COLLECTIONS.arguments)
+      .updateMany({ createdAt: { $exists: false } }, [
+        { $set: { createdAt: "$$NOW" } },
+      ])
+  ).modifiedCount;
+  if (backfilledArgumentDates > 0) {
+    console.log(
+      `[migration] backfilled createdAt for ${backfilledArgumentDates} arguments`,
     );
   }
 
