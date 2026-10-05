@@ -35,14 +35,14 @@ export const GET = async (request: Request) => {
 
   const { matches, top } = await searchArticlesByText(query);
 
-  const { answer, model } = await getLlmProvider().generateAnswer({ query });
+  // const { answer, model } = await getLlmProvider().generateAnswer({ query });
 
   return NextResponse.json({
     query,
     match: isMatch(top),
     score: top,
     matches,
-    answer,
-    model,
+    // answer,
+    // model,
   });
 };

@@ -169,12 +169,24 @@ describe("Search", () => {
     expect(screen.getByRole("alert")).toHaveTextContent("Search failed.");
   });
 
-  it("renders matches with scores and jumps to the article on click", async () => {
+  it("renders matches with views and attestations, then jumps on click", async () => {
     const user = userEvent.setup();
     const results: SearchResults = {
       matches: [
-        { articleId: "article-1", title: "Article One", score: 0.85 },
-        { articleId: "article-2", title: "Article Two", score: 0.42 },
+        {
+          articleId: "article-1",
+          title: "Article One",
+          score: 0.85,
+          openCount: 12,
+          attestationCount: 3,
+        },
+        {
+          articleId: "article-2",
+          title: "Article Two",
+          score: 0.42,
+          openCount: 1,
+          attestationCount: null,
+        },
       ],
       answer: "An answer",
       model: "gpt-4o-mini",
@@ -183,7 +195,13 @@ describe("Search", () => {
     await openModal(user);
 
     expect(screen.getByText("An answer")).toBeInTheDocument();
-    expect(screen.getByText("85%")).toBeInTheDocument();
+    expect(screen.queryByText("85%")).toBeNull();
+    expect(screen.getByLabelText("12 opens")).toHaveTextContent("12");
+    expect(screen.getByLabelText("3 attestations")).toHaveTextContent("3");
+    expect(screen.getByLabelText("1 opens")).toHaveTextContent("1");
+    expect(
+      screen.queryByLabelText("0 attestations"),
+    ).toBeNull();
     const link = screen.getByRole("link", { name: /Article One/ });
     expect(link).toHaveAttribute("href", "#article-1");
 

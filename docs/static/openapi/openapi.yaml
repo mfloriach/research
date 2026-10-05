@@ -1137,26 +1137,32 @@ components:
               articleId:
                 type: string
                 description: Matched article ID
+              title:
+                type: string
+                description: Matched article title
+              openCount:
+                type: number
+                description: Matched article view count
               score:
                 type: number
                 description: Cosine similarity score
             required:
               - articleId
+              - title
+              - openCount
               - score
           description: Top vector matches in rank order
         answer:
           type: string
-          description: LLM answer for the query
+          description: LLM answer for the query, when the provider is enabled
         model:
           type: string
-          description: LLM model that produced the answer
+          description: LLM model that produced the answer, when enabled
       required:
         - query
         - match
         - score
         - matches
-        - answer
-        - model
     SiweLogoutResponse:
       type: object
       properties:

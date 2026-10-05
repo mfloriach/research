@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   ANVIL_CHAIN_ID_DEC,
   ANVIL_CHAIN_ID_HEX,
@@ -10,6 +10,7 @@ import {
   type AnvilEthereumProvider,
 } from "@/lib/anvil";
 import { useSiweAuth } from "@/app/hooks/use-siwe-auth";
+import { useAttestations } from "@/app/hooks/use-attestation";
 import { UserIcon } from "./icons";
 import { Search, type SearchResults } from "./search";
 import { config } from "@/lib/config";
@@ -82,7 +83,6 @@ export function SiteNavbar({
   >("idle");
   const [searchError, setSearchError] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<SearchResults>(null);
-  const titlesCache = useRef<Map<string, string> | null>(null);
   const {
     status: authStatus,
     error: authError,
@@ -90,32 +90,6 @@ export function SiteNavbar({
     signOut: signOutSession,
   } = useSiweAuth();
   const authPending = authStatus === "signing" || authStatus === "verifying";
-
-  async function fetchArticleTitles(): Promise<Map<string, string>> {
-    if (titlesCache.current) {
-      return titlesCache.current;
-    }
-    const titles = new Map<string, string>();
-    try {
-      const response = await fetch("/api/content");
-      if (response.ok) {
-        const data = (await response.json()) as {
-          reportingCard: {
-            tabs: { items: { id: string; title: string }[] }[];
-          };
-        };
-        for (const tab of data.reportingCard.tabs) {
-          for (const item of tab.items) {
-            titles.set(item.id, item.title);
-          }
-        }
-      }
-    } catch {
-      // Titles are a progressive enhancement; fall back to IDs.
-    }
-    titlesCache.current = titles;
-    return titles;
-  }
 
   async function handleSearchSubmit(value: string) {
     const query = value.trim();
@@ -132,15 +106,23 @@ export function SiteNavbar({
         throw new Error(`status ${response.status}`);
       }
       const data = (await response.json()) as {
-        matches: { articleId: string; score: number }[];
+        matches: {
+          articleId: string;
+          title: string;
+          openCount: number;
+          score: number;
+        }[];
         answer: string;
         model: string;
       };
-      const titles = await fetchArticleTitles();
       setSearchResults({
         matches: data.matches.map((match) => ({
           articleId: match.articleId,
-          title: titles.get(match.articleId) ?? match.articleId,
+          // The API resolves titles across every argument; fall back to
+          // the id only for responses predating that field.
+          title: match.title ?? match.articleId,
+          openCount: match.openCount ?? 0,
+          attestationCount: null,
           score: match.score,
         })),
         answer: data.answer,
@@ -329,6 +311,29 @@ export function SiteNavbar({
     });
   }
 
+  // On-chain attestation counts for the current search hits. The hook is
+  // unconditional (possibly an empty id list) and overlays counts once the
+  // RPC reads resolve; views come straight from the search response.
+  const searchMatchIds = useMemo(
+    () => searchResults?.matches.map((match) => match.articleId) ?? [],
+    [searchResults],
+  );
+  const { items: searchAttestations } = useAttestations(searchMatchIds);
+  const searchResultsWithAttestations = useMemo<SearchResults>(
+    () =>
+      searchResults === null
+        ? null
+        : {
+            ...searchResults,
+            matches: searchResults.matches.map((match) => ({
+              ...match,
+              attestationCount:
+                searchAttestations[match.articleId]?.count ?? null,
+            })),
+          },
+    [searchResults, searchAttestations],
+  );
+
   return (
     <header className="navbar sticky top-0 z-40 bg-base-100 px-4 shadow-sm sm:px-6">
       <div className="navbar-start">
@@ -341,7 +346,7 @@ export function SiteNavbar({
           setQuery={setQuery}
           search={search}
           status={searchStatus}
-          results={searchResults}
+          results={searchResultsWithAttestations}
           error={searchError}
           onSubmitSearch={handleSearchSubmit}
         />

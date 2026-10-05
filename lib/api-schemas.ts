@@ -98,12 +98,20 @@ export const searchResponseSchema = z
       .array(
         z.object({
           articleId: z.string().describe("Matched article ID"),
+          title: z.string().describe("Matched article title"),
+          openCount: z.number().describe("Matched article view count"),
           score: z.number().describe("Cosine similarity score"),
         }),
       )
       .describe("Top vector matches in rank order"),
-    answer: z.string().describe("LLM answer for the query"),
-    model: z.string().describe("LLM model that produced the answer"),
+    answer: z
+      .string()
+      .optional()
+      .describe("LLM answer for the query, when the provider is enabled"),
+    model: z
+      .string()
+      .optional()
+      .describe("LLM model that produced the answer, when enabled"),
   })
   .meta({ id: "SearchResponse" });
 

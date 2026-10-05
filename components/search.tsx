@@ -1,11 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { EyeIcon, ShieldCheckIcon } from "./icons";
 
 export type SearchMatchView = {
   articleId: string;
   title: string;
   score: number;
+  openCount: number;
+  /** On-chain attestation count, or null while unloaded/unavailable. */
+  attestationCount: number | null;
 };
 
 export type SearchResults = {
@@ -204,8 +208,29 @@ export function Search({
                             <span className="truncate font-medium">
                               {match.title}
                             </span>
-                            <span className="shrink-0 font-mono text-xs tabular-nums opacity-70">
-                              {Math.round(match.score * 100)}%
+                            <span className="flex shrink-0 items-center gap-3 font-mono text-xs tabular-nums opacity-70">
+                              <span
+                                className="flex items-center gap-1"
+                                title={`${match.openCount} ${match.openCount === 1 ? "open" : "opens"}`}
+                              >
+                                <EyeIcon />
+                                <span aria-label={`${match.openCount} opens`}>
+                                  {match.openCount}
+                                </span>
+                              </span>
+                              {typeof match.attestationCount === "number" ? (
+                                <span
+                                  className="flex items-center gap-1"
+                                  title={`${match.attestationCount} attestations`}
+                                >
+                                  <ShieldCheckIcon />
+                                  <span
+                                    aria-label={`${match.attestationCount} attestations`}
+                                  >
+                                    {match.attestationCount}
+                                  </span>
+                                </span>
+                              ) : null}
                             </span>
                           </a>
                         </li>
