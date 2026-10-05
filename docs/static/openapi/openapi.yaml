@@ -1137,6 +1137,9 @@ components:
               articleId:
                 type: string
                 description: Matched article ID
+              argumentId:
+                type: string
+                description: Dossier ID owning the article (routes to it)
               title:
                 type: string
                 description: Matched article title
@@ -1148,6 +1151,7 @@ components:
                 description: Cosine similarity score
             required:
               - articleId
+              - argumentId
               - title
               - openCount
               - score

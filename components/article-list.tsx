@@ -1,11 +1,12 @@
 "use client";
 
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ReportingArticleCard,
   type ParagraphSelection,
 } from "@/components/reporting-article-card";
 import { useAttestations } from "@/app/hooks/use-attestation";
+import { useFocusedArticleId } from "@/app/hooks/use-focused-article";
 import { useWallet } from "@/app/hooks/use-wallet";
 import type { Article, ReportingParagraph } from "@/db/nuclear";
 import { setCountArticleOpen } from "@/lib/api";
@@ -77,6 +78,31 @@ export function ArticleList({
     },
     [storedCounts],
   );
+
+  // Deep link: a `#article-id` hash (e.g. from search results) opens the
+  // matching card once it renders and scrolls it into view, recording the
+  // open like a manual expand. Runs once per id so the user can close the
+  // card afterwards without it springing back open.
+  const focusedArticleId = useFocusedArticleId();
+  const focusedOpenedRef = useRef<string | null>(null);
+  useEffect(() => {
+    if (
+      focusedArticleId === null ||
+      focusedOpenedRef.current === focusedArticleId ||
+      !articleIds.includes(focusedArticleId)
+    ) {
+      return;
+    }
+    focusedOpenedRef.current = focusedArticleId;
+    const card = document.getElementById(focusedArticleId);
+    if (card instanceof HTMLDetailsElement && !card.open) {
+      card.open = true;
+    }
+    if (typeof card?.scrollIntoView === "function") {
+      card?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+    void handleOpen(focusedArticleId);
+  }, [focusedArticleId, articleIds, handleOpen]);
 
   if (articles.length === 0) {
     return null;

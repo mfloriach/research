@@ -175,6 +175,7 @@ describe("Search", () => {
       matches: [
         {
           articleId: "article-1",
+          argumentId: "arg-1",
           title: "Article One",
           score: 0.85,
           openCount: 12,
@@ -182,6 +183,7 @@ describe("Search", () => {
         },
         {
           articleId: "article-2",
+          argumentId: "arg-1",
           title: "Article Two",
           score: 0.42,
           openCount: 1,
@@ -203,7 +205,7 @@ describe("Search", () => {
       screen.queryByLabelText("0 attestations"),
     ).toBeNull();
     const link = screen.getByRole("link", { name: /Article One/ });
-    expect(link).toHaveAttribute("href", "#article-1");
+    expect(link).toHaveAttribute("href", "/debate/argument/arg-1#article-1");
 
     await user.click(link);
     expect(screen.queryByRole("dialog")).not.toBeInTheDocument();

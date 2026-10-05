@@ -4,6 +4,7 @@ import { embedText } from "@/lib/embeddings";
 
 export type SearchMatch = {
   articleId: string;
+  argumentId: string;
   title: string;
   openCount: number;
   score: number;
@@ -71,17 +72,21 @@ async function withArticleTitles(
 ): Promise<SearchMatch[]> {
   const db = await getDb();
   const docs = await db
-    .collection<{ _id: string; title: string; openCount?: number }>(
-      COLLECTIONS.articles,
-    )
+    .collection<{
+      _id: string;
+      argumentId: string;
+      title: string;
+      openCount?: number;
+    }>(COLLECTIONS.articles)
     .find({ _id: { $in: matches.map((match) => match.articleId) } })
-    .project({ title: 1, openCount: 1 })
+    .project({ argumentId: 1, title: 1, openCount: 1 })
     .toArray();
   const byId = new Map(docs.map((doc) => [doc._id, doc]));
   return matches.map((match) => {
     const doc = byId.get(match.articleId);
     return {
       articleId: match.articleId,
+      argumentId: doc?.argumentId ?? "",
       title: doc?.title ?? match.articleId,
       openCount: doc?.openCount ?? 0,
       score: match.score,

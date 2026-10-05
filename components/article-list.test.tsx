@@ -445,4 +445,60 @@ describe("ArticleList", () => {
       "false",
     );
   });
+
+  describe("hash deep link", () => {
+    const priorHash = window.location.hash;
+
+    afterEach(() => {
+      window.location.hash = priorHash;
+    });
+
+    it("opens the card matching the URL hash", async () => {
+      window.location.hash = "#article-1";
+      render(<ArticleList articles={[makeArticle()]} />);
+
+      await waitFor(() => {
+        expect(document.querySelector("details")).toHaveAttribute("open");
+      });
+    });
+
+    it("records an open for the hash-linked card", async () => {
+      window.location.hash = "#article-1";
+      render(<ArticleList articles={[makeArticle({ openCount: 12 })]} />);
+
+      await waitFor(() => {
+        expect(mockFetch).toHaveBeenCalledWith(
+          "/api/articles/article-1/open",
+          { method: "POST" },
+        );
+      });
+    });
+
+    it("ignores a hash matching no article", async () => {
+      window.location.hash = "#no-such-article";
+      render(<ArticleList articles={[makeArticle()]} />);
+
+      await act(async () => {});
+      expect(document.querySelector("details")).not.toHaveAttribute("open");
+      expect(mockFetch).not.toHaveBeenCalled();
+    });
+
+    it("opens only the matching card", async () => {
+      window.location.hash = "#a-2";
+      render(
+        <ArticleList
+          articles={[
+            makeArticle({ id: "a-1", title: "First article" }),
+            makeArticle({ id: "a-2", title: "Second article" }),
+          ]}
+        />,
+      );
+
+      await waitFor(() => {
+        const cards = document.querySelectorAll("details");
+        expect(cards[0]).not.toHaveAttribute("open");
+        expect(cards[1]).toHaveAttribute("open");
+      });
+    });
+  });
 });

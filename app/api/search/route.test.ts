@@ -19,6 +19,7 @@ describe("GET /api/search", () => {
     const matches = [
       {
         articleId: "article-1",
+        argumentId: "arg-1",
         title: "Climate sensitivity",
         openCount: 12,
         score: 0.85,

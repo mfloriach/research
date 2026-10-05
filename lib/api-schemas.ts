@@ -98,6 +98,9 @@ export const searchResponseSchema = z
       .array(
         z.object({
           articleId: z.string().describe("Matched article ID"),
+          argumentId: z
+            .string()
+            .describe("Dossier ID owning the article (routes to it)"),
           title: z.string().describe("Matched article title"),
           openCount: z.number().describe("Matched article view count"),
           score: z.number().describe("Cosine similarity score"),

@@ -1,10 +1,12 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useState } from "react";
 import { EyeIcon, ShieldCheckIcon } from "./icons";
 
 export type SearchMatchView = {
   articleId: string;
+  argumentId: string;
   title: string;
   score: number;
   openCount: number;
@@ -199,8 +201,8 @@ export function Search({
                     <ul className="divide-y divide-base-300">
                       {results.matches.map((match) => (
                         <li key={match.articleId}>
-                          <a
-                            href={`#${match.articleId}`}
+                          <Link
+                            href={`/debate/argument/${match.argumentId}#${match.articleId}`}
                             className="flex items-center justify-between gap-3 py-2 text-left text-sm transition-colors hover:text-primary"
                             onClick={() => setOpen(false)}
                             title={match.title}
@@ -232,7 +234,7 @@ export function Search({
                                 </span>
                               ) : null}
                             </span>
-                          </a>
+                          </Link>
                         </li>
                       ))}
                     </ul>

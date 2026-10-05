@@ -44,8 +44,8 @@ describe("searchArticlesByText", () => {
         { articleId: "a", score: 0.7 },
       ],
       [
-        { _id: "a", title: "Alpha", openCount: 12 },
-        { _id: "b", title: "Beta", openCount: 34 },
+        { _id: "a", argumentId: "arg-1", title: "Alpha", openCount: 12 },
+        { _id: "b", argumentId: "arg-1", title: "Beta", openCount: 34 },
       ],
     );
 
@@ -53,8 +53,20 @@ describe("searchArticlesByText", () => {
 
     expect(top).toBe(0.9);
     expect(matches).toEqual([
-      { articleId: "b", title: "Beta", openCount: 34, score: 0.9 },
-      { articleId: "a", title: "Alpha", openCount: 12, score: 0.7 },
+      {
+        articleId: "b",
+        argumentId: "arg-1",
+        title: "Beta",
+        openCount: 34,
+        score: 0.9,
+      },
+      {
+        articleId: "a",
+        argumentId: "arg-1",
+        title: "Alpha",
+        openCount: 12,
+        score: 0.7,
+      },
     ]);
   });
 
@@ -64,7 +76,13 @@ describe("searchArticlesByText", () => {
     const { matches } = await searchArticlesByText("climate");
 
     expect(matches).toEqual([
-      { articleId: "missing", title: "missing", openCount: 0, score: 0.5 },
+      {
+        articleId: "missing",
+        argumentId: "",
+        title: "missing",
+        openCount: 0,
+        score: 0.5,
+      },
     ]);
   });
 

@@ -108,6 +108,7 @@ export function SiteNavbar({
       const data = (await response.json()) as {
         matches: {
           articleId: string;
+          argumentId: string;
           title: string;
           openCount: number;
           score: number;
@@ -118,6 +119,7 @@ export function SiteNavbar({
       setSearchResults({
         matches: data.matches.map((match) => ({
           articleId: match.articleId,
+          argumentId: match.argumentId ?? "",
           // The API resolves titles across every argument; fall back to
           // the id only for responses predating that field.
           title: match.title ?? match.articleId,
