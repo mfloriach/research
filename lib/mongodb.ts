@@ -33,7 +33,7 @@ function getClientPromise(): Promise<MongoClient> {
       monitorCommands: true,
       // Local single-node topologies (e.g. mongodb-atlas-local, which
       // advertises its internal container hostname) must be dialed directly.
-      // directConnection: true,
+      directConnection: true,
     });
     // attachMonitoring(client);
     const started = performance.now();

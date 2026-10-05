@@ -14,6 +14,8 @@ import { getDb, closeDb } from "../lib/mongodb";
 import { COLLECTIONS, migrate } from "./migration";
 import * as nuclear from "./nuclear";
 import * as rickandmorty from "./rickandmorty1_1";
+import * as bitcoin from "./bitcoin";
+import * as thecityoflostchildren from "./thecityoflostchildren";
 import { articleEmbeddingText, embedText } from "../lib/embeddings";
 
 type SeedDoc = {
@@ -183,6 +185,8 @@ export async function seed(): Promise<void> {
 
   await seedContent(db, nuclear as unknown as ContentModule);
   await seedContent(db, rickandmorty as unknown as ContentModule);
+  await seedContent(db, bitcoin as unknown as ContentModule);
+  await seedContent(db, thecityoflostchildren as unknown as ContentModule);
 }
 
 const isMain = process.argv[1]?.endsWith("seed.ts") ?? false;

@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "vercel-build": "tsx db/seed.ts",
     "db:migrate": "tsx db/migration.ts",
     "db:seed": "tsx db/seed.ts",
     "db:setup": "tsx db/seed.ts",
