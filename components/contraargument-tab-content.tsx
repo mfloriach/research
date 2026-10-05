@@ -15,17 +15,26 @@ import type { CollapsibleItem, ContentTab } from "@/db/nuclear";
 export type ContraargumentTabContentProps = {
   tab: ContentTab<CollapsibleItem>;
   selectedParagraphId: string | null;
+  /** Dossier id, threaded into the create link for breadcrumb context. */
+  argumentId?: string;
 };
 
 export function ContraargumentTabContent({
   tab,
   selectedParagraphId,
+  argumentId,
 }: ContraargumentTabContentProps) {
   const { isConnected } = useWallet();
   const router = useRouter();
-  const createHref = selectedParagraphId
-    ? `/debate/contraarguments/create?paragraphId=${selectedParagraphId}`
-    : "/debate/contraarguments/create";
+  const createParams = new URLSearchParams();
+  if (selectedParagraphId) {
+    createParams.set("paragraphId", selectedParagraphId);
+  }
+  if (argumentId) {
+    createParams.set("argumentId", argumentId);
+  }
+  const createQuery = createParams.toString();
+  const createHref = `/debate/contraarguments/create${createQuery ? `?${createQuery}` : ""}`;
 
   const [openCounts, setOpenCounts] = useState<Record<string, number>>(() =>
     Object.fromEntries(tab.items.map((item) => [item.id, item.openCount ?? 0])),

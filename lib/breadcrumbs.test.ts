@@ -1,49 +1,88 @@
-import { buildCrumbs, segmentLabel } from "@/lib/breadcrumbs";
+import { buildCrumbs, HOME_LABEL, segmentLabel } from "@/lib/breadcrumbs";
 
-const TOPIC = "Carbon border taxes, audited";
+const TITLE = "Carbon border taxes, audited";
+const ID = "arg-1";
 
 describe("buildCrumbs", () => {
-  it("leads with the static topic label, then the topic name", () => {
-    expect(buildCrumbs("/", TOPIC)).toEqual([
-      { label: "Topic" },
-      { label: TOPIC, href: "/" },
+  it("renders no trail on the landing page", () => {
+    expect(buildCrumbs({ pathname: "/" })).toEqual([]);
+  });
+
+  it("shows home and the argument title on the dossier route", () => {
+    expect(
+      buildCrumbs({ pathname: `/debate/argument/${ID}`, argumentTitle: TITLE }),
+    ).toEqual([
+      { label: HOME_LABEL, href: "/" },
+      { label: TITLE },
     ]);
   });
 
-  it("drills down through the full path", () => {
-    expect(buildCrumbs("/debate/contraarguments/create", TOPIC)).toEqual([
-      { label: "Topic" },
-      { label: TOPIC, href: "/" },
-      { label: "Debate", href: "/debate" },
-      { label: "Contraargument", href: "/debate/contraarguments" },
-      { label: "Create", href: "/debate/contraarguments/create" },
+  it("falls back to a generic label while the title loads", () => {
+    expect(buildCrumbs({ pathname: `/debate/argument/${ID}` })).toEqual([
+      { label: HOME_LABEL, href: "/" },
+      { label: "Argument" },
     ]);
   });
 
-  it("maps single-segment routes", () => {
-    expect(buildCrumbs("/debate/provenance", TOPIC)).toEqual([
-      { label: "Topic" },
-      { label: TOPIC, href: "/" },
+  it("shows home, argument and audit title on audit create routes", () => {
+    expect(
+      buildCrumbs({
+        pathname: "/debate/contraarguments/create",
+        argumentId: ID,
+        argumentTitle: TITLE,
+      }),
+    ).toEqual([
+      { label: HOME_LABEL, href: "/" },
+      { label: TITLE, href: `/debate/argument/${ID}` },
+      { label: "Contraargument" },
+    ]);
+  });
+
+  it("omits the argument crumb when its title is unknown", () => {
+    expect(
+      buildCrumbs({ pathname: "/debate/evidences/create" }),
+    ).toEqual([
+      { label: HOME_LABEL, href: "/" },
+      { label: "Evidences" },
+    ]);
+  });
+
+  it("covers the report create and provenance routes", () => {
+    expect(
+      buildCrumbs({
+        pathname: "/debate/create",
+        argumentId: ID,
+        argumentTitle: TITLE,
+      }),
+    ).toEqual([
+      { label: HOME_LABEL, href: "/" },
+      { label: TITLE, href: `/debate/argument/${ID}` },
+      { label: "Create" },
+    ]);
+    expect(buildCrumbs({ pathname: "/debate/provenance" })).toEqual([
+      { label: HOME_LABEL, href: "/" },
+      { label: "Provenance" },
+    ]);
+  });
+
+  it("falls back to one crumb per segment for unknown routes", () => {
+    expect(buildCrumbs({ pathname: "/audit-report" })).toEqual([
+      { label: HOME_LABEL, href: "/" },
+      { label: "Audit report", href: "/audit-report" },
+    ]);
+    expect(buildCrumbs({ pathname: "/debate/unknown-page" })).toEqual([
+      { label: HOME_LABEL, href: "/" },
       { label: "Debate", href: "/debate" },
-      { label: "Provenance", href: "/debate/provenance" },
+      { label: "Unknown page", href: "/debate/unknown-page" },
     ]);
   });
 
   it("ignores trailing slashes and empty segments", () => {
-    expect(buildCrumbs("/debate//sources/create/", TOPIC)).toEqual([
-      { label: "Topic" },
-      { label: TOPIC, href: "/" },
-      { label: "Debate", href: "/debate" },
-      { label: "Sources", href: "/debate/sources" },
-      { label: "Create", href: "/debate/sources/create" },
-    ]);
-  });
-
-  it("humanises segments with no explicit label", () => {
-    expect(buildCrumbs("/audit-report", TOPIC)).toEqual([
-      { label: "Topic" },
-      { label: TOPIC, href: "/" },
-      { label: "Audit report", href: "/audit-report" },
+    expect(
+      buildCrumbs({ pathname: `/debate/argument/${ID}/` }),
+    ).toEqual([
+      { label: HOME_LABEL, href: "/" },
+      { label: "Argument" },
     ]);
   });
 
@@ -54,30 +93,5 @@ describe("buildCrumbs", () => {
   it("prefers the canonical label over humanising", () => {
     expect(segmentLabel("interpretations")).toBe("Interpretation");
     expect(segmentLabel("evidences")).toBe("Evidences");
-  });
-
-  it("keeps query strings out of the href", () => {
-    // The pathname never carries a query, but assert we do not leak one.
-    expect(buildCrumbs("/debate/evidences/create", TOPIC).at(-1)?.href).toBe(
-      "/debate/evidences/create",
-    );
-  });
-
-  it("covers every audit route", () => {
-    const expected: Record<string, string> = {
-      "/debate/create": "Create",
-      "/debate/contraarguments/create": "Create",
-      "/debate/evidences/create": "Create",
-      "/debate/fallacies/create": "Create",
-      "/debate/interpretations/create": "Create",
-      "/debate/sources/create": "Create",
-      "/debate/provenance": "Provenance",
-    };
-    for (const [pathname, last] of Object.entries(expected)) {
-      expect(buildCrumbs(pathname, TOPIC).at(-1)).toEqual({
-        label: last,
-        href: pathname,
-      });
-    }
   });
 });

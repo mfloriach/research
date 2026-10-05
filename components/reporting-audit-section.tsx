@@ -42,6 +42,8 @@ export type ReportingAuditSectionProps = {
   reportingResetKey?: string;
   /** True when a filter narrowed every reporting tab away. */
   reportingEmpty?: boolean;
+  /** Dossier id, threaded into audit create links for breadcrumb context. */
+  argumentId?: string;
 };
 
 export function ReportingAuditSection({
@@ -49,6 +51,7 @@ export function ReportingAuditSection({
   auditCard,
   reportingResetKey,
   reportingEmpty = false,
+  argumentId,
 }: ReportingAuditSectionProps) {
   const [selected, setSelected] = useState<SelectedParagraph | null>(null);
 
@@ -135,6 +138,7 @@ export function ReportingAuditSection({
                 <AuditTabContent
                   tab={tab}
                   selectedParagraphId={selected?.paragraphId ?? null}
+                  argumentId={argumentId}
                 />
               ),
             }))}
@@ -148,31 +152,46 @@ export function ReportingAuditSection({
 function AuditTabContent({
   tab,
   selectedParagraphId,
+  argumentId,
 }: {
   tab: ContentTab<CollapsibleItem>;
   selectedParagraphId: string | null;
+  argumentId?: string;
 }) {
   if (tab.label === "Contraargument") {
     return (
       <ContraargumentTabContent
         tab={tab}
         selectedParagraphId={selectedParagraphId}
+        argumentId={argumentId}
       />
     );
   }
   if (tab.label === "Fallacies") {
     return (
-      <FallacyTabContent tab={tab} selectedParagraphId={selectedParagraphId} />
+      <FallacyTabContent
+        tab={tab}
+        selectedParagraphId={selectedParagraphId}
+        argumentId={argumentId}
+      />
     );
   }
   if (tab.label === "Evidences") {
     return (
-      <EvidenceTabContent tab={tab} selectedParagraphId={selectedParagraphId} />
+      <EvidenceTabContent
+        tab={tab}
+        selectedParagraphId={selectedParagraphId}
+        argumentId={argumentId}
+      />
     );
   }
   if (tab.label === "Sources") {
     return (
-      <SourceTabContent tab={tab} selectedParagraphId={selectedParagraphId} />
+      <SourceTabContent
+        tab={tab}
+        selectedParagraphId={selectedParagraphId}
+        argumentId={argumentId}
+      />
     );
   }
   if (tab.label === "Interpretation") {
@@ -180,6 +199,7 @@ function AuditTabContent({
       <InterpretationTabContent
         tab={tab}
         selectedParagraphId={selectedParagraphId}
+        argumentId={argumentId}
       />
     );
   }

@@ -100,7 +100,7 @@ export function Dossier({ id }: { id: string }) {
               ? "Create a new report"
               : "Connect your wallet to create a report"
           }
-          onClick={() => router.push("/debate/create")}
+          onClick={() => router.push(`/debate/create?argumentId=${id}`)}
         >
           Create new report
         </button>
@@ -119,6 +119,7 @@ export function Dossier({ id }: { id: string }) {
         auditCard={auditCard}
         reportingResetKey={articleFilterQuery(filter)}
         reportingEmpty={total === 0}
+        argumentId={id}
       />
     </>
   );

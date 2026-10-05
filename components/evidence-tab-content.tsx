@@ -15,17 +15,26 @@ import type { CollapsibleItem, ContentTab } from "@/db/nuclear";
 export type EvidenceTabContentProps = {
   tab: ContentTab<CollapsibleItem>;
   selectedParagraphId: string | null;
+  /** Dossier id, threaded into the create link for breadcrumb context. */
+  argumentId?: string;
 };
 
 export function EvidenceTabContent({
   tab,
   selectedParagraphId,
+  argumentId,
 }: EvidenceTabContentProps) {
   const { isConnected } = useWallet();
   const router = useRouter();
-  const createHref = selectedParagraphId
-    ? `/debate/evidences/create?paragraphId=${selectedParagraphId}`
-    : "/debate/evidences/create";
+  const createParams = new URLSearchParams();
+  if (selectedParagraphId) {
+    createParams.set("paragraphId", selectedParagraphId);
+  }
+  if (argumentId) {
+    createParams.set("argumentId", argumentId);
+  }
+  const createQuery = createParams.toString();
+  const createHref = `/debate/evidences/create${createQuery ? `?${createQuery}` : ""}`;
 
   const [openCounts, setOpenCounts] = useState<Record<string, number>>(() =>
     Object.fromEntries(tab.items.map((item) => [item.id, item.openCount ?? 0])),

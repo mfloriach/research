@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Newsreader } from "next/font/google";
-import { cache } from "react";
+import { cache, Suspense } from "react";
 import { argument as argumentFallback } from "@/db/nuclear";
 import { getContentFromDb } from "@/lib/content-db";
 import { Breadcrumbs } from "@/components/breadcrumbs";
@@ -45,8 +45,6 @@ export async function generateMetadata(): Promise<Metadata> {
 }
 
 export default async function RootLayout({ children }: LayoutProps<"/">) {
-  const argument = await loadArgument();
-
   return (
     <html
       lang="en"
@@ -59,7 +57,9 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
           avatar={site.avatar}
         />
         <div className="mx-12">
-          <Breadcrumbs topic={argument.title} />
+          <Suspense fallback={null}>
+            <Breadcrumbs />
+          </Suspense>
         </div>
         {children}
       </body>

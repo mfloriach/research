@@ -15,17 +15,26 @@ import type { CollapsibleItem, ContentTab } from "@/db/nuclear";
 export type InterpretationTabContentProps = {
   tab: ContentTab<CollapsibleItem>;
   selectedParagraphId: string | null;
+  /** Dossier id, threaded into the create link for breadcrumb context. */
+  argumentId?: string;
 };
 
 export function InterpretationTabContent({
   tab,
   selectedParagraphId,
+  argumentId,
 }: InterpretationTabContentProps) {
   const { isConnected } = useWallet();
   const router = useRouter();
-  const createHref = selectedParagraphId
-    ? `/debate/interpretations/create?paragraphId=${selectedParagraphId}`
-    : "/debate/interpretations/create";
+  const createParams = new URLSearchParams();
+  if (selectedParagraphId) {
+    createParams.set("paragraphId", selectedParagraphId);
+  }
+  if (argumentId) {
+    createParams.set("argumentId", argumentId);
+  }
+  const createQuery = createParams.toString();
+  const createHref = `/debate/interpretations/create${createQuery ? `?${createQuery}` : ""}`;
 
   const [openCounts, setOpenCounts] = useState<Record<string, number>>(() =>
     Object.fromEntries(tab.items.map((item) => [item.id, item.openCount ?? 0])),
