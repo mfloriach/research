@@ -1,4 +1,3 @@
-import { AUDIT_TABS } from "@/db/nuclear";
 import type { DbContent } from "@/lib/content-db";
 
 export type IndexedArticle = {
@@ -100,11 +99,6 @@ export type ArticleTypeCount = {
   percent: number;
 };
 
-function tabRank(tab: string): number {
-  const rank = AUDIT_TABS.findIndex((entry) => entry.label === tab);
-  return rank === -1 ? AUDIT_TABS.length : rank;
-}
-
 export function summarizeArticle(
   index: ContentIndex,
   articleId: string,
@@ -119,13 +113,11 @@ export function summarizeArticle(
     counts.set(tab, (counts.get(tab) ?? 0) + 1);
   }
   const total = article.auditItemIds.length;
-  return [...counts.entries()]
-    .sort(([a], [b]) => tabRank(a) - tabRank(b))
-    .map(([tab, count]) => ({
-      tab,
-      count,
-      percent: total === 0 ? 0 : (count / total) * 100,
-    }));
+  return [...counts.entries()].map(([tab, count]) => ({
+    tab,
+    count,
+    percent: total === 0 ? 0 : (count / total) * 100,
+  }));
 }
 
 export type ArticleTableRow = {

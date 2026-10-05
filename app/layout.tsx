@@ -54,7 +54,6 @@ export default async function RootLayout({ children }: LayoutProps<"/">) {
         <SiteNavbar
           brand={site.brand}
           search={site.search}
-          avatar={site.avatar}
         />
         <div className="mx-12">
           <Suspense fallback={null}>

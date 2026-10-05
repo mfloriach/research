@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import Image from "next/image";
 import {
   ANVIL_CHAIN_ID_DEC,
   ANVIL_CHAIN_ID_HEX,
@@ -11,6 +10,7 @@ import {
   type AnvilEthereumProvider,
 } from "@/lib/anvil";
 import { useSiweAuth } from "@/app/hooks/use-siwe-auth";
+import { UserIcon } from "./icons";
 import { Search, type SearchResults } from "./search";
 import { config } from "@/lib/config";
 
@@ -33,10 +33,6 @@ export type SiteNavbarProps = {
     placeholder: string;
     label: string;
   };
-  avatar: {
-    src: string;
-    alt: string;
-  };
   connect?: {
     label: string;
     connectingLabel?: string;
@@ -54,11 +50,12 @@ export type SiteNavbarProps = {
 /**
  * Top navigation bar: brand, search field and wallet-gated account UI.
  *
- * If a wallet is connected to the local Anvil chain, renders the avatar
- * dropdown menu. Otherwise renders a connect button that switches the
- * injected EIP-1193 provider to Anvil (`http://127.0.0.1:8545`, chain 31337)
- * and requests accounts. When no injected wallet exists, it falls back to
- * Anvil's unlocked accounts over direct JSON-RPC (local dev only).
+ * If a wallet is connected to the local Anvil chain, renders the account
+ * dropdown menu behind a rounded person icon. Otherwise renders a connect
+ * button that switches the injected EIP-1193 provider to Anvil
+ * (`http://127.0.0.1:8545`, chain 31337) and requests accounts. When no
+ * injected wallet exists, it falls back to Anvil's unlocked accounts over
+ * direct JSON-RPC (local dev only).
  *
  * Connecting with an injected wallet also runs Sign-In with Ethereum:
  * the wallet signs an EIP-4361 message (`personal_sign`) and the server
@@ -68,7 +65,6 @@ export type SiteNavbarProps = {
 export function SiteNavbar({
   brand,
   search,
-  avatar,
   connect = { label: "Connect wallet" },
   disconnect = {},
   walletAddress,
@@ -355,15 +351,11 @@ export function SiteNavbar({
             <div
               tabIndex={0}
               role="button"
+              aria-label={MENU_LABEL}
               className="btn btn-ghost btn-circle avatar"
             >
-              <div className="w-10 rounded-full">
-                <Image
-                  src={avatar.src}
-                  alt={avatar.alt}
-                  width={40}
-                  height={40}
-                />
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-base-200">
+                <UserIcon />
               </div>
             </div>
             <ul
