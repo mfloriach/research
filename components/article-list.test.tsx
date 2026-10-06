@@ -500,5 +500,40 @@ describe("ArticleList", () => {
         expect(cards[1]).toHaveAttribute("open");
       });
     });
+
+    it("activates the tab holding the hash-linked card", async () => {
+      window.location.hash = "#a-2";
+      render(
+        <div className="tabs">
+          <input
+            type="radio"
+            name="reporting"
+            className="tab"
+            aria-label="First (1)"
+            defaultChecked
+          />
+          <div className="tab-content">
+            <ArticleList articles={[makeArticle({ id: "a-1" })]} />
+          </div>
+          <input
+            type="radio"
+            name="reporting"
+            className="tab"
+            aria-label="Second (1)"
+          />
+          <div className="tab-content">
+            <ArticleList articles={[makeArticle({ id: "a-2" })]} />
+          </div>
+        </div>,
+      );
+
+      await waitFor(() => {
+        const radios = screen.getAllByRole("radio");
+        expect(radios[0]).not.toBeChecked();
+        expect(radios[1]).toBeChecked();
+      });
+      const cards = document.querySelectorAll("details");
+      expect(cards[1]).toHaveAttribute("open");
+    });
   });
 });

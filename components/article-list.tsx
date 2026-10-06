@@ -81,8 +81,10 @@ export function ArticleList({
 
   // Deep link: a `#article-id` hash (e.g. from search results) opens the
   // matching card once it renders and scrolls it into view, recording the
-  // open like a manual expand. Runs once per id so the user can close the
-  // card afterwards without it springing back open.
+  // open like a manual expand. The card may live in an inactive tab, so the
+  // tab is activated first — otherwise the opened card stays invisible.
+  // Runs once per id so the user can close the card afterwards without it
+  // springing back open.
   const focusedArticleId = useFocusedArticleId();
   const focusedOpenedRef = useRef<string | null>(null);
   useEffect(() => {
@@ -95,12 +97,27 @@ export function ArticleList({
     }
     focusedOpenedRef.current = focusedArticleId;
     const card = document.getElementById(focusedArticleId);
-    if (card instanceof HTMLDetailsElement && !card.open) {
+    if (!(card instanceof HTMLDetailsElement)) {
+      return;
+    }
+    const tabInput =
+      card.closest(".tab-content")?.previousElementSibling ?? null;
+    if (
+      tabInput instanceof HTMLInputElement &&
+      tabInput.type === "radio" &&
+      !tabInput.checked
+    ) {
+      tabInput.checked = true;
+    }
+    if (!card.open) {
       card.open = true;
     }
-    if (typeof card?.scrollIntoView === "function") {
-      card?.scrollIntoView({ behavior: "smooth", block: "start" });
+    if (typeof card.scrollIntoView === "function") {
+      card.scrollIntoView({ behavior: "smooth", block: "start" });
     }
+    // Guarded by focusedOpenedRef above, so this runs once per deep-linked
+    // id and cannot cascade: the open is recorded like a manual expand.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void handleOpen(focusedArticleId);
   }, [focusedArticleId, articleIds, handleOpen]);
 
