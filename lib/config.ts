@@ -51,10 +51,7 @@ export const publicSchema = z.object({
     "NEXT_PUBLIC_IPFS_GATEWAY_URL",
     "http://127.0.0.1:8080",
   ).transform((value) => value.replace(/\/$/, "")),
-  anvilRpcUrl: urlSchema(
-    "NEXT_PUBLIC_ANVIL_RPC_URL",
-    "http://127.0.0.1:8545",
-  ),
+  anvilRpcUrl: urlSchema("NEXT_PUBLIC_ANVIL_RPC_URL", "http://127.0.0.1:8545"),
   attestationContractAddress: addressSchema(
     "NEXT_PUBLIC_ATTESTATION_CONTRACT_ADDRESS",
   ),

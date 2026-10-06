@@ -10,7 +10,8 @@ import {
   type AuditSortMode,
 } from "@/lib/audit-sort";
 import { useWallet } from "@/app/hooks/use-wallet";
-import type { CollapsibleItem, ContentTab } from "@/db/nuclear";
+import type { CollapsibleItem, ContentTab } from "@/db/types";
+import { setCountInterpretationOpen } from "@/lib/api";
 
 export type InterpretationTabContentProps = {
   tab: ContentTab<CollapsibleItem>;
@@ -64,21 +65,11 @@ export function InterpretationTabContent({
   async function handleOpen(itemId: string) {
     setOpenCounts((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? 0) + 1 }));
     try {
-      const response = await fetch(
-        `/api/audits/interpretations/${itemId}/open`,
-        { method: "POST" },
-      );
-      if (!response.ok) {
-        throw new Error(`status ${response.status}`);
-      }
-
-      const { openCount }: { openCount?: number } = await response.json();
-      if (typeof openCount === "number") {
-        setOpenCounts((prev) => ({
-          ...prev,
-          [itemId]: openCount as number,
-        }));
-      }
+      const openCount = await setCountInterpretationOpen(itemId);
+      setOpenCounts((prev) => ({
+        ...prev,
+        [itemId]: openCount,
+      }));
     } catch {
       setOpenCounts((prev) => ({
         ...prev,

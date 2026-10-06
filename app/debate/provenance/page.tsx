@@ -8,7 +8,7 @@ import { useContentIndex } from "@/app/hooks/use-content-index";
 import { CopyButton } from "@/components/copy-button";
 import {
   ProvenanceSummary,
-  kindBadgeClass,
+  kindBadgeClassMap,
 } from "@/components/provenance-summary";
 import { ipfsGatewayUrl } from "@/lib/ipfs";
 import { truncateText, formatTime } from "@/lib/utils";
@@ -140,7 +140,7 @@ function ProvenanceContent() {
                                   <td>
                                     <span className="flex items-center justify-center gap-1.5">
                                       <span
-                                        className={`badge badge-sm ${kindBadgeClass(row.tab)}`}
+                                        className={`badge badge-sm ${kindBadgeClassMap[row.tab] ?? "badge-neutral"}`}
                                       >
                                         {row.tab}
                                       </span>
@@ -229,7 +229,7 @@ function ProvenanceContent() {
                           <td className="text-xs">
                             <span className="flex items-center gap-1.5">
                               <span
-                                className={`badge badge-sm ${kindBadgeClass(resolved.kind)}`}
+                                className={`badge badge-sm ${kindBadgeClassMap[resolved.kind] ?? "badge-neutral"}`}
                               >
                                 {resolved.kind}
                               </span>

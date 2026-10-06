@@ -10,7 +10,8 @@ import {
   type AuditSortMode,
 } from "@/lib/audit-sort";
 import { useWallet } from "@/app/hooks/use-wallet";
-import type { CollapsibleItem, ContentTab } from "@/db/nuclear";
+import type { CollapsibleItem, ContentTab } from "@/db/types";
+import { setCountContraargumentOpen } from "@/lib/api";
 
 export type ContraargumentTabContentProps = {
   tab: ContentTab<CollapsibleItem>;
@@ -55,6 +56,7 @@ export function ContraargumentTabContent({
       ),
     [attestations],
   );
+
   const sortedItems = useMemo(
     () => sortAuditItems(tab.items, sort, { openCounts, attestationCounts }),
     [tab.items, sort, openCounts, attestationCounts],
@@ -63,20 +65,11 @@ export function ContraargumentTabContent({
   async function handleOpen(itemId: string) {
     setOpenCounts((prev) => ({ ...prev, [itemId]: (prev[itemId] ?? 0) + 1 }));
     try {
-      const response = await fetch(
-        `/api/audits/contraarguments/${itemId}/open`,
-        { method: "POST" },
-      );
-      if (!response.ok) {
-        throw new Error(`status ${response.status}`);
-      }
-      const data = (await response.json()) as { openCount?: number };
-      if (typeof data.openCount === "number") {
-        setOpenCounts((prev) => ({
-          ...prev,
-          [itemId]: data.openCount as number,
-        }));
-      }
+      const openCount = await setCountContraargumentOpen(itemId);
+      setOpenCounts((prev) => ({
+        ...prev,
+        [itemId]: openCount,
+      }));
     } catch {
       setOpenCounts((prev) => ({
         ...prev,

@@ -101,3 +101,67 @@ export async function setCountArticleOpen(articleId: string): Promise<number> {
 
   return openCount;
 }
+
+export async function setCountContraargumentOpen(
+  contraargumentId: string,
+): Promise<number> {
+  const response = await fetch(
+    `/api/contraarguments/${contraargumentId}/open`,
+    {
+      method: "POST",
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`status ${response.status}`);
+  }
+
+  const { openCount } = (await response.json()) as { openCount: number };
+
+  return openCount;
+}
+
+export async function setCountEvidenceOpen(
+  evidenceId: string,
+): Promise<number> {
+  const response = await fetch(`/api/evidences/${evidenceId}/open`, {
+    method: "POST",
+  });
+  if (!response.ok) {
+    throw new Error(`status ${response.status}`);
+  }
+
+  const { openCount } = (await response.json()) as { openCount: number };
+
+  return openCount;
+}
+
+export async function setCountFallacyOpen(fallacyId: string): Promise<number> {
+  const response = await fetch(`/api/fallacies/${fallacyId}/open`, {
+    method: "POST",
+  });
+  if (!response.ok) {
+    throw new Error(`status ${response.status}`);
+  }
+
+  const { openCount } = (await response.json()) as { openCount: number };
+
+  return openCount;
+}
+
+export async function setCountInterpretationOpen(
+  interpretationId: string,
+): Promise<number> {
+  const response = await fetch(
+    `/api/interpretations/${interpretationId}/open`,
+    {
+      method: "POST",
+    },
+  );
+  if (!response.ok) {
+    throw new Error(`status ${response.status}`);
+  }
+
+  const { openCount } = (await response.json()) as { openCount: number };
+
+  return openCount;
+}

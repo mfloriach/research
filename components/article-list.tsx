@@ -8,7 +8,7 @@ import {
 import { useAttestations } from "@/app/hooks/use-attestation";
 import { useFocusedArticleId } from "@/app/hooks/use-focused-article";
 import { useWallet } from "@/app/hooks/use-wallet";
-import type { Article, ReportingParagraph } from "@/db/nuclear";
+import type { Article, ReportingParagraph } from "@/db/types";
 import { setCountArticleOpen } from "@/lib/api";
 
 export type { ParagraphSelection };

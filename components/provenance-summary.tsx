@@ -1,40 +1,21 @@
 import type { ArticleView } from "@/app/hooks/use-content-index";
 
-export function kindBadgeClass(kind: string): string {
-  switch (kind) {
-    case "Article":
-      return "badge-neutral";
-    case "Contraargument":
-      return "badge-warning";
-    case "Fallacies":
-      return "badge-error";
-    case "Evidences":
-      return "badge-success";
-    case "Sources":
-      return "badge-info";
-    case "Interpretation":
-      return "badge-accent";
-    default:
-      return "badge-ghost";
-  }
-}
+export const kindBadgeClassMap: Record<string, string> = {
+  Article: "badge-neutral",
+  Contraargument: "badge-warning",
+  Fallacies: "badge-error",
+  Evidences: "badge-success",
+  Sources: "badge-info",
+  Interpretation: "badge-accent",
+};
 
-function kindBarClass(kind: string): string {
-  switch (kind) {
-    case "Contraargument":
-      return "bg-warning";
-    case "Fallacies":
-      return "bg-error";
-    case "Evidences":
-      return "bg-success";
-    case "Sources":
-      return "bg-info";
-    case "Interpretation":
-      return "bg-accent";
-    default:
-      return "bg-neutral";
-  }
-}
+const kindBarClassMap: Record<string, string> = {
+  Contraargument: "bg-warning",
+  Fallacies: "bg-error",
+  Evidences: "bg-success",
+  Sources: "bg-info",
+  Interpretation: "bg-accent",
+};
 
 type ProvenanceSummaryProps = {
   articles: ArticleView[];
@@ -73,13 +54,13 @@ export function ProvenanceSummary({ articles }: ProvenanceSummaryProps) {
                   {article.counts.map((entry) => (
                     <div key={entry.tab} className="flex items-center gap-2">
                       <span
-                        className={`badge badge-sm w-32 justify-center ${kindBadgeClass(entry.tab)}`}
+                        className={`badge badge-sm w-32 justify-center ${kindBadgeClassMap[entry.tab] ?? "badge-neutral"}`}
                       >
                         {entry.tab}
                       </span>
                       <div className="h-2.5 flex-1 overflow-hidden rounded-full bg-base-300">
                         <div
-                          className={`h-full rounded-full ${kindBarClass(entry.tab)}`}
+                          className={`h-full rounded-full ${kindBarClassMap[entry.tab] ?? "bg-neutral"}`}
                           style={{ width: `${entry.percent}%` }}
                           title={`${entry.tab}: ${entry.count} (${Math.round(entry.percent)}%)`}
                         />
