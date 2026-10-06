@@ -4,17 +4,12 @@ import { getServerConfig } from "@/lib/config";
 
 /**
  * Server-only IPFS access via the local Kubo node (see docker-compose.yml).
- * Never import this module from client components.
+ * Never import this module from client components: it pulls in the Kubo RPC
+ * client and reads server secrets at import time, which throws in the
+ * browser. Client components needing a gateway link use `lib/ipfs-gateway`.
  */
 
 const { ipfsRpcUrl } = getServerConfig();
-
-/** Client-safe IPFS gateway helpers (no Kubo dependency). */
-import { config } from "@/lib/config";
-
-export function ipfsGatewayUrl(cid: string): string {
-  return `${config.ipfsGatewayUrl}/ipfs/${cid}`;
-}
 
 let client: KuboRPCClient | null = null;
 

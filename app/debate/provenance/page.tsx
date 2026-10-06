@@ -10,8 +10,8 @@ import {
   ProvenanceSummary,
   kindBadgeClassMap,
 } from "@/components/provenance-summary";
-import { ipfsGatewayUrl } from "@/lib/ipfs";
-import { truncateText, formatTime } from "@/lib/utils";
+import { ipfsGatewayUrl } from "@/lib/ipfs-gateway";
+import { truncateAddress, truncateText, formatTime } from "@/lib/utils";
 
 export default function ProvenancePage() {
   return (
@@ -62,14 +62,14 @@ function ProvenanceContent() {
           {wallet ? (
             <>
               <span className="font-semibold">
-                {walletName ?? truncateText(wallet)}
+                {walletName ?? truncateAddress(wallet)}
               </span>
               {walletName ? (
                 <span
                   className="font-mono text-xs text-base-content/60"
                   title={wallet}
                 >
-                  {truncateText(wallet)}
+                  {truncateAddress(wallet)}
                 </span>
               ) : null}
             </>
