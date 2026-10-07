@@ -1,10 +1,24 @@
 import { NextResponse } from "next/server";
 import { BadRequestError } from "@/lib/errors";
-import {
-  argumentQuerySchema,
-  type HotTopicsSort,
-} from "@/lib/api-schemas";
+import { argumentQuerySchema, type HotTopicsSort } from "@/lib/api-schemas";
 import { listArguments } from "@/app/server/repositories/arguments";
+import { z } from "zod";
+import { parseJson } from "@/lib/parse_json";
+
+export const searchSchema = z.object({
+  labels: z
+    .string({ error: "Labels must be a string" })
+    .trim()
+    .min(3, {
+      error: `Labels must be between 3 characters`,
+    })
+    .optional(),
+  sort: z
+    .string({ error: "Sort must be a string" })
+    .trim()
+    .min(1, { error: "Sort must not be empty" })
+    .optional(),
+});
 
 /**
  * List hot-topic arguments
@@ -36,6 +50,7 @@ export const GET = async (request: Request) => {
     .split(",")
     .map((label) => label.trim())
     .filter((label) => label !== "");
+
   const sort: HotTopicsSort = parsed.data.sort ?? "newest";
 
   const items = await listArguments({ labels, sort });
