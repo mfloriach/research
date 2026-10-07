@@ -87,9 +87,15 @@ export function Dossier({ id }: { id: string }) {
     <>
       <div className="flex flex-wrap items-start justify-between gap-4 mx-4">
         <div className="max-w-3xl">
-          <h1 className="font-serif text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+          <p className="font-mono text-[11px] font-medium uppercase tracking-[0.18em] text-primary">
+            Dossier
+          </p>
+          <h1 className="mt-2 font-serif text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
             {argument.title}
           </h1>
+          <p className="mt-3 max-w-3xl text-[15px] leading-relaxed text-base-content/70">
+            {argument.description}
+          </p>
         </div>
         <button
           type="button"

@@ -27,7 +27,7 @@ export type TabbedCardProps = {
  * Tabs use radio inputs, so switching them is pure CSS and this component
  * stays a Server Component — no hydration cost.
  */
-export function TabbedCard({ name, tabs, defaultTabId, tone = "plain" }: TabbedCardProps) {
+export function TabbedCard({ name, title, tabs, defaultTabId, tone = "plain" }: TabbedCardProps) {
   if (tabs.length === 0) {
     return null;
   }
@@ -36,6 +36,11 @@ export function TabbedCard({ name, tabs, defaultTabId, tone = "plain" }: TabbedC
 
   return (
     <section>
+      <div className="flex items-baseline justify-between gap-4 px-3 pb-3 sm:px-4">
+        <h2 className="font-serif text-2xl font-semibold tracking-tight text-balance">
+          {title}
+        </h2>
+      </div>
       <div className="px-3 pb-3 sm:px-4 sm:pb-4">
         <div className="tabs tabs-lift">
           {tabs.map((tab) => (
