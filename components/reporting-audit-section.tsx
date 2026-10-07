@@ -14,7 +14,7 @@ import type {
   CollapsibleItem,
   ContentTab,
   ReportingParagraph,
-} from "@/db/nuclear";
+} from "@/db/types";
 
 export type SelectedParagraph = {
   articleId: string;
@@ -83,7 +83,7 @@ export function ReportingAuditSection({
     const filtered = auditCard.tabs
       .map((tab) => ({
         ...tab,
-        items: tab.items.filter((item) => wanted.has(item.id)),
+        items: tab.items.filter((item: any) => wanted.has(item.id)),
       }))
       .filter((tab) => tab.items.length > 0);
     return filtered.length > 0 ? filtered : auditCard.tabs;
@@ -149,6 +149,14 @@ export function ReportingAuditSection({
   );
 }
 
+const auditTabContent: Record<string, React.ComponentType<any>> = {
+  Contraargument: ContraargumentTabContent,
+  Fallacies: FallacyTabContent,
+  Evidences: EvidenceTabContent,
+  Sources: SourceTabContent,
+  Interpretation: InterpretationTabContent,
+};
+
 function AuditTabContent({
   tab,
   selectedParagraphId,
@@ -158,51 +166,17 @@ function AuditTabContent({
   selectedParagraphId: string | null;
   argumentId?: string;
 }) {
-  if (tab.label === "Contraargument") {
+  const TabContent = auditTabContent[tab.label];
+  if (TabContent) {
     return (
-      <ContraargumentTabContent
+      <TabContent
         tab={tab}
         selectedParagraphId={selectedParagraphId}
         argumentId={argumentId}
       />
     );
   }
-  if (tab.label === "Fallacies") {
-    return (
-      <FallacyTabContent
-        tab={tab}
-        selectedParagraphId={selectedParagraphId}
-        argumentId={argumentId}
-      />
-    );
-  }
-  if (tab.label === "Evidences") {
-    return (
-      <EvidenceTabContent
-        tab={tab}
-        selectedParagraphId={selectedParagraphId}
-        argumentId={argumentId}
-      />
-    );
-  }
-  if (tab.label === "Sources") {
-    return (
-      <SourceTabContent
-        tab={tab}
-        selectedParagraphId={selectedParagraphId}
-        argumentId={argumentId}
-      />
-    );
-  }
-  if (tab.label === "Interpretation") {
-    return (
-      <InterpretationTabContent
-        tab={tab}
-        selectedParagraphId={selectedParagraphId}
-        argumentId={argumentId}
-      />
-    );
-  }
+
   return (
     <div className="space-y-4">
       {(tab.author ?? tab.date) && (
