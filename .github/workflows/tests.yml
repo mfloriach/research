@@ -35,17 +35,6 @@ jobs:
     name: E2E tests
     runs-on: ubuntu-latest
 
-    services:
-      # Atlas-local runs as a replica set, which db:migrate's waitForPrimary
-      # needs. Readiness is covered by that retry loop, so no healthcheck.
-      mongodb:
-        image: mongodb/mongodb-atlas-local:7
-        ports:
-          - 27017:27017
-        env:
-          MONGODB_INITDB_ROOT_USERNAME: admin
-          MONGODB_INITDB_ROOT_PASSWORD: admin123
-
     env:
       MONGODB_URI: mongodb://admin:admin123@localhost:27017/epistimology_test?authSource=admin
       MONGODB_DB: epistimology_test
@@ -67,6 +56,20 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
+      - name: Cache Playwright browsers
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: ${{ runner.os }}-playwright-${{ hashFiles('package-lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-playwright-
+
+      - name: Start docker compose services
+        # Same atlas-local replica-set image as local dev; only mongodb is
+        # needed (no anvil/ipfs). Readiness is covered by db:migrate's
+        # waitForPrimary retry loop.
+        run: docker compose up -d
+
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium
 
@@ -83,3 +86,7 @@ jobs:
           name: playwright-report
           path: playwright-report/
           retention-days: 7
+
+      - name: Stop docker compose services
+        if: always()
+        run: docker compose down

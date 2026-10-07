@@ -2,6 +2,7 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 [![Docs](https://img.shields.io/badge/docs-GitHub%20Pages-blue)](https://mfloriach.github.io/research/)
 [![Deploy Docusaurus](https://github.com/mfloriach/research/actions/workflows/deploy-docs.yml/badge.svg)](https://github.com/mfloriach/research/actions/workflows/deploy-docs.yml)
+[![Tests](https://github.com/mfloriach/research/actions/workflows/tests.yml/badge.svg)](https://github.com/mfloriach/research/actions/workflows/tests.yml)
 
 ## Getting Started
 
