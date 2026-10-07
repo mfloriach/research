@@ -12,6 +12,7 @@ import { parseJson } from "@/lib/parse_json";
  * @requestBody AuditItemInput required
  * @response 201:AuditItemResponse:Contraargument created
  * @response 400:ErrorResponse:Invalid input
+ * @response 401:ErrorResponse:Authentication required
  * @response 500:ErrorResponse:Storage failed
  * @openapi
  */

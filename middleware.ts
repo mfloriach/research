@@ -22,7 +22,6 @@ export function getClientIp(request: Request): string {
 
 /**
  * Resolve the SIWE session address without ever failing the request.
- * Auth is informational here: protected routes enforce it themselves.
  * Any misconfiguration or invalid token resolves to `null`.
  */
 async function resolveSessionAddress(
@@ -43,6 +42,21 @@ async function resolveSessionAddress(
   }
 }
 
+/**
+ * Audit creators (POST /api/audits/<tab>) require a JWT session; every
+ * other route stays public, including view-count open posts. Matches
+ * the collection level only (3 path segments), never deeper routes.
+ */
+function requiresSession(pathname: string, method: string): boolean {
+  if (method !== "POST") {
+    return false;
+  }
+  const segments = pathname.split("/").filter((part) => part !== "");
+  return (
+    segments.length === 3 && segments[0] === "api" && segments[1] === "audits"
+  );
+}
+
 export async function middleware(request: NextRequest) {
   const start = performance.now();
   const requestId = getRequestId(request);
@@ -60,6 +74,23 @@ export async function middleware(request: NextRequest) {
 
   try {
     const sessionAddress = await resolveSessionAddress(request);
+    if (requiresSession(route, method) && !sessionAddress) {
+      log.warn(
+        {
+          event: "request.unauthorized",
+          path: url.pathname,
+          ip,
+          userAgent,
+        },
+        `${method} ${url.pathname} 401 (authentication required)`,
+      );
+      const denied = NextResponse.json(
+        { error: "Authentication required" },
+        { status: 401 },
+      );
+      denied.headers.set("x-request-id", requestId);
+      return denied;
+    }
     const requestHeaders = new Headers(request.headers);
     if (sessionAddress) {
       requestHeaders.set("x-auth-address", sessionAddress);

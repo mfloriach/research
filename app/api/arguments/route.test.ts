@@ -52,6 +52,18 @@ describe("GET /api/arguments", () => {
     expect(response.status).toBe(200);
   });
 
+  it("serves reads without any session", async () => {
+    listArgumentsMock.mockResolvedValue(items);
+
+    // No cookie header, no authorization header: reads stay public while
+    // creators require a JWT session (see app/api/audits/*/route.test.ts).
+    const response = await GET(new Request("http://localhost/api/arguments"));
+    const body = await response.json();
+
+    expect(response.status).toBe(200);
+    expect(body).toEqual({ arguments: items, total: 1 });
+  });
+
   it("rejects an invalid sort with 400", async () => {
     await expect(
       GET(new Request("http://localhost/api/arguments?sort=random")),
