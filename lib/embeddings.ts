@@ -1,5 +1,5 @@
 /**
- * Server-only sentence embeddings via `transformers`
+ * Server-only sentence embeddings via `@huggingface/transformers`
  * (Xenova/all-MiniLM-L6-v2, quantized ONNX, 384 dimensions, CPU).
  * Never import this module from client components: the model loads
  * into the server process on first use (cached in ~/.cache/huggingface).
@@ -19,9 +19,9 @@ let pipelinePromise: Promise<EmbeddingPipeline> | null = null;
 async function getPipeline(): Promise<EmbeddingPipeline> {
   if (!pipelinePromise) {
     pipelinePromise = (async () => {
-      const { pipeline } = await import("@xenova/transformers");
+      const { pipeline } = await import("@huggingface/transformers");
       return (await pipeline("feature-extraction", MATCH_MODEL, {
-        quantized: true,
+        dtype: "q8",
       })) as unknown as EmbeddingPipeline;
     })();
   }

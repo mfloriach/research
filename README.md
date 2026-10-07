@@ -107,7 +107,7 @@ with a gateway link. Start the node with `docker compose up -d ipfs`
 ## Vector search
 
 `/api/search` embeds the query with a local sentence model
-(`@xenova/transformers`, `Xenova/all-MiniLM-L6-v2`, 384 dims, CPU — model
+(`@huggingface/transformers`, `Xenova/all-MiniLM-L6-v2`, 384 dims, CPU — model
 downloads once to `~/.cache/huggingface`) and runs Atlas Vector Search over
 article embeddings (`article_embeddings`, cosine). It returns
 `{query, match, score, matches}` where `match` is true when the top
