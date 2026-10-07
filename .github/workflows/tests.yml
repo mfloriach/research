@@ -1,0 +1,85 @@
+name: Tests
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  unit:
+    name: Unit tests
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Jest suite
+        run: npm test
+
+  e2e:
+    name: E2E tests
+    runs-on: ubuntu-latest
+
+    services:
+      # Atlas-local runs as a replica set, which db:migrate's waitForPrimary
+      # needs. Readiness is covered by that retry loop, so no healthcheck.
+      mongodb:
+        image: mongodb/mongodb-atlas-local:7
+        ports:
+          - 27017:27017
+        env:
+          MONGODB_INITDB_ROOT_USERNAME: admin
+          MONGODB_INITDB_ROOT_PASSWORD: admin123
+
+    env:
+      MONGODB_URI: mongodb://admin:admin123@localhost:27017/epistimology_test?authSource=admin
+      MONGODB_DB: epistimology_test
+      # Format-validated only; the smoke suite never calls the LLM.
+      OPENAI_API_KEY: ci-dummy-key
+      JWT_SECRET: ci-dummy-jwt-secret-at-least-32-chars
+      CI: true
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: Seed test database
+        run: npm run db:setup
+
+      - name: Run Playwright suite
+        run: npm run test:e2e
+
+      - name: Upload Playwright report
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
