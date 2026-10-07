@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { debateResponseSchema } from "@/lib/api-schemas";
 
 type StoreDbResult = {
   itemId: string;
@@ -25,10 +26,23 @@ async function client(req: Request): Promise<any> {
   });
 
   if (!response.ok) {
-    throw new Error(`Request failed with status ${response.status}`);
+    throw new Error(await responseErrorMessage(response));
   }
 
   return req.validation.parse(await response.json());
+}
+
+/** Prefer the API's error message, falling back to the status line. */
+async function responseErrorMessage(response: Response): Promise<string> {
+  try {
+    const body = (await response.json()) as { error?: unknown };
+    if (typeof body.error === "string" && body.error.length > 0) {
+      return body.error;
+    }
+  } catch {
+    // Non-JSON error bodies fall through to the status message.
+  }
+  return `Request failed with status ${response.status}`;
 }
 
 export async function saveEvidence(body: any): Promise<StoreDbResult> {
@@ -50,12 +64,15 @@ export async function saveContraargument(body: any): Promise<StoreDbResult> {
 }
 
 export async function saveArticle(body: any): Promise<StoreDbResult> {
-  return client({
+  // POST /api/debates answers the shared DebateResponse shape, keyed by
+  // `articleId`; map it onto the `{ itemId }` result callers expect.
+  const data = (await client({
     method: "POST",
     endpoint: "/api/debates",
     body,
-    validation: ResultBodySchema,
-  });
+    validation: debateResponseSchema.pick({ articleId: true, ipfsCid: true }),
+  })) as { articleId: string; ipfsCid: string };
+  return { itemId: data.articleId, ipfsCid: data.ipfsCid };
 }
 
 export async function saveFallacy(body: any): Promise<StoreDbResult> {

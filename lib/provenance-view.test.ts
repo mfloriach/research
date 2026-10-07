@@ -1,10 +1,10 @@
 import type { DbContent } from "@/lib/content-db";
+import { truncateText } from "@/lib/utils";
 import {
   articleTableRows,
   buildContentIndex,
   resolveProvenanceItem,
   summarizeArticle,
-  truncateText,
 } from "./provenance-view";
 
 const fixture: DbContent = {
