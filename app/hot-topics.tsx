@@ -41,17 +41,45 @@ export function HotTopics() {
         aria-busy={loading}
       >
         {loading ? (
-          <p className="text-sm opacity-70">Loading hot topics…</p>
+          <ul className="space-y-4" aria-label="Loading hot topics">
+            {[0, 1, 2].map((index) => (
+              <li
+                key={index}
+                className="card border border-base-300 bg-base-100"
+                aria-hidden="true"
+              >
+                <div className="card-body gap-2.5 p-5 sm:p-6">
+                  <div className="skeleton h-7 w-2/3" />
+                  <div className="skeleton h-4 w-full" />
+                  <div className="skeleton h-4 w-5/6" />
+                  <div className="flex gap-1.5 pt-1">
+                    <div className="skeleton h-5 w-16" />
+                    <div className="skeleton h-5 w-20" />
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
         ) : error ? (
           <p role="alert" className="text-sm text-error">
             {error}
           </p>
         ) : total === 0 ? (
-          <p className="text-sm opacity-70">
-            No arguments match these filters. Clear them to see everything.
-          </p>
+          <div className="rounded-box border border-dashed border-base-300 px-6 py-12 text-center">
+            <p className="font-serif text-xl font-semibold">
+              No arguments match these filters
+            </p>
+            <p className="mt-1 text-sm text-base-content/70">
+              Clear them to see everything.
+            </p>
+          </div>
         ) : (
-          <HotTopicList items={items} />
+          <>
+            <p className="mb-3 font-mono text-xs tabular-nums text-base-content/60">
+              {total} open argument{total === 1 ? "" : "s"}
+            </p>
+            <HotTopicList items={items} />
+          </>
         )}
       </div>
     </>
