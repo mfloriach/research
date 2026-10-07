@@ -157,6 +157,25 @@ Required environment variable (`lib/config.ts`, also needed for tests):
 | ------------ | -------------------------------------------------- |
 | `JWT_SECRET` | HMAC secret for SIWE session JWTs (min 32 chars). Generate with `openssl rand -base64 48`. |
 
+## Testing
+
+Unit tests (Jest, colocated `*.test.ts(x)`):
+
+```bash
+npm test
+```
+
+End-to-end tests (Playwright, `e2e/`, Chromium):
+
+```bash
+npm run db:setup   # MongoDB must run with seed data
+npm run test:e2e
+```
+
+First run needs browsers once: `npx playwright install chromium`. The
+suite reuses a local dev server when one is listening, otherwise it boots
+its own; `npm run test:e2e:ui` opens the interactive runner.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

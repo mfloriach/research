@@ -23,6 +23,14 @@ const eslintConfig = defineConfig([
       "no-restricted-properties": "off",
     },
   },
+  {
+    // Playwright runs outside the app (CI flags, server env): the
+    // @/lib/config indirection does not apply to test orchestration.
+    files: ["playwright.config.ts", "e2e/**/*"],
+    rules: {
+      "no-restricted-properties": "off",
+    },
+  },
   // Override default ignores of eslint-config-next.
   globalIgnores([
     // Default ignores of eslint-config-next:
