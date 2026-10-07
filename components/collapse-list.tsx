@@ -25,7 +25,7 @@ export function CollapseList({
   }
 
   return (
-    <div className="flex flex-col gap-2">
+    <div className="card-enter flex flex-col gap-3">
       {items.map((item) => {
         const attestation = attestations?.[item.id];
         return (

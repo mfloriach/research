@@ -23,5 +23,70 @@
   *::before,
   *::after {
     transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
   }
+}
+
+/*
+ * Dossier motion language (subtle, transform/opacity only).
+ * Entrance stagger lives on list containers via `.card-enter`; the open
+ * fade retriggers whenever a card's <details> opens. All gated above.
+ */
+@keyframes dossier-rise {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes dossier-open {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.card-enter > * {
+  animation: dossier-rise 0.5s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.card-enter > *:nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+.card-enter > *:nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+.card-enter > *:nth-child(4) {
+  animation-delay: 0.15s;
+}
+
+.card-enter > *:nth-child(5) {
+  animation-delay: 0.2s;
+}
+
+.card-enter > *:nth-child(n + 6) {
+  animation-delay: 0.25s;
+}
+
+details.dossier-card[open] > .collapse-content > * {
+  animation: dossier-open 0.3s ease-out both;
+}
+
+::selection {
+  background: color-mix(
+    in oklab,
+    var(--color-primary, #570df8) 25%,
+    transparent
+  );
 }

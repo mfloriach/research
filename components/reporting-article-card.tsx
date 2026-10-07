@@ -198,8 +198,8 @@ export function ReportingArticleCard({
             aria-pressed={isSelected}
             title={clickable ? "Click to audit this paragraph" : undefined}
             className={[
-              "block w-full rounded-md text-left leading-7 transition-colors",
-              "text-base-content/80",
+              "block w-full rounded-md text-left leading-8 transition-colors",
+              "text-base-content/85",
               clickable
                 ? "cursor-pointer px-2 py-1 hover:bg-base-300/50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary"
                 : "cursor-default",
@@ -218,11 +218,11 @@ export function ReportingArticleCard({
   return (
     <details
       id={article.id}
-      className="group scroll-mt-24 collapse border border-base-300 bg-base-100"
+      className="dossier-card group scroll-mt-24 collapse border border-base-300 bg-base-100 transition-shadow duration-300 open:border-primary/30 hover:shadow-md"
       onToggle={handleToggle}
     >
-      <summary className="collapse-title flex flex-col gap-1 text-sm font-medium leading-6">
-        <span className="line-clamp-2 font-serif text-lg font-semibold leading-7 group-open:line-clamp-none">
+      <summary className="collapse-title flex flex-col gap-1.5 text-sm font-medium leading-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+        <span className="line-clamp-2 font-serif text-xl font-semibold leading-8 tracking-tight text-balance transition-colors group-hover:text-primary group-open:line-clamp-none">
           {article.title}
         </span>
         {showMeta ? (
@@ -271,7 +271,7 @@ export function ReportingArticleCard({
                   disabled={!canAttest || attesting || hasAttested}
                   title={attestTitle}
                   aria-label={attestTitle}
-                  className={`btn btn-ghost btn-xs shrink-0 gap-1 px-1.5 font-normal ${
+                  className={`btn btn-ghost btn-xs shrink-0 gap-1 px-1.5 font-normal transition-transform active:scale-95 ${
                     hasAttested ? "text-success" : "text-base-content/60"
                   }`}
                 >
@@ -296,7 +296,7 @@ export function ReportingArticleCard({
                 title="Expand to full screen"
                 aria-label="Expand to full screen"
                 aria-pressed={expanded}
-                className="btn btn-ghost btn-xs shrink-0 px-1.5 font-normal text-base-content/60"
+                className="btn btn-ghost btn-xs shrink-0 px-1.5 font-normal text-base-content/60 transition-transform active:scale-95"
               >
                 <ExpandIcon />
               </button>

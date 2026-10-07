@@ -126,7 +126,7 @@ export function ArticleList({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="card-enter space-y-4">
       {articles.map((article) => {
         const attestation = attestations?.[article.id];
         return (

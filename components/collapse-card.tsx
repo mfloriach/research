@@ -63,9 +63,9 @@ export function CollapseCard({
       : "Connect your wallet to attest";
 
   return (
-    <details className="group collapse border border-base-300 bg-base-100" onToggle={handleToggle}>
-      <summary className="collapse-title flex items-center gap-2 text-sm font-medium leading-6">
-        <span className="line-clamp-2 flex-1 group-open:line-clamp-none">{title}</span>
+    <details className="dossier-card group collapse border border-base-300 bg-base-100 transition-shadow duration-300 open:border-primary/30 hover:shadow-md" onToggle={handleToggle}>
+      <summary className="collapse-title flex items-center gap-2 text-sm font-medium leading-6 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
+        <span className="line-clamp-2 flex-1 font-medium tracking-tight text-balance transition-colors group-hover:text-primary group-open:line-clamp-none">{title}</span>
         {typeof openCount === "number" ? (
           <span
             className="flex shrink-0 items-center gap-1 text-xs font-normal text-base-content/60"
@@ -82,7 +82,7 @@ export function CollapseCard({
             disabled={!canAttest || attesting || hasAttested}
             title={attestTitle}
             aria-label={attestTitle}
-            className={`btn btn-ghost btn-xs shrink-0 gap-1 px-1.5 font-normal ${
+            className={`btn btn-ghost btn-xs shrink-0 gap-1 px-1.5 font-normal transition-transform active:scale-95 ${
               hasAttested ? "text-success" : "text-base-content/60"
             }`}
           >
@@ -100,7 +100,7 @@ export function CollapseCard({
         ) : null}
       </summary>
       <div className="collapse-content">
-        <div className="space-y-3 text-sm leading-6 text-base-content/80">
+        <div className="space-y-3 text-sm leading-7 text-base-content/85">
           {paragraphs.map((paragraph, index) => (
             <p key={index}>{paragraph}</p>
           ))}
