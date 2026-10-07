@@ -25,6 +25,7 @@ export function HotTopicList({ items }: HotTopicListProps) {
             href={`/debate/argument/${item.id}`}
             className="card group border border-base-300 bg-base-100 shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/30 hover:shadow-md focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary active:translate-y-0 active:scale-[0.995]"
             aria-label={`Open argument ${item.title}`}
+            title={item.title}
           >
             <div className="card-body gap-2.5 p-5 sm:p-6">
               <div className="flex items-start justify-between gap-4">

@@ -12,11 +12,17 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
+  // Two workers: five parallel browsers starve the dev server's lazy
+  // compiles and click-stability checks flake. CI already runs serially.
+  workers: process.env.CI ? 1 : 2,
   reporter: process.env.CI ? "github" : "list",
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
+  },
+  // First paint compiles routes lazily under parallel workers; allow room.
+  expect: {
+    timeout: 10 * 1000,
   },
   projects: [
     {

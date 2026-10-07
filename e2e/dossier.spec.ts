@@ -1,29 +1,10 @@
-import { expect, test, type APIRequestContext } from "@playwright/test";
-
-/**
- * Dossier interactions on /debate/argument/[id]. Article ids, titles and
- * authors come from the stable db/nuclear.ts fixtures; only the argument id
- * is read at runtime (random per seed). Requires MongoDB + seed data
- * (`npm run db:setup`).
- */
-async function carbonArgumentId(request: APIRequestContext): Promise<string> {
-  const response = await request.get("/api/arguments");
-  const body = (await response.json()) as {
-    arguments: { id: string; title: string }[];
-  };
-  const found = body.arguments.find((item) =>
-    item.title.includes("Carbon border"),
-  );
-  if (!found) {
-    throw new Error("Carbon border taxes argument not seeded");
-  }
-  return found.id;
-}
+import { expect, test } from "@playwright/test";
+import { gotoDossier } from "./helpers";
 
 const CLIMATE_TITLE = "Climate sensitivity is a range, not a number";
 
 test("paragraph click narrows the audit tabs", async ({ page, request }) => {
-  await page.goto(`/debate/argument/${await carbonArgumentId(request)}`);
+  await gotoDossier(page, request);
   const card = page
     .locator("details", { hasText: CLIMATE_TITLE })
     .first();
@@ -46,7 +27,7 @@ test("paragraph click narrows the audit tabs", async ({ page, request }) => {
 });
 
 test("label filter narrows the articles", async ({ page, request }) => {
-  await page.goto(`/debate/argument/${await carbonArgumentId(request)}`);
+  await gotoDossier(page, request);
   await expect(
     page.getByText(CLIMATE_TITLE).first(),
   ).toBeVisible();
@@ -61,7 +42,7 @@ test("label filter narrows the articles", async ({ page, request }) => {
 });
 
 test("date sort reorders the articles", async ({ page, request }) => {
-  await page.goto(`/debate/argument/${await carbonArgumentId(request)}`);
+  await gotoDossier(page, request);
   await expect(
     page.getByText(CLIMATE_TITLE).first(),
   ).toBeVisible();
@@ -81,8 +62,14 @@ test("opening an article increases its view count", async ({
   page,
   request,
 }) => {
-  await page.goto(`/debate/argument/${await carbonArgumentId(request)}`);
-  const card = page.locator("details", { hasText: CLIMATE_TITLE }).first();
+  await gotoDossier(page, request);
+  // A different article than the paragraph-click test uses, so the two
+  // tests never race on the same view counter under parallel workers.
+  const card = page
+    .locator("details", {
+      hasText: "What the IPCC Sixth Assessment Report found",
+    })
+    .first();
   await expect(card).toBeVisible();
 
   const badge = card.getByLabel(/^\d+ opens$/);
@@ -97,7 +84,7 @@ test("opening an audit item increases its view count", async ({
   page,
   request,
 }) => {
-  await page.goto(`/debate/argument/${await carbonArgumentId(request)}`);
+  await gotoDossier(page, request);
   const card = page
     .locator("details", { hasText: "Relocation: production moves" })
     .first();
@@ -112,7 +99,7 @@ test("opening an audit item increases its view count", async ({
 });
 
 test("author byline opens their provenance", async ({ page, request }) => {
-  await page.goto(`/debate/argument/${await carbonArgumentId(request)}`);
+  await gotoDossier(page, request);
   const byline = page.getByRole("link", { name: "By L. Brandt" }).first();
   await expect(byline).toBeVisible();
 
